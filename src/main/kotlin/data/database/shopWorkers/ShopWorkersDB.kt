@@ -33,6 +33,7 @@ object ShopWorkersDB : Table("shop_workers") {
     fun getAll(): List<ShopWorkersDTO> {
         return try {
             transaction {
+                addLogger(StdOutSqlLogger)
 //                addLogger(StdOutSqlLogger)
                 ShopWorkersDB.selectAll().toList().map {
                     ShopWorkersDTO(

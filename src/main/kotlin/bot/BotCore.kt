@@ -3,6 +3,7 @@ package bot
 import cache.InMemoryCache
 import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
+import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.api.send.sendMessage
 import dev.inmo.tgbotapi.extensions.api.send.sendTextMessage
 import dev.inmo.tgbotapi.extensions.api.telegramBot
@@ -10,22 +11,25 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.buildBehaviourWithFSMAndSt
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
 import dev.inmo.tgbotapi.extensions.utils.asFromUser
+import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.Identifier
+import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
+import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.utils.buildEntities
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
 import utils.Logging
 
 sealed interface BotState : State
 
-//data class ExpectLogin(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class ExpectLogin(override val context: ChatId) : BotState
-data class ExpectPassword(override val context: ChatId) : BotState
-data class ExpectShop(override val context: ChatId) : BotState
+data class ExpectLogin(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class ExpectPassword(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class ExpectShop(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class StopState(override val context: ChatId) : BotState
 
 class BotCore(private val job: CompletableJob) {
@@ -47,24 +51,30 @@ class BotCore(private val job: CompletableJob) {
                 botUsers[it.context.chatId] = BotUserData("", "", "")
 
                 stateUser[it.context.chatId] = it
-                sendMessage(it.context, buildEntities { +"Введите ваш логин в TS (буквами)" })
-                val contentMessage = waitTextMessage().first()
+                send(it.context) { +"Введите ваш логин в TS (буквами)" }
+                val contentMessage = waitTextMessage().filter { message ->
+                    message.sameChat(it.sourceMessage)
+                }.first()
                 botUsers[it.context.chatId]?.login = contentMessage.content.text
-                ExpectPassword(it.context)
+                ExpectPassword(it.context, it.sourceMessage)
             }
 
             strictlyOn<ExpectPassword> {
                 stateUser[it.context.chatId] = it
-                sendMessage(it.context, buildEntities { +"Введите ваш пароль в TS (не должен быть пустым)" })
-                val contentMessage = waitTextMessage().first()
+                send(it.context) { +"Введите ваш пароль в TS (не должен быть пустым)" }
+                val contentMessage = waitTextMessage().filter { message ->
+                    message.sameChat(it.sourceMessage)
+                }.first()
                 botUsers[it.context.chatId]?.password = contentMessage.content.text
-                ExpectShop(it.context)
+                ExpectShop(it.context, it.sourceMessage)
             }
 
             strictlyOn<ExpectShop> {
                 stateUser[it.context.chatId] = it
-                sendMessage(it.context, buildEntities { +"Введите ваш магазин (в формате A000)" })
-                val contentMessage = waitTextMessage().first()
+                send(it.context) { +"Введите ваш магазин (в формате A000)" }
+                val contentMessage = waitTextMessage().filter { message ->
+                    message.sameChat(it.sourceMessage)
+                }.first()
 
                 if (contentMessage.content.text.length != 4) {
                     sendMessage(it.context, buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
@@ -75,15 +85,32 @@ class BotCore(private val job: CompletableJob) {
                 }
             }
 
+/*            strictlyOn<ExpectOpenTime> {
+                stateUser[it.context.chatId] = it
+                sendMessage(it.context, buildEntities { +"Введите время открытия магазина (в часах, например 10)" })
+                val contentMessage = waitTextMessage().first()
+
+                if ((contentMessage.content.text.length > 2)||(contentMessage.content.text.toIntOrNull() == null)) {
+                    sendMessage(it.context, buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
+                    it
+                } else {
+                    botUsers[it.context.chatId]?.openTime = contentMessage.content.text.toInt()
+                    StopState(it.context)
+                }
+            }*/
+
             strictlyOn<StopState> {
                 sendMessage(
                     it.context,
-                    "Проверяем в TS логин:${botUsers[it.context.chatId]?.login} " +
-                            "пароль:${botUsers[it.context.chatId]?.password} " +
-                            "магазин:${botUsers[it.context.chatId]?.shop}"
+                    "Проверяем: \nлогин в TS:${botUsers[it.context.chatId]?.login} " +
+                            "\nпароль:${botUsers[it.context.chatId]?.password} " +
+                            "\nмагазин:${botUsers[it.context.chatId]?.shop}"
                 )
 
                 stateUser.remove(it.context.chatId)
+
+                println(botUsers[it.context.chatId]) // тут вставить проверку и коннект с апи магазине
+                // затем внесение в бд, если все ок или запрос по новой если не ок
 
                 null
             }
@@ -108,7 +135,7 @@ class BotCore(private val job: CompletableJob) {
                 initialFilter = { stateUser[it.chat.id.chatId] == null }
             ) {
                 sendTextMessage(it.chat, "Стартуем!")
-                startChain(ExpectLogin(it.chat.id))
+                startChain(ExpectLogin(it.chat.id, it))
             }
 
             onCommand("getmyid") {

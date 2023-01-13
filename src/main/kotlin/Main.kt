@@ -9,6 +9,10 @@ import orderProcessing.data.SecurityData.POSTGRES_PASSWORD
 import orderProcessing.data.SecurityData.POSTGRES_URL
 import orderProcessing.data.SecurityData.POSTGRES_USER
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.DatabaseConfig
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.transactions.transaction
 
 val job = SupervisorJob()
 private val bot by lazy { BotCore(job) }

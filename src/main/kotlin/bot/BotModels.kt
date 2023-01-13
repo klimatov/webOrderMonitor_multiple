@@ -6,7 +6,7 @@ import dev.inmo.tgbotapi.types.Identifier
 data class BotUserData(
     var login: String,
     var password: String,
-    var shop: String,
+    var shop: String
 )
 
 data class BotUsers(
