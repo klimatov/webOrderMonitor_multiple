@@ -30,14 +30,15 @@ sealed interface BotState : State
 data class ExpectLogin(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class ExpectPassword(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class ExpectShop(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class StopState(override val context: ChatId) : BotState
+data class StopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 
-class BotCore(private val job: CompletableJob) {
-    private var botUsers: MutableMap<Identifier, BotUserData> = mutableMapOf()
+class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
+    private var botUsers: MutableMap<Identifier, BotUsers> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
     private val tag = this::class.java.simpleName
     private val botToken = TELEGRAM_BOT_TOKEN
     private val bot = telegramBot(token = botToken)
+    private val botRepositoryTS = BotRepositoryTS()
 
     init {
 
@@ -48,14 +49,14 @@ class BotCore(private val job: CompletableJob) {
         bot.buildBehaviourWithFSMAndStartLongPolling<BotState>(scope) {
 
             strictlyOn<ExpectLogin> {
-                botUsers[it.context.chatId] = BotUserData("", "", "")
+                botUsers[it.context.chatId] = BotUsers("", "", "", it.context.chatId, UserRole.GUEST.toString())
 
                 stateUser[it.context.chatId] = it
                 send(it.context) { +"Введите ваш логин в TS (буквами)" }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                botUsers[it.context.chatId]?.login = contentMessage.content.text
+                botUsers[it.context.chatId]?.tsLogin = contentMessage.content.text
                 ExpectPassword(it.context, it.sourceMessage)
             }
 
@@ -65,7 +66,7 @@ class BotCore(private val job: CompletableJob) {
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                botUsers[it.context.chatId]?.password = contentMessage.content.text
+                botUsers[it.context.chatId]?.tsPassword = contentMessage.content.text
                 ExpectShop(it.context, it.sourceMessage)
             }
 
@@ -80,8 +81,8 @@ class BotCore(private val job: CompletableJob) {
                     sendMessage(it.context, buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
                     it
                 } else {
-                    botUsers[it.context.chatId]?.shop = contentMessage.content.text
-                    StopState(it.context)
+                    botUsers[it.context.chatId]?.tsShop = contentMessage.content.text
+                    StopState(it.context, it.sourceMessage)
                 }
             }
 
@@ -102,9 +103,9 @@ class BotCore(private val job: CompletableJob) {
             strictlyOn<StopState> {
                 sendMessage(
                     it.context,
-                    "Проверяем: \nлогин в TS:${botUsers[it.context.chatId]?.login} " +
-                            "\nпароль:${botUsers[it.context.chatId]?.password} " +
-                            "\nмагазин:${botUsers[it.context.chatId]?.shop}"
+                    "Проверяем: \nлогин в TS:${botUsers[it.context.chatId]?.tsLogin} " +
+                            "\nпароль:${botUsers[it.context.chatId]?.tsPassword} " +
+                            "\nмагазин:${botUsers[it.context.chatId]?.tsShop}"
                 )
 
                 stateUser.remove(it.context.chatId)
@@ -112,7 +113,13 @@ class BotCore(private val job: CompletableJob) {
                 println(botUsers[it.context.chatId]) // тут вставить проверку и коннект с апи магазине
                 // затем внесение в бд, если все ок или запрос по новой если не ок
 
-                null
+                val result = botRepositoryTS.checkUserDataInTS(botUsers[it.context.chatId])
+                if (result) {
+                    println("all ok")
+                    botRepositoryDB.setBy(botUsers = botUsers[it.context.chatId]!!)
+                    null
+                } else ExpectLogin(it.context, it.sourceMessage)
+
             }
 
 //            strictlyOn<ExpectPasswordOrStopState> {

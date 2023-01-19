@@ -10,11 +10,11 @@ data class BotUserData(
 )
 
 data class BotUsers(
-    val tsLogin: String,
-    val tsPassword: String,
-    val tsShop: String,
-    val tgUserId: Identifier,
-    val userRole: UserRole
+    var tsLogin: String,
+    var tsPassword: String,
+    var tsShop: String,
+    var tgUserId: Identifier,
+    var userRole: String
 )
 
 enum class UserRole {

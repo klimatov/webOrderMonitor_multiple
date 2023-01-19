@@ -1,0 +1,67 @@
+package data.database.botUsers
+
+import org.jetbrains.exposed.exceptions.ExposedSQLException
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.postgresql.util.PSQLException
+import utils.Logging
+import java.sql.SQLException
+
+object BotUsersDB : Table("bot_users") {
+    private val tag = this::class.java.simpleName
+    private val login = BotUsersDB.varchar("ts_login", 25)
+    private val password = BotUsersDB.varchar("ts_password", 25)
+    private val shop = BotUsersDB.varchar("ts_shop", 4)
+    private val telegramUserId = BotUsersDB.varchar("tg_user_id", 20)
+    private val userRole = BotUsersDB.varchar("user_role", 20)
+
+    fun insert(botUsersDTO: BotUsersDTO) {
+
+        try {
+            transaction {
+                addLogger(StdOutSqlLogger)
+                BotUsersDB.insert {
+                    it[login] = botUsersDTO.login
+                    it[password] = botUsersDTO.password
+                    it[shop] = botUsersDTO.shop
+                    it[telegramUserId] = botUsersDTO.telegramUserId.toString()
+                    it[userRole] = botUsersDTO.userRole
+                }
+            }
+
+        } catch (e: ExposedSQLException) {
+            // 23505 ERROR:  duplicate key violates unique constraint
+            if (e.sqlState == "23505") {
+                transaction {
+                    addLogger(StdOutSqlLogger)
+                    BotUsersDB.update {
+                        it[login] = botUsersDTO.login
+                        it[password] = botUsersDTO.password
+                        it[shop] = botUsersDTO.shop
+                        it[telegramUserId] = botUsersDTO.telegramUserId.toString()
+                        it[userRole] = botUsersDTO.userRole
+                    }
+                }
+            } else Logging.e(tag, e.message.toString())
+        }
+    }
+
+    fun getAll(): List<BotUsersDTO> {
+        return try {
+            transaction {
+                addLogger(StdOutSqlLogger)
+                BotUsersDB.selectAll().toList().map {
+                    BotUsersDTO(
+                        login = it[login],
+                        password = it[password],
+                        shop = it[shop],
+                        telegramUserId = it[telegramUserId].toLong(),
+                        userRole = it[userRole]
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+}

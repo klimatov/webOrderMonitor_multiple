@@ -1,4 +1,5 @@
 import bot.BotCore
+import data.BotRepositoryDBImpl
 import data.ShopWorkersRepositoryImpl
 import domain.ShopWorkersManager
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +16,8 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 
 val job = SupervisorJob()
-private val bot by lazy { BotCore(job) }
+private val botRepositoryDB = BotRepositoryDBImpl()
+private val bot by lazy { BotCore(job = job, botRepositoryDB = botRepositoryDB) }
 private val shopWorkersRepository = ShopWorkersRepositoryImpl()
 private val shopWorkersManager by lazy(LazyThreadSafetyMode.NONE) { ShopWorkersManager(shopWorkersRepository = shopWorkersRepository) }
 

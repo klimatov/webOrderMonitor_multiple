@@ -16,6 +16,7 @@ object ShopWorkersDB : Table("shop_workers") {
 
     fun insert(shopWorkersDTO: ShopWorkersDTO) {
         transaction {
+            addLogger(StdOutSqlLogger)
             ShopWorkersDB.insert {
                 it[workerId] = shopWorkersDTO.workerId
                 it[login] = shopWorkersDTO.login
@@ -34,7 +35,6 @@ object ShopWorkersDB : Table("shop_workers") {
         return try {
             transaction {
                 addLogger(StdOutSqlLogger)
-//                addLogger(StdOutSqlLogger)
                 ShopWorkersDB.selectAll().toList().map {
                     ShopWorkersDTO(
                         workerId = it[workerId],
