@@ -9,7 +9,7 @@ data class BotUserData(
     var shop: String
 )
 
-data class BotUsers(
+data class BotUser(
     var tsLogin: String,
     var tsPassword: String,
     var tsShop: String,

@@ -1,6 +1,6 @@
 package data.database.botUsers
 
-import bot.BotUsers
+import bot.BotUser
 import dev.inmo.tgbotapi.types.Identifier
 import kotlinx.serialization.Serializable
 
@@ -13,7 +13,7 @@ data class BotUsersDTO(
     val userRole: String
 )
 
-fun BotUsers.mapToBotUsersDTO(): BotUsersDTO =
+fun BotUser.mapToBotUsersDTO(): BotUsersDTO =
     BotUsersDTO(
         login = tsLogin,
         password = tsPassword,
@@ -22,8 +22,8 @@ fun BotUsers.mapToBotUsersDTO(): BotUsersDTO =
         userRole = userRole
     )
 
-fun BotUsersDTO.mapToBotUsers(): BotUsers =
-    BotUsers(
+fun BotUsersDTO.mapToBotUsers(): BotUser =
+    BotUser(
         tsLogin = login,
         tsPassword = password,
         tsShop = shop,

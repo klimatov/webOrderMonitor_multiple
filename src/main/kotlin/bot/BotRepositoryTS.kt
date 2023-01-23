@@ -2,7 +2,7 @@ package bot
 
 class BotRepositoryTS {
 
-    fun checkUserDataInTS(botUserData: BotUsers?): Boolean {
+    fun checkUserDataInTS(botUserData: BotUser?): Boolean {
         if (botUserData?.tsLogin == "zzz") return true else return false
     }
 }
