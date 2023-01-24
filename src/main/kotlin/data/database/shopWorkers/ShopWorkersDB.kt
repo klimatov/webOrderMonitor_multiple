@@ -2,8 +2,10 @@ package data.database.shopWorkers
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import utils.Logging
 
 object ShopWorkersDB : Table("shop_workers") {
+    private val tag = this::class.java.simpleName
     private val workerId = ShopWorkersDB.uuid("worker_id")
     private val login = ShopWorkersDB.varchar("login", 25)
     private val password = ShopWorkersDB.varchar("password", 25)
@@ -50,7 +52,31 @@ object ShopWorkersDB : Table("shop_workers") {
                 }
             }
         } catch (e: Exception) {
+            Logging.e(tag, e.message.toString())
             emptyList()
+        }
+    }
+
+    fun fetchWorkerByShop(requiredShop: String): ShopWorkersDTO? {
+        return try {
+            transaction {
+                addLogger(StdOutSqlLogger)
+                val worker = ShopWorkersDB.select { ShopWorkersDB.shop.eq(requiredShop) }.single()
+                ShopWorkersDTO(
+                    workerId = worker[workerId],
+                    login = worker[login],
+                    password = worker[password],
+                    shop = worker[shop],
+                    ownerTgId = worker[ownerTgId].toLong(),
+                    isActive = worker[isActive],
+                    shopOpen = worker[shopOpen].toInt(),
+                    shopClose = worker[shopClose].toInt(),
+                    telegramChatId = worker[telegramChatId].toLong()
+                )
+            }
+        } catch (e: Exception) {
+            Logging.e(tag, e.message.toString())
+            null
         }
     }
 }

@@ -4,14 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- репозиторий (частичный) и реализация взаимодействия бота с БД&#10;- вставка (или обновление если существует) юзера по команде из бота">
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- получение всех юзеров из БД&#10;- обработка команды /start для нового/зарегистрированного юзера">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotModels.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotModels.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryDB.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryDB.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryTS.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryTS.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/BotRepositoryDBImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/BotRepositoryDBImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/database/botUsers/BotUsersDTO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/database/botUsers/BotUsersDTO.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDB.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDB.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDTO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDTO.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -140,7 +140,14 @@
       <option name="project" value="LOCAL" />
       <updated>1674113173630</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="- получение всех юзеров из БД&#10;- обработка команды /start для нового/зарегистрированного юзера">
+      <created>1674461598153</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1674461598153</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -160,7 +167,8 @@
     <MESSAGE value="last edition" />
     <MESSAGE value="FSM (убрал баг с рассылкой сообщений всем активным юзерам)" />
     <MESSAGE value="- репозиторий (частичный) и реализация взаимодействия бота с БД&#10;- вставка (или обновление если существует) юзера по команде из бота" />
-    <option name="LAST_COMMIT_MESSAGE" value="- репозиторий (частичный) и реализация взаимодействия бота с БД&#10;- вставка (или обновление если существует) юзера по команде из бота" />
+    <MESSAGE value="- получение всех юзеров из БД&#10;- обработка команды /start для нового/зарегистрированного юзера" />
+    <option name="LAST_COMMIT_MESSAGE" value="- получение всех юзеров из БД&#10;- обработка команды /start для нового/зарегистрированного юзера" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

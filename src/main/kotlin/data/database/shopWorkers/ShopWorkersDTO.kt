@@ -1,5 +1,6 @@
 package data.database.shopWorkers
 
+import bot.NewWorker
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
 import kotlinx.serialization.Serializable
@@ -43,4 +44,17 @@ fun ShopWorkersDTO.mapToShopWorkersParam(): ShopWorkersParam =
         shopClose = shopClose,
         telegramChatId = telegramChatId,
         workerState = WorkerState.CREATE
+    )
+
+fun NewWorker.mapToShopWorkersDTO(): ShopWorkersDTO =
+    ShopWorkersDTO(
+        workerId = workerId,
+        login = login,
+        password = password,
+        shop = shop,
+        ownerTgId = ownerTgId,
+        isActive = isActive,
+        shopOpen = shopOpen,
+        shopClose = shopClose,
+        telegramChatId = telegramChatId
     )
