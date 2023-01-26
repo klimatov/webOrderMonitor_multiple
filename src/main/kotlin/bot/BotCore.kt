@@ -212,13 +212,11 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             strictlyOn<BotStopState> {
                 stateUser.remove(it.context.chatId)
-
-                println(newWorkers[it.context.chatId])
-
                 Logging.i(tag, "Create new worker in DB ${newWorkers[it.context.chatId]!!.shop}")
                 botRepositoryDB.setWorkerBy(newWorkers[it.context.chatId]!!)
                 sendMessage(it.context, buildEntities { +"Чат-бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} создан" })
-                // Тут вызов или колбэк для запуска воркера
+                // Сохраняем новый/изменившийся воркер для создания/обновления
+                BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
 
                 null
             }
@@ -291,6 +289,31 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             "Чат-бот магазина ${currentUser.tsShop} уже существует. " +
                                     if (requiredShopWorker.tgUserId == currentUser.tgUserId) "Его создали Вы."
                                     else "Его создал пользователь TS с логином ${requiredShopWorker.tsLogin}."
+                        )
+                    }
+                } else {
+                    sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
+                }
+            }
+
+            onCommand("delete", initialFilter = { stateUser[it.chat.id.chatId] == null }) {
+                if (allBotUsers.containsKey(it.chat.id.chatId)) {
+                    val currentUser = allBotUsers[it.chat.id.chatId]
+                    val requiredShopWorker = botRepositoryDB.checkWorker(currentUser!!.tsShop)
+                    if (requiredShopWorker != null) {
+                        sendTextMessage(
+                            it.chat,
+                            "Удаляем чат-бота магазина ${currentUser.tsShop}. "
+                        )
+//                        startChain(BotExpectChatId(it.chat.id, it))
+
+                    // тут удаление
+
+                    } else {
+                        sendTextMessage(
+                            it.chat,
+                            "Чат-бота магазина ${currentUser.tsShop} пока не существует. " +
+                                    "Вы можете его создать командой /create"
                         )
                     }
                 } else {

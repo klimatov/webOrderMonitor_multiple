@@ -1,6 +1,8 @@
 package bot
 
+import data.database.shopWorkers.ShopWorkersDTO
 import dev.inmo.tgbotapi.types.Identifier
+import domain.models.ShopWorkersParam
 import domain.models.WorkerState
 import java.util.*
 
@@ -33,3 +35,17 @@ enum class UserRole {
     ADMIN,
     ROOT
 }
+
+fun NewWorker.mapToShopWorkersParam(): ShopWorkersParam =
+    ShopWorkersParam(
+        workerId = workerId,
+        login = login,
+        password = password,
+        shop = shop,
+        ownerTgId = ownerTgId,
+        isActive = isActive,
+        shopOpen = shopOpen,
+        shopClose = shopClose,
+        telegramChatId = telegramChatId,
+        workerState = workerState
+    )
