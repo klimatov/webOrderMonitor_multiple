@@ -4,14 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- запуск созданного воркера из /create&#10;- обработка команда /delete в боте (без функционала)">
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- функционал команды /delete (подтверждение, удаление в БД, удаление воркера)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryDB.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryDB.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/BotRepositoryDBImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/BotRepositoryDBImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDB.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDB.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDTO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/database/shopWorkers/ShopWorkersDTO.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -161,7 +156,14 @@
       <option name="project" value="LOCAL" />
       <updated>1674755945744</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="- функционал команды /delete (подтверждение, удаление в БД, удаление воркера)">
+      <created>1674979808127</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1674979808127</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -184,7 +186,8 @@
     <MESSAGE value="- получение всех юзеров из БД&#10;- обработка команды /start для нового/зарегистрированного юзера" />
     <MESSAGE value="- создание нового бота магазина в БД по команде /create" />
     <MESSAGE value="- запуск созданного воркера из /create&#10;- обработка команда /delete в боте (без функционала)" />
-    <option name="LAST_COMMIT_MESSAGE" value="- запуск созданного воркера из /create&#10;- обработка команда /delete в боте (без функционала)" />
+    <MESSAGE value="- функционал команды /delete (подтверждение, удаление в БД, удаление воркера)" />
+    <option name="LAST_COMMIT_MESSAGE" value="- функционал команды /delete (подтверждение, удаление в БД, удаление воркера)" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -247,7 +247,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         sendMessage(
                             it.context,
                             buildEntities { +"Бота магазина ${allBotUsers[it.context.chatId]!!.tsShop} нет в базе данных" })
-                    }else {
+                    } else {
                         // меняем стэйт на удаление
                         requiredShopWorker.workerState = WorkerState.DELETE
                         // удаляем из БД
@@ -339,7 +339,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         sendTextMessage(
                             it.chat,
                             "Чат-бот магазина ${currentUser.tsShop} уже существует. " +
-                                    if (requiredShopWorker.tgUserId == currentUser.tgUserId) "Его создали Вы."
+                                    if (requiredShopWorker.tgUserId == currentUser.tgUserId) "Его создали Вы с логином в TS ${requiredShopWorker.tsLogin}."
                                     else "Его создал пользователь TS с логином ${requiredShopWorker.tsLogin}."
                         )
                     }
@@ -351,13 +351,24 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             onCommand("delete", initialFilter = { stateUser[it.chat.id.chatId] == null }) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
                     val currentUser = allBotUsers[it.chat.id.chatId]
-                    val requiredShopWorker = botRepositoryDB.checkWorker(currentUser!!.tsShop)
+
+                    // получаем воркер из БД
+                    val requiredShopWorker = botRepositoryDB.getWorkerByShop(currentUser!!.tsShop)
+
                     if (requiredShopWorker != null) {
-                        sendTextMessage(
-                            it.chat,
-                            "Удаляем чат-бота магазина ${currentUser.tsShop}. "
-                        )
-                        startChain(DeleteExpectConfirmation(it.chat.id, it))
+
+                        if (requiredShopWorker.ownerTgId == currentUser.tgUserId) {
+                            sendTextMessage(
+                                it.chat,
+                                "Удаляем чат-бота магазина ${currentUser.tsShop}. "
+                            )
+                            startChain(DeleteExpectConfirmation(it.chat.id, it))
+                        } else {
+                            sendTextMessage(
+                                it.chat,
+                                "Чат бота магазина ${currentUser.tsShop} создали не Вы. Обратитесь к пользователю TS ${requiredShopWorker.login}"
+                            )
+                        }
 
                     } else {
                         sendTextMessage(
