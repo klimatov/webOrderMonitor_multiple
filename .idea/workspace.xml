@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- обработка прав на удаление по команде /delete">
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- выход из /create ввода ID чата по /stop">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
     </list>
@@ -170,7 +170,14 @@
       <option name="project" value="LOCAL" />
       <updated>1674981719327</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="- выход из /create ввода ID чата по /stop">
+      <created>1675001939684</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1675001939684</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -195,7 +202,8 @@
     <MESSAGE value="- запуск созданного воркера из /create&#10;- обработка команда /delete в боте (без функционала)" />
     <MESSAGE value="- функционал команды /delete (подтверждение, удаление в БД, удаление воркера)" />
     <MESSAGE value="- обработка прав на удаление по команде /delete" />
-    <option name="LAST_COMMIT_MESSAGE" value="- обработка прав на удаление по команде /delete" />
+    <MESSAGE value="- выход из /create ввода ID чата по /stop" />
+    <option name="LAST_COMMIT_MESSAGE" value="- выход из /create ввода ID чата по /stop" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

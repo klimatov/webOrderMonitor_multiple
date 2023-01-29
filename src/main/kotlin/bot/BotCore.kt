@@ -349,7 +349,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             onCommand("create", initialFilter = { stateUser[it.chat.id.chatId] == null }) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
                     val currentUser = allBotUsers[it.chat.id.chatId]
-                    val requiredShopWorker = botRepositoryDB.checkWorker(currentUser!!.tsShop)
+                    val requiredShopWorker = botRepositoryDB.getWorkerByShop(currentUser!!.tsShop)
                     if (requiredShopWorker == null) {
                         sendTextMessage(
                             it.chat,
@@ -362,8 +362,8 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         sendTextMessage(
                             it.chat,
                             "Чат-бот магазина ${currentUser.tsShop} уже существует. " +
-                                    if (requiredShopWorker.tgUserId == currentUser.tgUserId) "Его создали Вы с логином в TS ${requiredShopWorker.tsLogin}."
-                                    else "Его создал пользователь TS с логином ${requiredShopWorker.tsLogin}."
+                                    if (requiredShopWorker.ownerTgId == currentUser.tgUserId) "Его создали Вы с логином в TS ${requiredShopWorker.login}."
+                                    else "Его создал пользователь TS с логином ${requiredShopWorker.login}."
                         )
                     }
                 } else {
@@ -405,9 +405,41 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
+            onCommand(
+                "info",
+                initialFilter = { stateUser[it.chat.id.chatId] == null }
+            ) {
+                if (allBotUsers.containsKey(it.chat.id.chatId)) {
+                    val currentUser = allBotUsers[it.chat.id.chatId]
+
+                    // получаем воркер из БД
+                    val requiredShopWorker = botRepositoryDB.getWorkerByShop(currentUser!!.tsShop)
+
+                    if (requiredShopWorker != null) {
+
+                        sendMessage(
+                            it.chat,
+                            "Информация о боте магазина ${requiredShopWorker.shop}:" +
+                                    "\nСоздан пользователем TS: ${requiredShopWorker.login}" +
+                                    "\nВремя открытия магазина: ${requiredShopWorker.shopOpen}:00" +
+                                    "\nВремя закрытия магазина: ${requiredShopWorker.shopClose}:00"
+                        )
+                    } else {
+                        sendTextMessage(
+                            it.chat,
+                            "Чат-бота магазина ${currentUser.tsShop} пока не существует. " +
+                                    "Вы можете его создать командой /create"
+                        )
+                    }
+                } else {
+                    sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
+                }
+            }
+
+
             onCommandWithArgs("test") { it, myContent ->
 //                botRepositoryDB.setBy(botUser = botUser[it.context.chatId]!!)
-                println(botRepositoryDB.checkWorker(myContent.first()))
+//                println(botRepositoryDB.checkWorker(myContent.first()))
             }
 
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
