@@ -8,7 +8,16 @@ interface BotRepositoryDB {
 
     fun getAll(): MutableMap<Identifier, BotUser>
 
-    fun checkWorker(shop: String): BotUser?
+    fun checkWorker(requiredShop: String): BotUser?
+
+
+    /**
+     * Записываем нового/измененного воркера в БД
+     */
 
     fun setWorkerBy(newWorker: NewWorker): Boolean
+
+    fun deleteWorkerByShop(shop: String): Boolean
+
+    fun getWorkerByShop(shop: String): NewWorker?
 }

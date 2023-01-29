@@ -58,3 +58,17 @@ fun NewWorker.mapToShopWorkersDTO(): ShopWorkersDTO =
         shopClose = shopClose,
         telegramChatId = telegramChatId
     )
+
+fun ShopWorkersDTO.mapToNewWorker(): NewWorker =
+    NewWorker(
+        workerId = workerId,
+        login = login,
+        password = password,
+        shop = shop,
+        ownerTgId = ownerTgId,
+        isActive = isActive,
+        shopOpen = shopOpen,
+        shopClose = shopClose,
+        telegramChatId = telegramChatId,
+        workerState = WorkerState.WORK
+    )

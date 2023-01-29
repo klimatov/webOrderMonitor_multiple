@@ -1,6 +1,7 @@
 package data.database.shopWorkers
 
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import utils.Logging
 
@@ -79,4 +80,14 @@ object ShopWorkersDB : Table("shop_workers") {
             null
         }
     }
+
+    fun delete(shopDel: String) {
+        transaction {
+            addLogger(StdOutSqlLogger)
+            ShopWorkersDB.deleteWhere {
+                ShopWorkersDB.shop eq shopDel
+            }
+        }
+    }
+
 }

@@ -8,11 +8,9 @@ import data.database.botUsers.BotUsersDB
 import data.database.botUsers.mapToBotUsers
 import data.database.botUsers.mapToBotUsersDTO
 import data.database.shopWorkers.ShopWorkersDB
+import data.database.shopWorkers.mapToNewWorker
 import data.database.shopWorkers.mapToShopWorkersDTO
-import data.database.shopWorkers.mapToShopWorkersParam
 import dev.inmo.tgbotapi.types.Identifier
-import domain.models.ShopWorkersParam
-import java.util.*
 
 class BotRepositoryDBImpl: BotRepositoryDB {
 
@@ -39,5 +37,15 @@ class BotRepositoryDBImpl: BotRepositoryDB {
     override fun setWorkerBy(newWorker: NewWorker): Boolean {
         ShopWorkersDB.insert(newWorker.mapToShopWorkersDTO())
         return true
+    }
+
+    override fun deleteWorkerByShop(shop: String): Boolean {
+        ShopWorkersDB.delete(shop)
+        return true
+    }
+
+    override fun getWorkerByShop(requiredShop: String): NewWorker? {
+        val resultWorker = ShopWorkersDB.fetchWorkerByShop(requiredShop)
+        return if (resultWorker == null) null else resultWorker.mapToNewWorker()
     }
 }

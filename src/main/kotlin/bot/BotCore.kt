@@ -42,7 +42,10 @@ data class BotExpectChatId(override val context: ChatId, val sourceMessage: Comm
 data class BotExpectOpenTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotExpectCloseTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class DeleteExpectConfirmation(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
 
+data class DeleteStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 
 class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
     private var botUser: MutableMap<Identifier, BotUser> = mutableMapOf()
@@ -214,10 +217,59 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 stateUser.remove(it.context.chatId)
                 Logging.i(tag, "Create new worker in DB ${newWorkers[it.context.chatId]!!.shop}")
                 botRepositoryDB.setWorkerBy(newWorkers[it.context.chatId]!!)
-                sendMessage(it.context, buildEntities { +"Чат-бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} создан" })
+                sendMessage(
+                    it.context,
+                    buildEntities { +"Чат-бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} создан" })
                 // Сохраняем новый/изменившийся воркер для создания/обновления
                 BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
 
+                null
+            }
+
+
+            // /delete
+
+
+            strictlyOn<DeleteExpectConfirmation> {
+                stateUser[it.context.chatId] = it
+                send(it.context) {
+                    +"Введите 'Да', если вы действительно хотите удалить бота магазина ${allBotUsers[it.context.chatId]!!.tsShop}"
+                }
+                val contentMessage = waitTextMessage().filter { message ->
+                    message.sameChat(it.sourceMessage)
+                }.first()
+
+                if (contentMessage.content.text.lowercase() == "да") {
+                    // получаем воркер из БД
+                    val requiredShopWorker = botRepositoryDB.getWorkerByShop(allBotUsers[it.context.chatId]!!.tsShop)
+
+                    if (requiredShopWorker == null) {
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Бота магазина ${allBotUsers[it.context.chatId]!!.tsShop} нет в базе данных" })
+                    }else {
+                        // меняем стэйт на удаление
+                        requiredShopWorker.workerState = WorkerState.DELETE
+                        // удаляем из БД
+                        botRepositoryDB.deleteWorkerByShop(allBotUsers[it.context.chatId]!!.tsShop)
+                        // удалям запущенный воркер
+                        BotRepositoryWorkersImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam())
+
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} удален" })
+                    }
+
+                    DeleteStopState(it.context, it.sourceMessage)
+
+                } else {
+                    sendMessage(it.context, buildEntities { +"Отменяем удаление" })
+                    DeleteStopState(it.context, it.sourceMessage)
+                }
+            }
+
+            strictlyOn<DeleteStopState> {
+                stateUser.remove(it.context.chatId)
                 null
             }
 
@@ -305,9 +357,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             it.chat,
                             "Удаляем чат-бота магазина ${currentUser.tsShop}. "
                         )
-//                        startChain(BotExpectChatId(it.chat.id, it))
-
-                    // тут удаление
+                        startChain(DeleteExpectConfirmation(it.chat.id, it))
 
                     } else {
                         sendTextMessage(
