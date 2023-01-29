@@ -13,6 +13,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessa
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommandWithArgs
 import dev.inmo.tgbotapi.extensions.utils.asFromUser
+import dev.inmo.tgbotapi.extensions.utils.extensions.parseCommandsWithParams
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.types.ChatId
@@ -144,41 +145,57 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     workerState = WorkerState.CREATE
                 )
                 stateUser[it.context.chatId] = it
-                send(it.context) { +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию" }
+                send(it.context) { +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию (или /stop для отмены создания)" }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
 
-                if (contentMessage.text?.toLongOrNull() != null) {
-                    try {
-                        val msgChatId = ChatId(contentMessage.text?.toLong()!!)
-                        val msgResult = getChat(msgChatId)
-                        val chatTitle = when (msgResult) {
-                            is ExtendedSupergroupChatImpl -> msgResult.title
-                            is ExtendedPublicChat -> msgResult.title
-                            is ExtendedChannelChat -> msgResult.title
-                            is ExtendedChannelChatImpl -> msgResult.title
-                            is ExtendedGroupChat -> msgResult.title
-                            is ExtendedGroupChatImpl -> msgResult.title
-                            is ExtendedSupergroupChat -> msgResult.title
-                            else -> msgChatId.chatId.toString()
+                val content = contentMessage.content
+
+                when {
+                    content is TextContent && content.parseCommandsWithParams().keys.contains("stop") -> BotStopState(
+                        it.context,
+                        contentMessage
+                    )
+
+                    else -> {
+
+
+                        if (contentMessage.text?.toLongOrNull() != null) {
+                            try {
+                                val msgChatId = ChatId(contentMessage.text?.toLong()!!)
+                                val msgResult = getChat(msgChatId)
+                                val chatTitle = when (msgResult) {
+                                    is ExtendedSupergroupChatImpl -> msgResult.title
+                                    is ExtendedPublicChat -> msgResult.title
+                                    is ExtendedChannelChat -> msgResult.title
+                                    is ExtendedChannelChatImpl -> msgResult.title
+                                    is ExtendedGroupChat -> msgResult.title
+                                    is ExtendedGroupChatImpl -> msgResult.title
+                                    is ExtendedSupergroupChat -> msgResult.title
+                                    else -> msgChatId.chatId.toString()
+                                }
+
+                                send(it.context) { +"Чат $chatTitle доступен для бота" }
+                                newWorkers[it.context.chatId]?.telegramChatId = contentMessage.text!!.toLong()
+                                BotExpectOpenTime(it.context, it.sourceMessage)
+
+                            } catch (e: Exception) {
+                                Logging.e(tag, e.message.toString())
+                                send(it.context) { +"Некорректный chat ID, возможно Вы не добавили бота в чат как участника." }
+                                null
+                                BotExpectChatId(it.context, it.sourceMessage)
+                            }
+                        } else {
+                            send(it.context) { +"Некорректный chat ID" }
+                            null
+                            BotExpectChatId(it.context, it.sourceMessage)
                         }
 
-                        send(it.context) { +"Чат $chatTitle доступен для бота" }
-                        newWorkers[it.context.chatId]?.telegramChatId = contentMessage.text!!.toLong()
-                        BotExpectOpenTime(it.context, it.sourceMessage)
-
-                    } catch (e: Exception) {
-                        Logging.e(tag, e.message.toString())
-                        send(it.context) { +"Некорректный chat ID, возможно Вы не добавили бота в чат как участника." }
-                        null
-                        BotExpectChatId(it.context, it.sourceMessage)
                     }
-                } else {
-                    send(it.context) { +"Некорректный chat ID" }
-                    null
-                    BotExpectChatId(it.context, it.sourceMessage)
                 }
+
+
             }
 
             strictlyOn<BotExpectOpenTime> {
@@ -215,13 +232,19 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             strictlyOn<BotStopState> {
                 stateUser.remove(it.context.chatId)
-                Logging.i(tag, "Create new worker in DB ${newWorkers[it.context.chatId]!!.shop}")
-                botRepositoryDB.setWorkerBy(newWorkers[it.context.chatId]!!)
-                sendMessage(
+
+
+                if (!it.sourceMessage.content.parseCommandsWithParams().keys.contains("stop")) {
+                    Logging.i(tag, "Create new worker in DB ${newWorkers[it.context.chatId]!!.shop}")
+                    botRepositoryDB.setWorkerBy(newWorkers[it.context.chatId]!!)
+                    sendMessage(
+                        it.context,
+                        buildEntities { +"Чат-бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} создан" })
+                    // Сохраняем новый/изменившийся воркер для создания/обновления
+                    BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
+                } else sendMessage(
                     it.context,
-                    buildEntities { +"Чат-бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} создан" })
-                // Сохраняем новый/изменившийся воркер для создания/обновления
-                BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
+                    buildEntities { +"Создание бота отменено" })
 
                 null
             }
