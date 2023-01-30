@@ -19,5 +19,7 @@ interface BotRepositoryDB {
 
     fun deleteWorkerByShop(shop: String): Boolean
 
-    fun getWorkerByShop(shop: String): NewWorker?
+    fun getWorkerByShop(requiredShop: String): NewWorker?
+
+    fun updateWorkerBy(newWorker: NewWorker): Boolean
 }

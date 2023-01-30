@@ -47,6 +47,11 @@ data class DeleteExpectConfirmation(override val context: ChatId, val sourceMess
     BotState
 
 data class DeleteStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class PasswordUpdateExpectPassword(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class PasswordUpdateStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
 
 class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
     private var botUser: MutableMap<Identifier, BotUser> = mutableMapOf()
@@ -107,6 +112,9 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             }
 
             strictlyOn<UserStopState> {
+
+                stateUser.remove(it.context.chatId)
+
                 sendMessage(
                     it.context,
                     "Проверяем: \nлогин в TS:${botUser[it.context.chatId]?.tsLogin} " +
@@ -114,16 +122,20 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             "\nмагазин:${botUser[it.context.chatId]?.tsShop}"
                 )
 
-                stateUser.remove(it.context.chatId)
+                println(botUser[it.context.chatId])
 
-                println(botUser[it.context.chatId]) // тут вставить проверку и коннект с апи магазине
-                // затем внесение в бд, если все ок или запрос по новой если не ок
-
+                // проверка и коннект с апи магазина
                 val resultCheckTs = botRepositoryTS.checkUserDataInTS(botUser[it.context.chatId])
+
+                //внесение в бд, если все ок или запрос по новой если не ок
                 if (resultCheckTs) {
                     Logging.i(tag, "Create new user ${botUser[it.context.chatId]!!.tsLogin}")
                     botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
                     allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+
+                    sendMessage(
+                        it.context,
+                        buildEntities { +"Пользователь создан. Доступные команды по команде /start" })
                     null
                 } else UserExpectLogin(it.context, it.sourceMessage)
 
@@ -297,6 +309,78 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             }
 
 
+            // /password
+
+            strictlyOn<PasswordUpdateExpectPassword> {
+                stateUser[it.context.chatId] = it
+
+                botUser[it.context.chatId] = allBotUsers[it.context.chatId]!!
+
+                send(it.context) { +"Введите ваш пароль в TS (не должен быть пустым)" }
+                val contentMessage = waitTextMessage().filter { message ->
+                    message.sameChat(it.sourceMessage)
+                }.first()
+
+                botUser[it.context.chatId]?.tsPassword = contentMessage.content.text
+                Logging.d(tag, botUser[it.context.chatId].toString())
+
+                PasswordUpdateStopState(it.context, it.sourceMessage)
+            }
+
+            strictlyOn<PasswordUpdateStopState> {
+                stateUser.remove(it.context.chatId)
+                Logging.d(tag, botUser[it.context.chatId].toString())
+
+                sendMessage(
+                    it.context,
+                    "Проверяем: \nлогин в TS:${botUser[it.context.chatId]?.tsLogin} " +
+                            "\nпароль:${botUser[it.context.chatId]?.tsPassword} " +
+                            "\nмагазин:${botUser[it.context.chatId]?.tsShop}"
+                )
+                // проверка и коннект с апи магазина
+                val resultCheckTs = botRepositoryTS.checkUserDataInTS(botUser[it.context.chatId])
+
+                //внесение в бд, если все ок
+                if (resultCheckTs) {
+                    sendMessage(it.context, "Пароль пользователя TS изменен!")
+                    Logging.i(tag, "Update password user ${botUser[it.context.chatId]!!.tsLogin}")
+                    botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
+                    allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+
+                    // получаем воркер из БД и обновляем его
+                    val requiredShopWorker = botRepositoryDB.getWorkerByShop(allBotUsers[it.context.chatId]!!.tsShop)
+                    if (requiredShopWorker != null) {
+
+
+                        if (requiredShopWorker.ownerTgId == it.context.chatId) {
+                            newWorkers[it.context.chatId] = NewWorker(
+                                workerId = requiredShopWorker.workerId,
+                                login = botUser[it.context.chatId]!!.tsLogin,
+                                password = botUser[it.context.chatId]!!.tsPassword,
+                                shop = requiredShopWorker.shop,
+                                ownerTgId = requiredShopWorker.ownerTgId,
+                                isActive = requiredShopWorker.isActive,
+                                shopOpen = requiredShopWorker.shopOpen,
+                                shopClose = requiredShopWorker.shopClose,
+                                telegramChatId = requiredShopWorker.telegramChatId,
+                                workerState = WorkerState.UPDATE
+                            )
+                            Logging.i(tag, "Update worker in DB ${newWorkers[it.context.chatId]!!.shop}")
+                            // обновляем воркер в БД
+                            botRepositoryDB.updateWorkerBy(newWorkers[it.context.chatId]!!)
+                            // Сохраняем новый/изменившийся воркер для создания/обновления
+                            BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
+                            sendMessage(
+                                it.context,
+                                buildEntities { +"Пароль пользователя TS в чат-боте магазина ${allBotUsers[it.context.chatId]!!.tsShop} обновлен" })
+                        }
+                    }
+                    null
+                } else sendMessage(it.context, "Проверка в базе TS прошла неудачно, пароль НЕ изменен")
+                null
+            }
+
+
 //            strictlyOn<ExpectPasswordOrStopState> {
 //                val contentMessage = waitContentMessage().first()
 //                val content = contentMessage.content
@@ -323,8 +407,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         "Доступные команды:" +
                                 "\n/start - список команд" +
                                 "\n/getmyid - ваш telegram ID" +
-                                "\n/update - обновить все данные TS" +
-                                "\n/password - обновить пароль" +
+                                "\n/password - обновить пароль TS" +
                                 "\n/create - создать бота магазина" +
                                 "\n/delete - удалить бота магазина" +
                                 "\n/info - информация о боте вашего магазина"
@@ -431,6 +514,21 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                                     "Вы можете его создать командой /create"
                         )
                     }
+                } else {
+                    sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
+                }
+            }
+
+            onCommand(
+                "password",
+                initialFilter = { stateUser[it.chat.id.chatId] == null }
+            ) {
+                if (allBotUsers.containsKey(it.chat.id.chatId)) {
+                    sendTextMessage(
+                        it.chat,
+                        "Обновляем пароль пользователя TS ${allBotUsers[it.chat.id.chatId]!!.tsLogin}"
+                    )
+                    startChain(PasswordUpdateExpectPassword(it.chat.id, it))
                 } else {
                     sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
                 }

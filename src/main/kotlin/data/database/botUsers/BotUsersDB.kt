@@ -3,9 +3,7 @@ package data.database.botUsers
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.postgresql.util.PSQLException
 import utils.Logging
-import java.sql.SQLException
 
 object BotUsersDB : Table("bot_users") {
     private val tag = this::class.java.simpleName
@@ -34,11 +32,11 @@ object BotUsersDB : Table("bot_users") {
             if (e.sqlState == "23505") {
                 transaction {
                     addLogger(StdOutSqlLogger)
-                    BotUsersDB.update {
+                    BotUsersDB.update ({BotUsersDB.telegramUserId eq botUsersDTO.telegramUserId.toString()}){
                         it[login] = botUsersDTO.login
                         it[password] = botUsersDTO.password
                         it[shop] = botUsersDTO.shop
-                        it[telegramUserId] = botUsersDTO.telegramUserId.toString()
+//                        it[telegramUserId] = botUsersDTO.telegramUserId.toString()
                         it[userRole] = botUsersDTO.userRole
                     }
                 }

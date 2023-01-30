@@ -48,4 +48,9 @@ class BotRepositoryDBImpl: BotRepositoryDB {
         val resultWorker = ShopWorkersDB.fetchWorkerByShop(requiredShop)
         return if (resultWorker == null) null else resultWorker.mapToNewWorker()
     }
+
+    override fun updateWorkerBy(newWorker: NewWorker): Boolean {
+        ShopWorkersDB.update(newWorker.mapToShopWorkersDTO())
+        return true
+    }
 }

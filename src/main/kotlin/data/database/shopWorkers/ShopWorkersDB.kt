@@ -34,6 +34,23 @@ object ShopWorkersDB : Table("shop_workers") {
         }
     }
 
+    fun update(shopWorkersDTO: ShopWorkersDTO) {
+        transaction {
+            addLogger(StdOutSqlLogger)
+            ShopWorkersDB.update ({ ShopWorkersDB.shop eq shopWorkersDTO.shop }) {
+                it[workerId] = shopWorkersDTO.workerId
+                it[login] = shopWorkersDTO.login
+                it[password] = shopWorkersDTO.password
+//                it[shop] = shopWorkersDTO.shop
+                it[ownerTgId] = shopWorkersDTO.ownerTgId.toString()
+                it[isActive] = shopWorkersDTO.isActive
+                it[shopOpen] = shopWorkersDTO.shopOpen.toString()
+                it[shopClose] = shopWorkersDTO.shopClose.toString()
+                it[telegramChatId] = shopWorkersDTO.telegramChatId.toString()
+            }
+        }
+    }
+
     fun getAll(): List<ShopWorkersDTO> {
         return try {
             transaction {
