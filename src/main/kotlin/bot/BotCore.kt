@@ -12,6 +12,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.buildBehaviourWithFSMAndSt
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommandWithArgs
+import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onNewChatMembers
 import dev.inmo.tgbotapi.extensions.utils.asFromUser
 import dev.inmo.tgbotapi.extensions.utils.extensions.parseCommandsWithParams
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
@@ -320,16 +321,12 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-
                 botUser[it.context.chatId]?.tsPassword = contentMessage.content.text
-                Logging.d(tag, botUser[it.context.chatId].toString())
-
                 PasswordUpdateStopState(it.context, it.sourceMessage)
             }
 
             strictlyOn<PasswordUpdateStopState> {
                 stateUser.remove(it.context.chatId)
-                Logging.d(tag, botUser[it.context.chatId].toString())
 
                 sendMessage(
                     it.context,
@@ -398,7 +395,10 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             onCommand(
                 "start",
-                initialFilter = { stateUser[it.chat.id.chatId] == null }
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
             ) {
 
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
@@ -418,18 +418,32 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
-            onCommand("getmyid") {
+            onCommand("getmyid",
+                initialFilter = {
+                    stateUser[it.chat.id.chatId] == null
+                }
+                ) {
                 val userId = it.asFromUser()?.user?.id?.chatId
                 val chatId = it.chat.id.chatId
                 sendTextMessage(it.chat, "Твой user ID: $userId\nТекущий chat ID: $chatId")
             }
 
-            onCommand("lasterrors") {
+            onCommand("lasterrors",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
+                ) {
                 sendTextMessage(it.chat, "Последние ошибки:")
                 sendTextMessage(chat = it.chat, text = InMemoryCache.getErrors())
             }
 
-            onCommand("create", initialFilter = { stateUser[it.chat.id.chatId] == null }) {
+            onCommand("create",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
+            ) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
                     val currentUser = allBotUsers[it.chat.id.chatId]
                     val requiredShopWorker = botRepositoryDB.getWorkerByShop(currentUser!!.tsShop)
@@ -454,7 +468,12 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
-            onCommand("delete", initialFilter = { stateUser[it.chat.id.chatId] == null }) {
+            onCommand("delete",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
+            ) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
                     val currentUser = allBotUsers[it.chat.id.chatId]
 
@@ -488,9 +507,11 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
-            onCommand(
-                "info",
-                initialFilter = { stateUser[it.chat.id.chatId] == null }
+            onCommand("info",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
             ) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
                     val currentUser = allBotUsers[it.chat.id.chatId]
@@ -521,7 +542,10 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             onCommand(
                 "password",
-                initialFilter = { stateUser[it.chat.id.chatId] == null }
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
             ) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
                     sendTextMessage(
@@ -534,8 +558,27 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
+            onNewChatMembers { it ->
+                it.chatEvent.members.forEach { println(it.id.chatId) }
+                println(getMe().id.chatId.toString())
+                if (it.chatEvent.members.any { it.id == getMe().id }) {
+                    Logging.d(tag, "Бота добавили в группу ${it.chat}")
+                }
 
-            onCommandWithArgs("test") { it, myContent ->
+                sendTextMessage(
+                    it.chat,
+                    "ID данного чата: ${it.chat.id.chatId}" +
+                            "\nЕго нужно указать при создании чат-бота вашего магазина написав боту ${getMe().username.username}"
+                )
+            }
+
+
+            onCommandWithArgs("test",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
+                ) { it, myContent ->
 //                botRepositoryDB.setBy(botUser = botUser[it.context.chatId]!!)
 //                println(botRepositoryDB.checkWorker(myContent.first()))
             }
