@@ -76,7 +76,7 @@ class ShopWorkersManager(
 
 //                WorkerScope(bot = bot).processReport(reportsList[workerParam.workerId] ?: ReportWorkerParam())
                     while (true) {
-                        val time = (3000..15000).random().toLong()
+                        val time = (15000..60000).random().toLong()
                         Logging.d(tag, "${shopWorkersParam.workerId} - ${shopWorkersParam.shop} - ${time}ms - ${this.coroutineContext}")
                         delay(time)
                     }

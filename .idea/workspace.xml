@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- обработка команды /password - обновить пароль&#10;- коррекция update в работе с БД">
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -191,7 +192,14 @@
       <option name="project" value="LOCAL" />
       <updated>1675062652107</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)">
+      <created>1675072756109</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1675072756109</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -219,7 +227,8 @@
     <MESSAGE value="- выход из /create ввода ID чата по /stop" />
     <MESSAGE value="- обработка команды /info - информация о боте магазина" />
     <MESSAGE value="- обработка команды /password - обновить пароль&#10;- коррекция update в работе с БД" />
-    <option name="LAST_COMMIT_MESSAGE" value="- обработка команды /password - обновить пароль&#10;- коррекция update в работе с БД" />
+    <MESSAGE value="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)" />
+    <option name="LAST_COMMIT_MESSAGE" value="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -44,10 +44,12 @@ data class BotExpectChatId(override val context: ChatId, val sourceMessage: Comm
 data class BotExpectOpenTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotExpectCloseTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+
 data class DeleteExpectConfirmation(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
 data class DeleteStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+
 data class PasswordUpdateExpectPassword(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
@@ -113,7 +115,6 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             }
 
             strictlyOn<UserStopState> {
-
                 stateUser.remove(it.context.chatId)
 
                 sendMessage(
@@ -123,23 +124,65 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             "\nмагазин:${botUser[it.context.chatId]?.tsShop}"
                 )
 
-                println(botUser[it.context.chatId])
-
                 // проверка и коннект с апи магазина
                 val resultCheckTs = botRepositoryTS.checkUserDataInTS(botUser[it.context.chatId])
 
-                //внесение в бд, если все ок или запрос по новой если не ок
-                if (resultCheckTs) {
-                    Logging.i(tag, "Create new user ${botUser[it.context.chatId]!!.tsLogin}")
-                    botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
-                    allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+                if (it.sourceMessage.content.parseCommandsWithParams().keys.contains("start")) {
+                    //внесение в бд, если все ок или запрос по новой если не ок
+                    if (resultCheckTs) {
+                        Logging.i(tag, "Create new user ${botUser[it.context.chatId]!!.tsLogin}")
+                        botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
+                        allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
 
-                    sendMessage(
-                        it.context,
-                        buildEntities { +"Пользователь создан. Доступные команды по команде /start" })
-                    null
-                } else UserExpectLogin(it.context, it.sourceMessage)
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Пользователь создан. Доступные команды по команде /start" })
 
+                    } else UserExpectLogin(it.context, it.sourceMessage)
+                } else {        // /update
+                    if (resultCheckTs) {
+                        val oldShop = allBotUsers[it.context.chatId]!!.tsShop
+                        Logging.i(tag, "Update user data ${botUser[it.context.chatId]!!.tsLogin}")
+                        botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
+                        allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Данные пользователя TS обновлены." })
+
+                        // проверка созданного воркера и его удаление если изменился магазин
+                        // получаем воркер из БД
+                        val requiredShopWorker =
+                            botRepositoryDB.getWorkerByShop(oldShop)
+
+                        if (requiredShopWorker != null) {
+                            if (allBotUsers[it.context.chatId]!!.tsShop != oldShop) { // если изменился магазин, то удаляем воркер
+                                requiredShopWorker.workerState = WorkerState.DELETE // меняем стэйт на удаление
+                                botRepositoryDB.deleteWorkerByShop(oldShop) // удаляем из БД
+                                BotRepositoryWorkersImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // удалям запущенный воркер
+                                sendMessage(it.context, buildEntities {
+                                    +"Созданный Вами ранее бот магазина $oldShop удален, т.к. Вы изменили магазин"
+                                })
+                            } else { // если магазин не менялся, то обновляем воркер
+                                Logging.i(tag, "Update worker in DB $oldShop")
+                                requiredShopWorker.workerState = WorkerState.UPDATE // меняем стэйт на обновление
+                                requiredShopWorker.login = allBotUsers[it.context.chatId]!!.tsLogin
+                                requiredShopWorker.password = allBotUsers[it.context.chatId]!!.tsPassword
+                                botRepositoryDB.updateWorkerBy(requiredShopWorker) // обновляем воркер в БД
+                                BotRepositoryWorkersImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // обновляем запущенный воркер
+                                sendMessage(it.context, buildEntities {
+                                    +"Данные пользователя TS в чат-боте магазина $oldShop обновлены"
+                                })
+                            }
+                        }
+                    } else {
+                        sendMessage(
+                            it.context,
+                            "Проверка на сервере компании НЕ пройдена. Данные пользователя TS НЕ обновлены."
+                        )
+                    }
+                }
+                null
             }
 
             // /create
@@ -158,7 +201,11 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     workerState = WorkerState.CREATE
                 )
                 stateUser[it.context.chatId] = it
-                send(it.context) { +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию (или /stop для отмены создания)" }
+                send(it.context) { +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию " +
+                        "(или введите /stop для отмены создания)" +
+                        "\nДанный ID может быть со знаком минус (-). " +
+                        "Узнать ID можно введя команду /getchatid В ЧАТЕ куда добавлен бот."
+                         }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
@@ -172,8 +219,6 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     )
 
                     else -> {
-
-
                         if (contentMessage.text?.toLongOrNull() != null) {
                             try {
                                 val msgChatId = ChatId(contentMessage.text?.toLong()!!)
@@ -229,7 +274,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             strictlyOn<BotExpectCloseTime> {
                 stateUser[it.context.chatId] = it
-                send(it.context) { +"Введите время закрытия магазина (в часах, например 10)" }
+                send(it.context) { +"Введите время закрытия магазина (в часах, например 21)" }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
@@ -245,7 +290,6 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             strictlyOn<BotStopState> {
                 stateUser.remove(it.context.chatId)
-
 
                 if (!it.sourceMessage.content.parseCommandsWithParams().keys.contains("stop")) {
                     Logging.i(tag, "Create new worker in DB ${newWorkers[it.context.chatId]!!.shop}")
@@ -378,21 +422,6 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             }
 
 
-//            strictlyOn<ExpectPasswordOrStopState> {
-//                val contentMessage = waitContentMessage().first()
-//                val content = contentMessage.content
-//
-//                when {
-//                    content is TextContent && content.parseCommandsWithParams().keys.contains("stop") -> StopState(it.context)
-//                    else -> {
-//                        StopState(it.context)
-////                        execute(content.createResend(it.context))
-////                        it
-//                    }
-//                }
-//            }
-
-
             onCommand(
                 "start",
                 initialFilter = {
@@ -406,8 +435,9 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         it.chat,
                         "Доступные команды:" +
                                 "\n/start - список команд" +
-                                "\n/getmyid - ваш telegram ID" +
+                                "\n/getchatid - ваш telegram ID" +
                                 "\n/password - обновить пароль TS" +
+                                "\n/update - обновить все данные TS" +
                                 "\n/create - создать бота магазина" +
                                 "\n/delete - удалить бота магазина" +
                                 "\n/info - информация о боте вашего магазина"
@@ -418,11 +448,11 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
-            onCommand("getmyid",
+            onCommand("getchatid",
                 initialFilter = {
                     stateUser[it.chat.id.chatId] == null
                 }
-                ) {
+            ) {
                 val userId = it.asFromUser()?.user?.id?.chatId
                 val chatId = it.chat.id.chatId
                 sendTextMessage(it.chat, "Твой user ID: $userId\nТекущий chat ID: $chatId")
@@ -433,7 +463,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     (stateUser[it.chat.id.chatId] == null) &&
                             (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
                 }
-                ) {
+            ) {
                 sendTextMessage(it.chat, "Последние ошибки:")
                 sendTextMessage(chat = it.chat, text = InMemoryCache.getErrors())
             }
@@ -558,6 +588,24 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
+            onCommand(
+                "update",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
+                }
+            ) {
+                if (allBotUsers.containsKey(it.chat.id.chatId)) {
+                    sendTextMessage(
+                        it.chat,
+                        "Обновляем данные пользователя TS"
+                    )
+                    startChain(UserExpectLogin(it.chat.id, it))
+                } else {
+                    sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
+                }
+            }
+
             onNewChatMembers { it ->
                 it.chatEvent.members.forEach { println(it.id.chatId) }
                 println(getMe().id.chatId.toString())
@@ -578,9 +626,8 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     (stateUser[it.chat.id.chatId] == null) &&
                             (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
                 }
-                ) { it, myContent ->
-//                botRepositoryDB.setBy(botUser = botUser[it.context.chatId]!!)
-//                println(botRepositoryDB.checkWorker(myContent.first()))
+            ) { it, myContent ->
+
             }
 
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
