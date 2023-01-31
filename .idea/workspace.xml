@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)">
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- обновление данных пользователя TS по команде /update&#10;- при обновлении данных TS - проверка созданного бота магазина и удаление его при смене магазина">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -199,7 +198,14 @@
       <option name="project" value="LOCAL" />
       <updated>1675072756109</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="- обновление данных пользователя TS по команде /update&#10;- при обновлении данных TS - проверка созданного бота магазина и удаление его при смене магазина">
+      <created>1675101290512</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1675101290512</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -228,7 +234,8 @@
     <MESSAGE value="- обработка команды /info - информация о боте магазина" />
     <MESSAGE value="- обработка команды /password - обновить пароль&#10;- коррекция update в работе с БД" />
     <MESSAGE value="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)" />
-    <option name="LAST_COMMIT_MESSAGE" value="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)" />
+    <MESSAGE value="- обновление данных пользователя TS по команде /update&#10;- при обновлении данных TS - проверка созданного бота магазина и удаление его при смене магазина" />
+    <option name="LAST_COMMIT_MESSAGE" value="- обновление данных пользователя TS по команде /update&#10;- при обновлении данных TS - проверка созданного бота магазина и удаление его при смене магазина" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

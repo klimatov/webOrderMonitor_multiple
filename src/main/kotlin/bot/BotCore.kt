@@ -201,11 +201,12 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     workerState = WorkerState.CREATE
                 )
                 stateUser[it.context.chatId] = it
-                send(it.context) { +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию " +
-                        "(или введите /stop для отмены создания)" +
-                        "\nДанный ID может быть со знаком минус (-). " +
-                        "Узнать ID можно введя команду /getchatid В ЧАТЕ куда добавлен бот."
-                         }
+                send(it.context) {
+                    +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию " +
+                            "(или введите /stop для отмены создания)" +
+                            "\nДанный ID может быть со знаком минус (-). " +
+                            "Узнать ID можно введя команду /getchatid В ЧАТЕ куда добавлен бот."
+                }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
@@ -263,12 +264,19 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     message.sameChat(it.sourceMessage)
                 }.first()
 
-                if ((contentMessage.content.text.length > 2) || (contentMessage.content.text.toIntOrNull() == null)) {
-                    sendMessage(it.context, buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
-                    it
-                } else {
-                    newWorkers[it.context.chatId]?.shopOpen = contentMessage.text!!.toInt()
-                    BotExpectCloseTime(it.context, it.sourceMessage)
+
+                when (contentMessage.content.text.toIntOrNull()) {
+                    in 0..23 -> {
+                        newWorkers[it.context.chatId]?.shopOpen = contentMessage.text!!.toInt()
+                        BotExpectCloseTime(it.context, it.sourceMessage)
+                    }
+
+                    else -> {
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
+                        it
+                    }
                 }
             }
 
@@ -279,12 +287,18 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     message.sameChat(it.sourceMessage)
                 }.first()
 
-                if ((contentMessage.content.text.length > 2) || (contentMessage.content.text.toIntOrNull() == null)) {
-                    sendMessage(it.context, buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
-                    it
-                } else {
-                    newWorkers[it.context.chatId]?.shopClose = contentMessage.text!!.toInt()
-                    BotStopState(it.context, it.sourceMessage)
+                when (contentMessage.content.text.toIntOrNull()) {
+                    in 0..23 -> {
+                        newWorkers[it.context.chatId]?.shopOpen = contentMessage.text!!.toInt()
+                        BotStopState(it.context, it.sourceMessage)
+                    }
+
+                    else -> {
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
+                        it
+                    }
                 }
             }
 
