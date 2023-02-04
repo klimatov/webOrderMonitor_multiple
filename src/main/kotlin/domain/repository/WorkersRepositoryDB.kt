@@ -3,7 +3,7 @@ package domain.repository
 import domain.models.ShopWorkersParam
 import java.util.UUID
 
-interface ShopWorkersRepository {
+interface WorkersRepositoryDB {
 
     suspend fun getAll(): MutableMap<UUID, ShopWorkersParam>
 
