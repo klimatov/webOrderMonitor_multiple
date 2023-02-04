@@ -2,8 +2,11 @@ package bot
 
 import cache.InMemoryCache
 import dev.inmo.micro_utils.fsm.common.State
+import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
+import dev.inmo.tgbotapi.extensions.api.edit.reply_markup.editMessageReplyMarkup
+import dev.inmo.tgbotapi.extensions.api.edit.text.editMessageText
 import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.api.send.sendMessage
 import dev.inmo.tgbotapi.extensions.api.send.sendTextMessage
@@ -12,13 +15,19 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.buildBehaviourWithFSMAndSt
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommandWithArgs
+import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onNewChatMembers
 import dev.inmo.tgbotapi.extensions.utils.asFromUser
 import dev.inmo.tgbotapi.extensions.utils.extensions.parseCommandsWithParams
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.reply_markup
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.row
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.Identifier
+import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.chat.*
 import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.TextContent
@@ -29,7 +38,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import domain.orderProcessing.BotMessage
 import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
+import orderProcessing.data.SecurityData.TELEGRAM_CHAT_ID
+import data.restTS.data.WebOrder
 import utils.Logging
 import java.util.*
 
@@ -57,6 +69,20 @@ data class PasswordUpdateStopState(override val context: ChatId, val sourceMessa
     BotState
 
 class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
+
+    // из староого WOM Bot
+    val targetChatId = ChatId(TELEGRAM_CHAT_ID)
+    val msgConvert = BotMessage()
+    var msgNotification = msgConvert.shopInWork()
+    var dayConfirmedCount: Int = 0  //подтверждено за день
+
+    // из старого WOM TGInfoMessage
+    var currentInfoMsgId: Long? = null
+    var newInfoMsgId: Long? = null
+    var currentInfoMsg: InlineKeyboardMarkup? = null
+    var notConfirmedOrders: Int = 0  //активных не подтвержденных
+
+
     private var botUser: MutableMap<Identifier, BotUser> = mutableMapOf()
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
@@ -159,7 +185,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             if (allBotUsers[it.context.chatId]!!.tsShop != oldShop) { // если изменился магазин, то удаляем воркер
                                 requiredShopWorker.workerState = WorkerState.DELETE // меняем стэйт на удаление
                                 botRepositoryDB.deleteWorkerByShop(oldShop) // удаляем из БД
-                                BotRepositoryWorkersImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // удалям запущенный воркер
+                                BotWorkersRepositoryImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // удалям запущенный воркер
                                 sendMessage(it.context, buildEntities {
                                     +"Созданный Вами ранее бот магазина $oldShop удален, т.к. Вы изменили магазин"
                                 })
@@ -169,7 +195,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                                 requiredShopWorker.login = allBotUsers[it.context.chatId]!!.tsLogin
                                 requiredShopWorker.password = allBotUsers[it.context.chatId]!!.tsPassword
                                 botRepositoryDB.updateWorkerBy(requiredShopWorker) // обновляем воркер в БД
-                                BotRepositoryWorkersImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // обновляем запущенный воркер
+                                BotWorkersRepositoryImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // обновляем запущенный воркер
                                 sendMessage(it.context, buildEntities {
                                     +"Данные пользователя TS в чат-боте магазина $oldShop обновлены"
                                 })
@@ -289,7 +315,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
                 when (contentMessage.content.text.toIntOrNull()) {
                     in 0..23 -> {
-                        newWorkers[it.context.chatId]?.shopOpen = contentMessage.text!!.toInt()
+                        newWorkers[it.context.chatId]?.shopClose = contentMessage.text!!.toInt()
                         BotStopState(it.context, it.sourceMessage)
                     }
 
@@ -312,7 +338,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         it.context,
                         buildEntities { +"Чат-бот магазина ${allBotUsers[it.context.chatId]!!.tsShop} создан" })
                     // Сохраняем новый/изменившийся воркер для создания/обновления
-                    BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
+                    BotWorkersRepositoryImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
                 } else sendMessage(
                     it.context,
                     buildEntities { +"Создание бота отменено" })
@@ -347,7 +373,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         // удаляем из БД
                         botRepositoryDB.deleteWorkerByShop(allBotUsers[it.context.chatId]!!.tsShop)
                         // удалям запущенный воркер
-                        BotRepositoryWorkersImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam())
+                        BotWorkersRepositoryImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam())
 
                         sendMessage(
                             it.context,
@@ -424,7 +450,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             // обновляем воркер в БД
                             botRepositoryDB.updateWorkerBy(newWorkers[it.context.chatId]!!)
                             // Сохраняем новый/изменившийся воркер для создания/обновления
-                            BotRepositoryWorkersImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
+                            BotWorkersRepositoryImpl.changedWorkers.add(newWorkers[it.context.chatId]!!.mapToShopWorkersParam())
                             sendMessage(
                                 it.context,
                                 buildEntities { +"Пароль пользователя TS в чат-боте магазина ${allBotUsers[it.context.chatId]!!.tsShop} обновлен" })
@@ -634,7 +660,6 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 )
             }
 
-
             onCommandWithArgs("test",
                 initialFilter = {
                     (stateUser[it.chat.id.chatId] == null) &&
@@ -644,9 +669,121 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
             }
 
+            onDataCallbackQuery {
+                Logging.d(
+                    tag,
+                    "Callback: ${it.data} from ${it.user.firstName} ${it.user.lastName} ${it.user.username?.usernameWithoutAt}"
+                )
+                answer(
+                    it, msgConvert.popupMessage(dayConfirmedCount), showAlert = true
+                )
+            }
+
+
+
+
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
         }.start()
 
 
     }
+
+    suspend fun botSendMessage(webOrder: WebOrder?): Long? {
+        try {
+            return bot.sendMessage(
+                targetChatId,
+                msgConvert.inworkMessage(webOrder),
+                disableWebPagePreview = true,
+                disableNotification = !msgNotification
+            ).messageId
+        } catch (e: Exception) {
+            Logging.e(tag, "Exception: ${e.message}")
+            return currentInfoMsgId ?: 0
+        }
+    }
+
+    suspend fun botConfirmMessage(webOrder: WebOrder?) {
+        try {
+            bot.editMessageText(
+                targetChatId,
+                webOrder?.messageId ?: 0,
+                msgConvert.completeMessage(webOrder),
+                disableWebPagePreview = true
+            )
+        } catch (e: Exception) {
+            Logging.e(tag, "Exception: ${e.message}")
+        }
+    }
+
+    suspend fun botTimerUpdate(webOrder: WebOrder?) {
+        try {
+            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate)) {
+                bot.editMessageText(
+                    targetChatId,
+                    webOrder?.messageId ?: 0,
+                    msgConvert.inworkMessage(webOrder),
+                    disableWebPagePreview = true,
+                    replyMarkup = if (webOrder?.messageId == currentInfoMsgId) currentInfoMsg else null
+                )
+            }
+        } catch (e: Exception) {
+            Logging.e(tag, "Exception: ${e.message}")
+        }
+    }
+
+    suspend fun botSendInfoMessage() {
+        try {
+            bot.sendMessage(
+                targetChatId,
+                msgConvert.notificationMessage(msgNotification, dayConfirmedCount),
+                disableWebPagePreview = true,
+                disableNotification = !msgNotification
+            ).messageId
+        } catch (e: Exception) {
+            Logging.e(tag, "Exception: ${e.message}")
+        }
+    }
+
+
+    // из старого WOM TGInfoMessage
+    suspend fun updateInfoMsg() {
+        if (newInfoMsgId != null) {
+
+            if (currentInfoMsgId != newInfoMsgId) {
+                delInfoMsg()
+                currentInfoMsgId = newInfoMsgId
+            }
+
+            val updMsg = msgConvert.infoMessage(notConfirmedOrders)
+
+
+            val infoMsg = inlineKeyboard {
+                row {
+                    dataButton(updMsg, "infoRequest")
+                }
+            }
+
+            if (infoMsg != currentInfoMsg) {
+                try {
+                    currentInfoMsg = bot.editMessageReplyMarkup(
+                        targetChatId,
+                        currentInfoMsgId!!,
+                        replyMarkup = infoMsg
+                    ).reply_markup
+                } catch (e: Exception) {
+                    Logging.e(tag, "Exception: ${e.message}")
+                }
+            }
+        }
+    }
+
+    suspend fun delInfoMsg() {
+        try {
+            bot.editMessageReplyMarkup(targetChatId, currentInfoMsgId!!, replyMarkup = null)
+        } catch (e: Exception) {
+            Logging.e(tag, "Exception: ${e.message}")
+        }
+    }
+
+
 }

@@ -2,33 +2,38 @@ package domain
 
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
-import domain.repository.BotRepositoryWorkers
-import domain.repository.ShopWorkersRepository
+import domain.repository.BotProcessingRepository
+import domain.repository.BotWorkersRepository
+import domain.repository.WorkersRepositoryDB
 import kotlinx.coroutines.*
+import domain.orderProcessing.OrderDaemon
+import domain.repository.ServerTSRepository
 import utils.Logging
 import java.util.*
 
 class ShopWorkersManager(
-    private val shopWorkersRepository: ShopWorkersRepository,
-    private val botRepositoryWorkers: BotRepositoryWorkers,
+    private val workersRepositoryDB: WorkersRepositoryDB,
+    private val botWorkersRepository: BotWorkersRepository,
+    private val botProcessingRepository: BotProcessingRepository,
+    private val serverTSRepository: ServerTSRepository
 ) {
     private val tag = this::class.java.simpleName
     private val scopesList: MutableMap<UUID, Job> = mutableMapOf()
     private var shopWorkersList: MutableMap<UUID, ShopWorkersParam> = mutableMapOf()
 
     suspend fun start() {
-        shopWorkersList = shopWorkersRepository.getAll()
+        shopWorkersList = workersRepositoryDB.getAll()
         shopWorkersList.forEach {
             if (it.value.isActive) it.value.workerState = WorkerState.CREATE
         }
         processShopWorkers()
 
         while (true) {
-            if (botRepositoryWorkers.changedWorkers.size != 0) {
-                val changedWorkers = botRepositoryWorkers.changedWorkers.toList()
+            if (botWorkersRepository.changedWorkers.size != 0) {
+                val changedWorkers = botWorkersRepository.changedWorkers.toList()
                 changedWorkers.forEach{
                     shopWorkersList[it.workerId] = it
-                    botRepositoryWorkers.changedWorkers.remove(it)
+                    botWorkersRepository.changedWorkers.remove(it)
                 }
                 processShopWorkers()
             }
@@ -74,12 +79,17 @@ class ShopWorkersManager(
             val scope =
                 CoroutineScope(Dispatchers.Default).launch(CoroutineName(shopWorkersParam.workerId.toString())) {
 
+                    val orderDaemon = OrderDaemon(shopWorkersParam.login, shopWorkersParam.password, shopWorkersParam.shop, serverTSRepository)
+                    orderDaemon.orderDaemonStart(botProcessingRepository)
+                    //TODO("Добавить передачу параметра + маппинг")
+
 //                WorkerScope(bot = bot).processReport(reportsList[workerParam.workerId] ?: ReportWorkerParam())
-                    while (true) {
+
+/*                    while (true) {
                         val time = (15000..60000).random().toLong()
                         Logging.d(tag, "${shopWorkersParam.workerId} - ${shopWorkersParam.shop} - ${time}ms - ${this.coroutineContext}")
                         delay(time)
-                    }
+                    }*/
 
                 }
             scope.start()
@@ -96,7 +106,7 @@ class ShopWorkersManager(
         shopWorkersList[shopWorkersParam.workerId] = shopWorkersParam
         processShopWorkers()
         if (shopWorkersParam.workerState == WorkerState.DELETE) shopWorkersList.remove(shopWorkersParam.workerId)
-        shopWorkersRepository.setAll(shopWorkersList)
+        workersRepositoryDB.setAll(shopWorkersList)
     }
 
 

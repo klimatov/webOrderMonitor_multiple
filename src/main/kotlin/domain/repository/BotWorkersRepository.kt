@@ -2,7 +2,7 @@ package domain.repository
 
 import domain.models.ShopWorkersParam
 
-interface BotRepositoryWorkers {
+interface BotWorkersRepository {
     var changedWorkers: MutableList<ShopWorkersParam>
 
 }

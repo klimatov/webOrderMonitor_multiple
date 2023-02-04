@@ -4,11 +4,11 @@ import data.database.shopWorkers.ShopWorkersDB
 import data.database.shopWorkers.mapToShopWorkersDTO
 import data.database.shopWorkers.mapToShopWorkersParam
 import domain.models.ShopWorkersParam
-import domain.repository.ShopWorkersRepository
+import domain.repository.WorkersRepositoryDB
 import java.util.UUID
 
 
-class ShopWorkersRepositoryImpl() : ShopWorkersRepository {
+class WorkersRepositoryDBImpl() : WorkersRepositoryDB {
     private val tag = this::class.java.simpleName
 
     override suspend fun getAll(): MutableMap<UUID, ShopWorkersParam> {

@@ -1,8 +1,8 @@
 package bot
 
 import domain.models.ShopWorkersParam
-import domain.repository.BotRepositoryWorkers
+import domain.repository.BotWorkersRepository
 
-object BotRepositoryWorkersImpl : BotRepositoryWorkers {
+object BotWorkersRepositoryImpl : BotWorkersRepository {
     override var changedWorkers: MutableList<ShopWorkersParam> = mutableListOf()
 }
