@@ -1,5 +1,6 @@
 package domain.orderProcessing
 
+import bot.BotExpectCloseTime
 import dev.inmo.tgbotapi.extensions.utils.formatting.*
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
@@ -62,8 +63,8 @@ class BotMessage {
         return formatter.format(time)
     }
 
-    fun shopInWork(time: LocalTime = LocalTime.now()): Boolean {
-        return time.hour in SHOP_OPENING until SHOP_CLOSING
+    fun shopInWork(shopOpenTime: Int, shopCloseTime: Int, time: LocalTime = LocalTime.now()): Boolean {
+        return time.hour in shopOpenTime until shopCloseTime
     }
 
     fun minutesEnding(minute: Long): String {

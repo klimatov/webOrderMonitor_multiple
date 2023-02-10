@@ -15,7 +15,6 @@ import java.util.*
 class ShopWorkersManager(
     private val workersRepositoryDB: WorkersRepositoryDB,
     private val botWorkersRepository: BotWorkersRepository,
-    private val botProcessingRepository: BotProcessingRepository,
     private val serverTSRepository: ServerTSRepository,
 ) {
     private val tag = this::class.java.simpleName
@@ -91,7 +90,9 @@ class ShopWorkersManager(
                     val botProcessingRepositoryInstance = botWorkersRepository.botProcessingRepositoryInstance
                     botProcessingRepositoryInstance.build(
                         shop = shopWorkersParam.shop,
-                        targetChatId = ChatId(shopWorkersParam.telegramChatId)
+                        targetChatId = ChatId(shopWorkersParam.telegramChatId),
+                        shopOpenTime = shopWorkersParam.shopOpen,
+                        shopCloseTime = shopWorkersParam.shopClose
                     )
                     orderDaemon.start(botProcessingRepositoryInstance)
                 }

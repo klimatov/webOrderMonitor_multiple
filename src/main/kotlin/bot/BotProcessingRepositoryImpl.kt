@@ -1,16 +1,20 @@
 package bot
 
 import botCore
-import domain.repository.BotProcessingRepository
 import data.restTS.models.WebOrder
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.ChatIdentifier
-import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
-import domain.orderProcessing.BotMessage
+import domain.repository.BotProcessingRepository
 
 class BotProcessingRepositoryImpl : BotProcessingRepository {
 
     override var shop: String = ""
+    override var shopOpenTime: Int
+        get() = botCore.botInstancesParameters[shop]?.shopOpenTime ?:0
+        set(value) {botCore.botInstancesParameters[shop]?.shopOpenTime = value}
+    override var shopCloseTime: Int
+        get() = botCore.botInstancesParameters[shop]?.shopCloseTime ?:0
+        set(value) {botCore.botInstancesParameters[shop]?.shopCloseTime = value}
     override var targetChatId: ChatIdentifier
         get() = botCore.botInstancesParameters[shop]?.targetChatId ?: ChatId(0)
         set(value) {
@@ -44,12 +48,19 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
             botCore.botInstancesParameters[shop]?.notConfirmedOrders = value
         }
 
-    override suspend fun build(shop: String, targetChatId: ChatIdentifier) {
+    override suspend fun build(
+        shop: String,
+        targetChatId: ChatIdentifier,
+        shopOpenTime: Int,
+        shopCloseTime: Int,
+    ) {
         if (botCore.botInstancesParameters[shop] == null) {
             botCore.botInstancesParameters[shop] = BotInstanceParameters() //инициализируем параметры
         }
         this.shop = shop
         this.targetChatId = targetChatId
+        this.shopOpenTime = shopOpenTime
+        this.shopCloseTime = shopCloseTime
     }
 
     override suspend fun botSendInfoMessage() {

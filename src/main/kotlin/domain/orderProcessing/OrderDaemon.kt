@@ -19,6 +19,8 @@ class OrderDaemon(
 
     private val processing = Processing(serverTSRepository)
 
+    private val botMessage = BotMessage()
+
     //    val appStartTime: LocalDateTime = LocalDateTime.now()
     var loginTime: LocalDateTime = LocalDateTime.now()
 
@@ -66,7 +68,10 @@ class OrderDaemon(
             Logging.i(tag, "Обновляем данные...")
 
             // проверяем открыт ли магазин, триггерим звук уведомлений
-            if (BotMessage().shopInWork() != botProcessingRepository.msgNotification) {
+            if (botMessage.shopInWork(
+                shopOpenTime = botProcessingRepository.shopOpenTime,
+                shopCloseTime = botProcessingRepository.shopCloseTime
+            ) != botProcessingRepository.msgNotification) {
                 botProcessingRepository.msgNotification = !botProcessingRepository.msgNotification
                 botProcessingRepository.botSendInfoMessage()
                 // если магазин закрылся, то сбрасываем счетчик собранных за день и записываем в настройки
@@ -82,7 +87,10 @@ class OrderDaemon(
                     )
                 }
             }
-            Logging.d(tag, "Shop open: ${BotMessage().shopInWork()}")
+            Logging.d(tag, "Shop open: ${botMessage.shopInWork(
+                shopOpenTime = botProcessingRepository.shopOpenTime,
+                shopCloseTime = botProcessingRepository.shopCloseTime
+            )}")
 
             val orderListSimple = serverTSRepository.getOrderListSimple()
 

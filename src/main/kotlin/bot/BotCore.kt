@@ -70,10 +70,12 @@ data class PasswordUpdateStopState(override val context: ChatId, val sourceMessa
     BotState
 
 data class BotInstanceParameters(
+    var shopOpenTime: Int = 9,
+    var shopCloseTime: Int = 22,
     // из староого WOM Bot
     var targetChatId: ChatIdentifier = ChatId(0),
     val msgConvert: BotMessage = BotMessage(),
-    var msgNotification: Boolean = msgConvert.shopInWork(),
+    var msgNotification: Boolean = msgConvert.shopInWork(shopOpenTime, shopCloseTime),
     var dayConfirmedCount: Int = 0,  //подтверждено за день
 
     // из старого WOM TGInfoMessage

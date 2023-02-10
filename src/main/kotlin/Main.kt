@@ -19,13 +19,11 @@ private val botRepositoryDB = BotRepositoryDBImpl()
 val botCore by lazy { BotCore(job = job, botRepositoryDB = botRepositoryDB) }
 private val workersRepositoryDB = WorkersRepositoryDBImpl()
 private val botWorkersRepository = BotWorkersRepositoryImpl
-private val botProcessingRepository = BotProcessingRepositoryImpl()
 private val serverTS = ServerTSRepositoryImpl()
 private val shopWorkersManager by lazy(LazyThreadSafetyMode.NONE) {
     ShopWorkersManager(
         workersRepositoryDB = workersRepositoryDB,
         botWorkersRepository = botWorkersRepository,
-        botProcessingRepository = botProcessingRepository,
         serverTSRepository = serverTS
     )
 }
