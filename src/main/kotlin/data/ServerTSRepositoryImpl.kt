@@ -1,8 +1,8 @@
 package data
 
-import data.restTS.data.Items
-import data.restTS.data.RemainsLocal
-import data.restTS.data.WebOrder
+import data.restTS.models.Items
+import data.restTS.models.RemainsLocal
+import data.restTS.models.WebOrder
 import data.restTS.net.NetClient
 import domain.models.OrderListSimple
 import domain.repository.ServerTSRepository

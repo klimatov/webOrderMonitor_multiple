@@ -1,4 +1,4 @@
-package data.restTS.data
+package data.restTS.models
 
 import com.google.gson.annotations.SerializedName
 

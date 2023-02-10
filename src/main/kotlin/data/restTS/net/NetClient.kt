@@ -1,25 +1,27 @@
 package data.restTS.net
 
-import domain.orderProcessing.DateTimeProcess
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import data.restTS.data.*
+import data.restTS.models.*
 import utils.Logging
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 
 class NetClient {
     private val tag = this::class.java.simpleName
+
     //private var baseURL: String
     private var token = ""
     private var shop = ""
     lateinit var userInfo: UserInfo
     var error = ""
     var errorCode: Int? = null
-    private val dbVersion = "20"
+    private val dbVersion = "21"
     private val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault())
     val gmt = SimpleDateFormat("Z").format(calendar.time)
     var remoteDbVersion: Int? = null
@@ -81,14 +83,13 @@ class NetClient {
         }
         val hashMap: HashMap<Any?, Any?> = hashMapOf(
             "orderType" to "WRQST",
-            "dateFrom" to DateTimeProcess().dateFrom(),
+            "dateFrom" to dateFrom(),
             "dateTo" to "01.01.2030",
             "docStatus" to str,
             "skip" to 0,
             "limit" to 1000
         )
         try {
-            Logging.d(tag,token)
             val response = RetrofitInstance.eldoApi.getWebOrderListSimple(
                 shop,
                 dbVersion,
@@ -117,7 +118,7 @@ class NetClient {
         }
         val hashMap: HashMap<Any?, Any?> = hashMapOf(
             "orderType" to "WRQST",
-            "dateFrom" to DateTimeProcess().dateFrom(),
+            "dateFrom" to dateFrom(),
             "dateTo" to "01.01.2030",
             "docStatus" to str,
             "skip" to 0,
@@ -127,8 +128,6 @@ class NetClient {
             "limit" to 99
         )
         try {
-            Logging.d(tag,token)
-            Logging.d(tag,gmt)
             val response = RetrofitInstance.eldoApi.getWebOrderList(
                 shop,
                 dbVersion,
@@ -152,7 +151,7 @@ class NetClient {
 
     fun getWebOrderDetail(orderId: String?, type: String?): WebOrderDetail? {
         try {
-            Logging.d(tag,token)
+            Logging.d(tag, token)
             val response = RetrofitInstance.eldoApi.getWebOrderDetail(
                 shop,
                 dbVersion,
@@ -283,4 +282,11 @@ class NetClient {
             return emptyList()
         }
     }
+
+
+    private fun dateFrom() : String {
+        val result = LocalDate.now().minusDays(35)
+        return result.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+    }
+
 }

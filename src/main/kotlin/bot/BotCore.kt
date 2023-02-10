@@ -41,7 +41,8 @@ import kotlinx.coroutines.flow.first
 import domain.orderProcessing.BotMessage
 import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
 import orderProcessing.data.SecurityData.TELEGRAM_CHAT_ID
-import data.restTS.data.WebOrder
+import data.restTS.models.WebOrder
+import dev.inmo.tgbotapi.types.ChatIdentifier
 import utils.Logging
 import java.util.*
 
@@ -68,30 +69,33 @@ data class PasswordUpdateExpectPassword(override val context: ChatId, val source
 data class PasswordUpdateStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
-class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
-
+data class BotInstanceParameters(
     // из староого WOM Bot
-    val targetChatId = ChatId(TELEGRAM_CHAT_ID)
-    val msgConvert = BotMessage()
-    var msgNotification = msgConvert.shopInWork()
-    var dayConfirmedCount: Int = 0  //подтверждено за день
+    var targetChatId: ChatIdentifier = ChatId(0),
+    val msgConvert: BotMessage = BotMessage(),
+    var msgNotification: Boolean = msgConvert.shopInWork(),
+    var dayConfirmedCount: Int = 0,  //подтверждено за день
 
     // из старого WOM TGInfoMessage
-    var currentInfoMsgId: Long? = null
-    var newInfoMsgId: Long? = null
-    var currentInfoMsg: InlineKeyboardMarkup? = null
-    var notConfirmedOrders: Int = 0  //активных не подтвержденных
+    var currentInfoMsgId: Long? = null,
+    var newInfoMsgId: Long? = null,
+    var currentInfoMsg: InlineKeyboardMarkup? = null,
+    var notConfirmedOrders: Int = 0,  //активных не подтвержденных
+)
 
+class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
 
-    private var botUser: MutableMap<Identifier, BotUser> = mutableMapOf()
-    private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
-    private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
     private val tag = this::class.java.simpleName
+
+    val botInstancesParameters: MutableMap<String, BotInstanceParameters> = mutableMapOf()
+
     private val botToken = TELEGRAM_BOT_TOKEN
     private val bot = telegramBot(token = botToken)
     private val botRepositoryTS = BotRepositoryTS()
-
     private var allBotUsers: MutableMap<Identifier, BotUser> = botRepositoryDB.getAll()
+    private var newBotUsers: MutableMap<Identifier, BotUser> = mutableMapOf()
+    private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
+    private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
     init {
 
@@ -103,14 +107,14 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
         bot.buildBehaviourWithFSMAndStartLongPolling<BotState>(scope) {
 
             strictlyOn<UserExpectLogin> {
-                botUser[it.context.chatId] = BotUser("", "", "", it.context.chatId, UserRole.USER.toString())
+                newBotUsers[it.context.chatId] = BotUser("", "", "", it.context.chatId, UserRole.USER.toString())
 
                 stateUser[it.context.chatId] = it
                 send(it.context) { +"Введите ваш логин в TS (буквами)" }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                botUser[it.context.chatId]?.tsLogin = contentMessage.content.text
+                newBotUsers[it.context.chatId]?.tsLogin = contentMessage.content.text
                 UserExpectPassword(it.context, it.sourceMessage)
             }
 
@@ -120,7 +124,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                botUser[it.context.chatId]?.tsPassword = contentMessage.content.text
+                newBotUsers[it.context.chatId]?.tsPassword = contentMessage.content.text
                 UserExpectShop(it.context, it.sourceMessage)
             }
 
@@ -135,7 +139,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     sendMessage(it.context, buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
                     it
                 } else {
-                    botUser[it.context.chatId]?.tsShop = contentMessage.content.text
+                    newBotUsers[it.context.chatId]?.tsShop = contentMessage.content.text
                     UserStopState(it.context, it.sourceMessage)
                 }
             }
@@ -145,20 +149,20 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
                 sendMessage(
                     it.context,
-                    "Проверяем: \nлогин в TS:${botUser[it.context.chatId]?.tsLogin} " +
-                            "\nпароль:${botUser[it.context.chatId]?.tsPassword} " +
-                            "\nмагазин:${botUser[it.context.chatId]?.tsShop}"
+                    "Проверяем: \nлогин в TS:${newBotUsers[it.context.chatId]?.tsLogin} " +
+                            "\nпароль:${newBotUsers[it.context.chatId]?.tsPassword} " +
+                            "\nмагазин:${newBotUsers[it.context.chatId]?.tsShop}"
                 )
 
                 // проверка и коннект с апи магазина
-                val resultCheckTs = botRepositoryTS.checkUserDataInTS(botUser[it.context.chatId])
+                val resultCheckTs = botRepositoryTS.checkUserDataInTS(newBotUsers[it.context.chatId])
 
                 if (it.sourceMessage.content.parseCommandsWithParams().keys.contains("start")) {
                     //внесение в бд, если все ок или запрос по новой если не ок
                     if (resultCheckTs) {
-                        Logging.i(tag, "Create new user ${botUser[it.context.chatId]!!.tsLogin}")
-                        botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
-                        allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+                        Logging.i(tag, "Create new user ${newBotUsers[it.context.chatId]!!.tsLogin}")
+                        botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
+                        allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 
                         sendMessage(
                             it.context,
@@ -168,9 +172,9 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 } else {        // /update
                     if (resultCheckTs) {
                         val oldShop = allBotUsers[it.context.chatId]!!.tsShop
-                        Logging.i(tag, "Update user data ${botUser[it.context.chatId]!!.tsLogin}")
-                        botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
-                        allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+                        Logging.i(tag, "Update user data ${newBotUsers[it.context.chatId]!!.tsLogin}")
+                        botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
+                        allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 
                         sendMessage(
                             it.context,
@@ -399,13 +403,13 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
             strictlyOn<PasswordUpdateExpectPassword> {
                 stateUser[it.context.chatId] = it
 
-                botUser[it.context.chatId] = allBotUsers[it.context.chatId]!!
+                newBotUsers[it.context.chatId] = allBotUsers[it.context.chatId]!!
 
                 send(it.context) { +"Введите ваш пароль в TS (не должен быть пустым)" }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                botUser[it.context.chatId]?.tsPassword = contentMessage.content.text
+                newBotUsers[it.context.chatId]?.tsPassword = contentMessage.content.text
                 PasswordUpdateStopState(it.context, it.sourceMessage)
             }
 
@@ -414,19 +418,19 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
                 sendMessage(
                     it.context,
-                    "Проверяем: \nлогин в TS:${botUser[it.context.chatId]?.tsLogin} " +
-                            "\nпароль:${botUser[it.context.chatId]?.tsPassword} " +
-                            "\nмагазин:${botUser[it.context.chatId]?.tsShop}"
+                    "Проверяем: \nлогин в TS:${newBotUsers[it.context.chatId]?.tsLogin} " +
+                            "\nпароль:${newBotUsers[it.context.chatId]?.tsPassword} " +
+                            "\nмагазин:${newBotUsers[it.context.chatId]?.tsShop}"
                 )
                 // проверка и коннект с апи магазина
-                val resultCheckTs = botRepositoryTS.checkUserDataInTS(botUser[it.context.chatId])
+                val resultCheckTs = botRepositoryTS.checkUserDataInTS(newBotUsers[it.context.chatId])
 
                 //внесение в бд, если все ок
                 if (resultCheckTs) {
                     sendMessage(it.context, "Пароль пользователя TS изменен!")
-                    Logging.i(tag, "Update password user ${botUser[it.context.chatId]!!.tsLogin}")
-                    botRepositoryDB.setUserBy(botUser = botUser[it.context.chatId]!!)
-                    allBotUsers[it.context.chatId] = botUser[it.context.chatId]!!
+                    Logging.i(tag, "Update password user ${newBotUsers[it.context.chatId]!!.tsLogin}")
+                    botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
+                    allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 
                     // получаем воркер из БД и обновляем его
                     val requiredShopWorker = botRepositoryDB.getWorkerByShop(allBotUsers[it.context.chatId]!!.tsShop)
@@ -436,8 +440,8 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                         if (requiredShopWorker.ownerTgId == it.context.chatId) {
                             newWorkers[it.context.chatId] = NewWorker(
                                 workerId = requiredShopWorker.workerId,
-                                login = botUser[it.context.chatId]!!.tsLogin,
-                                password = botUser[it.context.chatId]!!.tsPassword,
+                                login = newBotUsers[it.context.chatId]!!.tsLogin,
+                                password = newBotUsers[it.context.chatId]!!.tsPassword,
                                 shop = requiredShopWorker.shop,
                                 ownerTgId = requiredShopWorker.ownerTgId,
                                 isActive = requiredShopWorker.isActive,
@@ -674,8 +678,15 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                     tag,
                     "Callback: ${it.data} from ${it.user.firstName} ${it.user.lastName} ${it.user.username?.usernameWithoutAt}"
                 )
+//                val shop =  allBotUsers[it.chat.id.chatId].tsShop
+                val shop = allBotUsers[it.user.id.chatId]?.tsShop ?: ""
+                println(botInstancesParameters)
                 answer(
-                    it, msgConvert.popupMessage(dayConfirmedCount), showAlert = true
+                    it,
+                    botInstancesParameters[shop]?.msgConvert?.popupMessage(
+                        botInstancesParameters[shop]?.dayConfirmedCount ?: 0
+                    ),
+                    showAlert = true
                 )
             }
 
@@ -688,26 +699,29 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
     }
 
-    suspend fun botSendMessage(webOrder: WebOrder?): Long? {
+    suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {
+        println(botInstancesParameters[shop])
+        println(shop)
+
         try {
             return bot.sendMessage(
-                targetChatId,
-                msgConvert.inworkMessage(webOrder),
+                botInstancesParameters[shop]!!.targetChatId,
+                botInstancesParameters[shop]!!.msgConvert!!.inworkMessage(webOrder),
                 disableWebPagePreview = true,
-                disableNotification = !msgNotification
+                disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
         } catch (e: Exception) {
             Logging.e(tag, "Exception: ${e.message}")
-            return currentInfoMsgId ?: 0
+            return botInstancesParameters[shop]?.currentInfoMsgId ?: 0
         }
     }
 
-    suspend fun botConfirmMessage(webOrder: WebOrder?) {
+    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
         try {
             bot.editMessageText(
-                targetChatId,
+                botInstancesParameters[shop]!!.targetChatId,
                 webOrder?.messageId ?: 0,
-                msgConvert.completeMessage(webOrder),
+                botInstancesParameters[shop]!!.msgConvert.completeMessage(webOrder),
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
@@ -715,15 +729,15 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
         }
     }
 
-    suspend fun botTimerUpdate(webOrder: WebOrder?) {
+    suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
-            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate)) {
+            if (webOrder?.activeTime != botInstancesParameters[shop]!!.msgConvert.timeDiff(webOrder?.docDate)) {
                 bot.editMessageText(
-                    targetChatId,
+                    botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
-                    msgConvert.inworkMessage(webOrder),
+                    botInstancesParameters[shop]!!.msgConvert.inworkMessage(webOrder),
                     disableWebPagePreview = true,
-                    replyMarkup = if (webOrder?.messageId == currentInfoMsgId) currentInfoMsg else null
+                    replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
                 )
             }
         } catch (e: Exception) {
@@ -731,13 +745,16 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
         }
     }
 
-    suspend fun botSendInfoMessage() {
+    suspend fun botSendInfoMessage(shop: String) {
         try {
             bot.sendMessage(
-                targetChatId,
-                msgConvert.notificationMessage(msgNotification, dayConfirmedCount),
+                botInstancesParameters[shop]!!.targetChatId,
+                botInstancesParameters[shop]!!.msgConvert.notificationMessage(
+                    botInstancesParameters[shop]!!.msgNotification,
+                    botInstancesParameters[shop]!!.dayConfirmedCount
+                ),
                 disableWebPagePreview = true,
-                disableNotification = !msgNotification
+                disableNotification = !(botInstancesParameters[shop]!!.msgNotification)
             ).messageId
         } catch (e: Exception) {
             Logging.e(tag, "Exception: ${e.message}")
@@ -746,15 +763,16 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
 
     // из старого WOM TGInfoMessage
-    suspend fun updateInfoMsg() {
-        if (newInfoMsgId != null) {
+    suspend fun updateInfoMsg(shop: String) {
+        if (botInstancesParameters[shop]?.newInfoMsgId != null) {
 
-            if (currentInfoMsgId != newInfoMsgId) {
-                delInfoMsg()
-                currentInfoMsgId = newInfoMsgId
+            if (botInstancesParameters[shop]!!.currentInfoMsgId != botInstancesParameters[shop]!!.newInfoMsgId) {
+                delInfoMsg(shop)
+                botInstancesParameters[shop]!!.currentInfoMsgId = botInstancesParameters[shop]!!.newInfoMsgId
             }
 
-            val updMsg = msgConvert.infoMessage(notConfirmedOrders)
+            val updMsg =
+                botInstancesParameters[shop]!!.msgConvert.infoMessage(botInstancesParameters[shop]!!.notConfirmedOrders)
 
 
             val infoMsg = inlineKeyboard {
@@ -763,11 +781,11 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 }
             }
 
-            if (infoMsg != currentInfoMsg) {
+            if (infoMsg != botInstancesParameters[shop]!!.currentInfoMsg) {
                 try {
-                    currentInfoMsg = bot.editMessageReplyMarkup(
-                        targetChatId,
-                        currentInfoMsgId!!,
+                    botInstancesParameters[shop]!!.currentInfoMsg = bot.editMessageReplyMarkup(
+                        botInstancesParameters[shop]!!.targetChatId,
+                        botInstancesParameters[shop]!!.currentInfoMsgId!!,
                         replyMarkup = infoMsg
                     ).reply_markup
                 } catch (e: Exception) {
@@ -777,9 +795,13 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
         }
     }
 
-    suspend fun delInfoMsg() {
+    suspend fun delInfoMsg(shop: String) {
         try {
-            bot.editMessageReplyMarkup(targetChatId, currentInfoMsgId!!, replyMarkup = null)
+            bot.editMessageReplyMarkup(
+                botInstancesParameters[shop]!!.targetChatId,
+                botInstancesParameters[shop]!!.currentInfoMsgId!!,
+                replyMarkup = null
+            )
         } catch (e: Exception) {
             Logging.e(tag, "Exception: ${e.message}")
         }

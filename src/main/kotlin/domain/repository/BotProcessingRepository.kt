@@ -1,8 +1,11 @@
 package domain.repository
 
-import data.restTS.data.WebOrder
+import data.restTS.models.WebOrder
+import dev.inmo.tgbotapi.types.ChatIdentifier
 
 interface BotProcessingRepository {
+    var shop: String
+    var targetChatId: ChatIdentifier
     var currentInfoMsgId: Long?
     var newInfoMsgId: Long?
     var dayConfirmedCount: Int

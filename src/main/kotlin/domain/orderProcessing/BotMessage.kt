@@ -5,7 +5,7 @@ import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
 import orderProcessing.data.SecurityData.SHOP_CLOSING
 import orderProcessing.data.SecurityData.SHOP_OPENING
-import data.restTS.data.WebOrder
+import data.restTS.models.WebOrder
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

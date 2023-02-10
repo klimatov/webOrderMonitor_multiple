@@ -1,6 +1,6 @@
 package domain.models
 
-import data.restTS.data.WebOrderSimply
+import data.restTS.models.WebOrderSimply
 
 data class OrderListSimple(
     val errorCode: Int,

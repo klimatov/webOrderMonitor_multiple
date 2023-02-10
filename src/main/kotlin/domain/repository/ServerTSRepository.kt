@@ -1,9 +1,8 @@
 package domain.repository
 
-import data.restTS.data.Items
-import data.restTS.data.RemainsLocal
-import data.restTS.data.WebOrder
-import data.restTS.data.WebOrderSimply
+import data.restTS.models.Items
+import data.restTS.models.RemainsLocal
+import data.restTS.models.WebOrder
 import domain.models.OrderListSimple
 
 interface ServerTSRepository {

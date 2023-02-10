@@ -4,8 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import domain.repository.BotProcessingRepository
 import kotlinx.coroutines.*
-import data.restTS.data.WebOrder
-import domain.models.OrderListSimple
+import data.restTS.models.WebOrder
 import domain.repository.ServerTSRepository
 import utils.Logging
 import java.time.LocalDateTime

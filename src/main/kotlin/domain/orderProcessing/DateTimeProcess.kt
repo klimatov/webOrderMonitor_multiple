@@ -1,15 +1,10 @@
 package domain.orderProcessing
 
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 class DateTimeProcess {
-    fun dateFrom() : String {
-        val result = LocalDate.now().minusDays(35)
-        return result.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-    }
 
     fun dateFormat(docDate: String): LocalDateTime {
         val docDateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")

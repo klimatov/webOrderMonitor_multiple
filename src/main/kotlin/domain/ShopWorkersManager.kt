@@ -1,5 +1,6 @@
 package domain
 
+import dev.inmo.tgbotapi.types.ChatId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
 import domain.repository.BotProcessingRepository
@@ -80,17 +81,30 @@ class ShopWorkersManager(
                 CoroutineScope(Dispatchers.Default).launch(CoroutineName(shopWorkersParam.workerId.toString())) {
 
                     val orderDaemon = OrderDaemon(shopWorkersParam.login, shopWorkersParam.password, shopWorkersParam.shop, serverTSRepository)
-                    orderDaemon.orderDaemonStart(botProcessingRepository)
-                    //TODO("Добавить передачу параметра + маппинг")
+
+                    // создаем новый экземпляр и сохраняем в мапу
+                    botWorkersRepository.botProcessingRepositoryInstances[shopWorkersParam.shop] = botWorkersRepository.botProcessingRepositoryInstance
+                    //берем этот экземпляр из мапы
+                    val botProcessingRepositoryInstance = botWorkersRepository.botProcessingRepositoryInstances[shopWorkersParam.shop]
+                    // проверяем
+                    if (botProcessingRepositoryInstance != null) {
+                        // прописываем магазин и чат в экземпляр
+                        botProcessingRepositoryInstance.shop = shopWorkersParam.shop
+                        botProcessingRepositoryInstance.targetChatId = ChatId(shopWorkersParam.telegramChatId)
+
+                        orderDaemon.orderDaemonStart(botProcessingRepositoryInstance)
+                        //TODO("Добавить передачу параметра + маппинг")
 
 //                WorkerScope(bot = bot).processReport(reportsList[workerParam.workerId] ?: ReportWorkerParam())
 
-/*                    while (true) {
-                        val time = (15000..60000).random().toLong()
-                        Logging.d(tag, "${shopWorkersParam.workerId} - ${shopWorkersParam.shop} - ${time}ms - ${this.coroutineContext}")
-                        delay(time)
-                    }*/
-
+                        /*                    while (true) {
+                                                val time = (15000..60000).random().toLong()
+                                                Logging.d(tag, "${shopWorkersParam.workerId} - ${shopWorkersParam.shop} - ${time}ms - ${this.coroutineContext}")
+                                                delay(time)
+                                            }*/
+                    } else {
+                        Logging.e(tag, "Worker for shop ${shopWorkersParam.shop} does not exist!")
+                    }
                 }
             scope.start()
             scopesList[shopWorkersParam.workerId] = scope
