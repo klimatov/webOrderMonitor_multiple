@@ -12,6 +12,10 @@ interface BotProcessingRepository {
     var msgNotification: Boolean
     var notConfirmedOrders: Int
 
+    suspend fun build(
+        shop: String,
+        targetChatId: ChatIdentifier
+    )
     suspend fun botSendInfoMessage()
     suspend fun updateInfoMsg()
     suspend fun botSendMessage(webOrder: WebOrder?): Long?

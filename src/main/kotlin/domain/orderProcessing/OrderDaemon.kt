@@ -29,7 +29,7 @@ class OrderDaemon(
 //        scope.coroutineContext.cancelChildren()
 //    }
 
-    suspend fun orderDaemonStart(botProcessingRepository: BotProcessingRepository) {
+    suspend fun start(botProcessingRepository: BotProcessingRepository) {
 
         Logging.i(tag, "Запускаем...")
 

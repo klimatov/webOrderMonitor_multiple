@@ -16,7 +16,7 @@ class ShopWorkersManager(
     private val workersRepositoryDB: WorkersRepositoryDB,
     private val botWorkersRepository: BotWorkersRepository,
     private val botProcessingRepository: BotProcessingRepository,
-    private val serverTSRepository: ServerTSRepository
+    private val serverTSRepository: ServerTSRepository,
 ) {
     private val tag = this::class.java.simpleName
     private val scopesList: MutableMap<UUID, Job> = mutableMapOf()
@@ -32,7 +32,7 @@ class ShopWorkersManager(
         while (true) {
             if (botWorkersRepository.changedWorkers.size != 0) {
                 val changedWorkers = botWorkersRepository.changedWorkers.toList()
-                changedWorkers.forEach{
+                changedWorkers.forEach {
                     shopWorkersList[it.workerId] = it
                     botWorkersRepository.changedWorkers.remove(it)
                 }
@@ -80,31 +80,20 @@ class ShopWorkersManager(
             val scope =
                 CoroutineScope(Dispatchers.Default).launch(CoroutineName(shopWorkersParam.workerId.toString())) {
 
-                    val orderDaemon = OrderDaemon(shopWorkersParam.login, shopWorkersParam.password, shopWorkersParam.shop, serverTSRepository)
+                    val orderDaemon = OrderDaemon(
+                        shopWorkersParam.login,
+                        shopWorkersParam.password,
+                        shopWorkersParam.shop,
+                        serverTSRepository
+                    )
 
-                    // создаем новый экземпляр и сохраняем в мапу
-                    botWorkersRepository.botProcessingRepositoryInstances[shopWorkersParam.shop] = botWorkersRepository.botProcessingRepositoryInstance
-                    //берем этот экземпляр из мапы
-                    val botProcessingRepositoryInstance = botWorkersRepository.botProcessingRepositoryInstances[shopWorkersParam.shop]
-                    // проверяем
-                    if (botProcessingRepositoryInstance != null) {
-                        // прописываем магазин и чат в экземпляр
-                        botProcessingRepositoryInstance.shop = shopWorkersParam.shop
-                        botProcessingRepositoryInstance.targetChatId = ChatId(shopWorkersParam.telegramChatId)
-
-                        orderDaemon.orderDaemonStart(botProcessingRepositoryInstance)
-                        //TODO("Добавить передачу параметра + маппинг")
-
-//                WorkerScope(bot = bot).processReport(reportsList[workerParam.workerId] ?: ReportWorkerParam())
-
-                        /*                    while (true) {
-                                                val time = (15000..60000).random().toLong()
-                                                Logging.d(tag, "${shopWorkersParam.workerId} - ${shopWorkersParam.shop} - ${time}ms - ${this.coroutineContext}")
-                                                delay(time)
-                                            }*/
-                    } else {
-                        Logging.e(tag, "Worker for shop ${shopWorkersParam.shop} does not exist!")
-                    }
+                    // создаем новый экземпляр
+                    val botProcessingRepositoryInstance = botWorkersRepository.botProcessingRepositoryInstance
+                    botProcessingRepositoryInstance.build(
+                        shop = shopWorkersParam.shop,
+                        targetChatId = ChatId(shopWorkersParam.telegramChatId)
+                    )
+                    orderDaemon.start(botProcessingRepositoryInstance)
                 }
             scope.start()
             scopesList[shopWorkersParam.workerId] = scope

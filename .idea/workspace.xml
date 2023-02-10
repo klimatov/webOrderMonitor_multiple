@@ -4,24 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- перенос старого ядра webOrderMonitor&#10;- рефакторинг (отделение работы с сервером через интерфейс)">
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- изменения для отправки в телеграм-чат воркера (было - в один общий)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotProcessingRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotProcessingRepositoryImpl.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotWorkersRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotWorkersRepositoryImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/ServerTSRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/ServerTSRepositoryImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/restTS/data/DataModels.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/restTS/models/DataModels.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/restTS/net/NetClient.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/restTS/net/NetClient.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/restTS/net/RetrofitInstance.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/restTS/net/RetrofitInstance.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/models/OrderListSimple.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/models/OrderListSimple.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/BotMessage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/BotMessage.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/DateTimeProcess.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/DateTimeProcess.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/OrderDaemon.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/OrderDaemon.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/Processing.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/orderProcessing/Processing.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/repository/BotProcessingRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/repository/BotProcessingRepository.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/repository/BotWorkersRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/repository/BotWorkersRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/repository/ServerTSRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/repository/ServerTSRepository.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -261,7 +251,14 @@
       <option name="project" value="LOCAL" />
       <updated>1675183721559</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="- изменения для отправки в телеграм-чат воркера (было - в один общий)">
+      <created>1676029549655</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1676029549655</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -307,7 +304,8 @@
     <MESSAGE value="- вывод chat ID при добавлении бота в чат&#10;- фильтр команд в чате (работают только в привате с ботом)" />
     <MESSAGE value="- обновление данных пользователя TS по команде /update&#10;- при обновлении данных TS - проверка созданного бота магазина и удаление его при смене магазина" />
     <MESSAGE value="- проверка корректности введенного времени в /create" />
-    <option name="LAST_COMMIT_MESSAGE" value="- проверка корректности введенного времени в /create" />
+    <MESSAGE value="- изменения для отправки в телеграм-чат воркера (было - в один общий)" />
+    <option name="LAST_COMMIT_MESSAGE" value="- изменения для отправки в телеграм-чат воркера (было - в один общий)" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -11,15 +11,6 @@ import domain.orderProcessing.BotMessage
 class BotProcessingRepositoryImpl : BotProcessingRepository {
 
     override var shop: String = ""
-        get() {
-            return field
-        }
-        set(value) {
-            field = value
-            if (botCore.botInstancesParameters[field] == null) {
-                botCore.botInstancesParameters[field] = BotInstanceParameters()
-            }
-        }
     override var targetChatId: ChatIdentifier
         get() = botCore.botInstancesParameters[shop]?.targetChatId ?: ChatId(0)
         set(value) {
@@ -52,6 +43,14 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
         set(value) {
             botCore.botInstancesParameters[shop]?.notConfirmedOrders = value
         }
+
+    override suspend fun build(shop: String, targetChatId: ChatIdentifier) {
+        if (botCore.botInstancesParameters[shop] == null) {
+            botCore.botInstancesParameters[shop] = BotInstanceParameters() //инициализируем параметры
+        }
+        this.shop = shop
+        this.targetChatId = targetChatId
+    }
 
     override suspend fun botSendInfoMessage() {
         botCore.botSendInfoMessage(shop)
