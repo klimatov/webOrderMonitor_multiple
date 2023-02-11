@@ -2,10 +2,12 @@ package domain.orderProcessing
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import domain.repository.BotProcessingRepository
-import kotlinx.coroutines.*
 import data.restTS.models.WebOrder
+import domain.models.ShopParameters
+import domain.repository.BotProcessingRepository
 import domain.repository.ServerTSRepository
+import domain.repository.ShopParametersDBRepository
+import kotlinx.coroutines.delay
 import utils.Logging
 import java.time.LocalDateTime
 
@@ -24,78 +26,99 @@ class OrderDaemon(
     //    val appStartTime: LocalDateTime = LocalDateTime.now()
     var loginTime: LocalDateTime = LocalDateTime.now()
 
-//    val job = SupervisorJob()
-//    val scope = CoroutineScope(Dispatchers.Default + job)
-
-//    fun cancelCoroutine() {
-//        scope.coroutineContext.cancelChildren()
-//    }
-
-    suspend fun start(botProcessingRepository: BotProcessingRepository) {
+    suspend fun start(
+        botProcessingRepository: BotProcessingRepository,
+        shopParametersDBRepository: ShopParametersDBRepository,
+    ) {
 
         Logging.i(tag, "Запускаем...")
 
-        // считываем данные из SharedPerferences
-//        val serializedActiveOrders = sharedPreferences.getString("ACTIVE_ORDERS", null)
+        var serializedActiveOrders: String? = null
+        var currentInfoMsgId: Long? = null
+        var dayConfirmedCount: Int? = null
 
-        val serializedActiveOrders: String? = null
+        // считываем данные из БД
+        val shopParameters = shopParametersDBRepository.getShopParametersByShop(werk)
+
+        // если запись в БД отсутствует - создаем
+        if (shopParameters == null) shopParametersDBRepository.updateShopParameters(
+            ShopParameters(
+                shop = werk,
+                serializedActiveOrders = "{}",
+                currentInfoMsgId = 0,
+                dayConfirmedCount = 0
+            )
+        ) else {
+            serializedActiveOrders = shopParameters.serializedActiveOrders
+            currentInfoMsgId = shopParameters.currentInfoMsgId
+            dayConfirmedCount = shopParameters.dayConfirmedCount
+        }
+
         if (serializedActiveOrders != null) {
             val type = object : TypeToken<MutableMap<String?, WebOrder?>>() {}.type
             processing.activeOrders =
                 Gson().fromJson(serializedActiveOrders, type)
-            Logging.i(tag, "sharedPreferences activeOrders READ: $serializedActiveOrders")
+            Logging.i(tag, "activeOrders READ: $serializedActiveOrders")
         }
 
-//        val currentInfoMsgId = sharedPreferences.getString("CURRENT_INFO_MESSAGE_ID", null)
-        val currentInfoMsgId: String? = null
         if (currentInfoMsgId != null) {
             botProcessingRepository.currentInfoMsgId = currentInfoMsgId.toLong()
             botProcessingRepository.newInfoMsgId = botProcessingRepository.currentInfoMsgId
-            Logging.i(tag, "sharedPreferences currentInfoMsgId READ: $currentInfoMsgId")
+            Logging.i(tag, "currentInfoMsgId READ: $currentInfoMsgId")
         }
 
-//        val dayConfirmedCount = sharedPreferences.getString("DAY_CONFIRMED_COUNT", null)
-        val dayConfirmedCount: String? = null
         if (dayConfirmedCount != null) {
             botProcessingRepository.dayConfirmedCount = dayConfirmedCount.toInt()
-            Logging.i(tag, "sharedPreferences dayConfirmedCount READ: $dayConfirmedCount")
+            Logging.i(tag, "dayConfirmedCount READ: $dayConfirmedCount")
         }
 
 
-//        scope.launch {
         serverTSRepository.login(login, password, werk)
+
         while (true) {  // основной цикл проверки
             Logging.i(tag, "Обновляем данные...")
 
             // проверяем открыт ли магазин, триггерим звук уведомлений
             if (botMessage.shopInWork(
-                shopOpenTime = botProcessingRepository.shopOpenTime,
-                shopCloseTime = botProcessingRepository.shopCloseTime
-            ) != botProcessingRepository.msgNotification) {
+                    shopOpenTime = botProcessingRepository.shopOpenTime,
+                    shopCloseTime = botProcessingRepository.shopCloseTime
+                ) != botProcessingRepository.msgNotification
+            ) {
                 botProcessingRepository.msgNotification = !botProcessingRepository.msgNotification
                 botProcessingRepository.botSendInfoMessage()
                 // если магазин закрылся, то сбрасываем счетчик собранных за день и записываем в настройки
                 if (!botProcessingRepository.msgNotification) {
                     botProcessingRepository.dayConfirmedCount = 0
-                    val serializedDayConfirmedCount = Gson().toJson(botProcessingRepository.dayConfirmedCount)
-                    //TODO("Запись в БД")
-//                        sharedPreferences.edit()
-//                            .putString("DAY_CONFIRMED_COUNT", serializedDayConfirmedCount).apply()
+
+                    shopParametersDBRepository.updateDayConfirmedCount(
+                        shop = werk,
+                        dayConfirmedCount = botProcessingRepository.dayConfirmedCount
+                    )
+
                     Logging.i(
                         tag,
-                        "sharedPreferences dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
+                        "dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
                     )
                 }
             }
-            Logging.d(tag, "Shop open: ${botMessage.shopInWork(
-                shopOpenTime = botProcessingRepository.shopOpenTime,
-                shopCloseTime = botProcessingRepository.shopCloseTime
-            )}")
+            Logging.d(
+                tag, "Shop open: ${
+                    botMessage.shopInWork(
+                        shopOpenTime = botProcessingRepository.shopOpenTime,
+                        shopCloseTime = botProcessingRepository.shopCloseTime
+                    )
+                }"
+            )
 
             val orderListSimple = serverTSRepository.getOrderListSimple()
 
             when (orderListSimple?.errorCode) {
-                200 -> processing.processInworkOrders(orderListSimple.listWebOrdersSimply, botProcessingRepository)
+                200 -> processing.processInworkOrders(
+                    orderListSimple.listWebOrdersSimply,
+                    botProcessingRepository,
+                    shopParametersDBRepository
+                )
+
                 401 -> serverTSRepository.login(login, password, werk)
                 else -> Logging.e(tag, "ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}")
             }
@@ -109,7 +132,7 @@ class OrderDaemon(
             Logging.i(tag, "Wait next iteration 30 second")
             delay(30000L)
         }
-//        }.join()
+
     }
 
 }

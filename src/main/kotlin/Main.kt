@@ -1,9 +1,8 @@
 import bot.BotCore
-import bot.BotProcessingRepositoryImpl
 import bot.BotWorkersRepositoryImpl
 import data.BotRepositoryDBImpl
 import data.ServerTSRepositoryImpl
-import data.WorkersRepositoryDBImpl
+import data.WorkersDBRepositoryImpl
 import domain.ShopWorkersManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,14 +16,15 @@ import org.jetbrains.exposed.sql.Database
 val job = SupervisorJob()
 private val botRepositoryDB = BotRepositoryDBImpl()
 val botCore by lazy { BotCore(job = job, botRepositoryDB = botRepositoryDB) }
-private val workersRepositoryDB = WorkersRepositoryDBImpl()
+private val workersRepositoryDB = WorkersDBRepositoryImpl()
 private val botWorkersRepository = BotWorkersRepositoryImpl
 private val serverTS = ServerTSRepositoryImpl()
 private val shopWorkersManager by lazy(LazyThreadSafetyMode.NONE) {
     ShopWorkersManager(
-        workersRepositoryDB = workersRepositoryDB,
+        workersDBRepository = workersRepositoryDB,
         botWorkersRepository = botWorkersRepository,
-        serverTSRepository = serverTS
+        serverTSRepository = serverTS,
+        shopParametersDBRepository = workersRepositoryDB
     )
 }
 

@@ -3,26 +3,27 @@ package domain
 import dev.inmo.tgbotapi.types.ChatId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
-import domain.repository.BotProcessingRepository
 import domain.repository.BotWorkersRepository
-import domain.repository.WorkersRepositoryDB
+import domain.repository.WorkersDBRepository
 import kotlinx.coroutines.*
 import domain.orderProcessing.OrderDaemon
 import domain.repository.ServerTSRepository
+import domain.repository.ShopParametersDBRepository
 import utils.Logging
 import java.util.*
 
 class ShopWorkersManager(
-    private val workersRepositoryDB: WorkersRepositoryDB,
+    private val workersDBRepository: WorkersDBRepository,
     private val botWorkersRepository: BotWorkersRepository,
     private val serverTSRepository: ServerTSRepository,
+    private val shopParametersDBRepository: ShopParametersDBRepository
 ) {
     private val tag = this::class.java.simpleName
     private val scopesList: MutableMap<UUID, Job> = mutableMapOf()
     private var shopWorkersList: MutableMap<UUID, ShopWorkersParam> = mutableMapOf()
 
     suspend fun start() {
-        shopWorkersList = workersRepositoryDB.getAll()
+        shopWorkersList = workersDBRepository.getAll()
         shopWorkersList.forEach {
             if (it.value.isActive) it.value.workerState = WorkerState.CREATE
         }
@@ -94,7 +95,7 @@ class ShopWorkersManager(
                         shopOpenTime = shopWorkersParam.shopOpen,
                         shopCloseTime = shopWorkersParam.shopClose
                     )
-                    orderDaemon.start(botProcessingRepositoryInstance)
+                    orderDaemon.start(botProcessingRepositoryInstance, shopParametersDBRepository)
                 }
             scope.start()
             scopesList[shopWorkersParam.workerId] = scope
@@ -110,7 +111,7 @@ class ShopWorkersManager(
         shopWorkersList[shopWorkersParam.workerId] = shopWorkersParam
         processShopWorkers()
         if (shopWorkersParam.workerState == WorkerState.DELETE) shopWorkersList.remove(shopWorkersParam.workerId)
-        workersRepositoryDB.setAll(shopWorkersList)
+        workersDBRepository.setAll(shopWorkersList)
     }
 
 

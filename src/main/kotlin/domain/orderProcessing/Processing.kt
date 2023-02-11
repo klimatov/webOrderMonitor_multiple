@@ -5,7 +5,9 @@ import com.google.gson.Gson
 import domain.repository.BotProcessingRepository
 import data.restTS.models.WebOrder
 import data.restTS.models.WebOrderSimply
+import domain.models.ShopParameters
 import domain.repository.ServerTSRepository
+import domain.repository.ShopParametersDBRepository
 import utils.Logging
 
 
@@ -15,7 +17,8 @@ class Processing(private val serverTSRepository: ServerTSRepository) {
 
     suspend fun processInworkOrders(
         inworkOrderList: List<WebOrderSimply>,
-        botProcessingRepository: BotProcessingRepository
+        botProcessingRepository: BotProcessingRepository,
+        shopParametersDBRepository: ShopParametersDBRepository
     ) {
         var newFlag = false
         // проверка, появились ли новые вебки, отсутствующие в списке активных?
@@ -62,27 +65,24 @@ class Processing(private val serverTSRepository: ServerTSRepository) {
         botProcessingRepository.notConfirmedOrders = activeOrders.count()
         botProcessingRepository.updateInfoMsg()
 
-        // записываем активные в SharedPerferences если были изменения +-
+        // записываем активные в БД> если были изменения +-
         if (newFlag || delOrderList.count() > 0) {
             val serializedActiveOrders = Gson().toJson(activeOrders)
-            //TODO("Запись в БД")
-/*            sharedPreferences.edit().putString("ACTIVE_ORDERS", serializedActiveOrders).apply()
+            shopParametersDBRepository.updateShopParameters(ShopParameters(
+                shop = botProcessingRepository.shop,
+                serializedActiveOrders = serializedActiveOrders,
+                currentInfoMsgId = botProcessingRepository.currentInfoMsgId?:0,
+                dayConfirmedCount = botProcessingRepository.dayConfirmedCount
+            ))
 
-            sharedPreferences.edit()
-                .putString("CURRENT_INFO_MESSAGE_ID", botProcessingRepository.currentInfoMsgId.toString())
-                .apply()
-
-            sharedPreferences.edit()
-                .putString("DAY_CONFIRMED_COUNT", botProcessingRepository.dayConfirmedCount.toString()).apply()*/
-
-            Logging.i(tag, "sharedPreferences activeOrders SAVE: $serializedActiveOrders")
+            Logging.i(tag, "activeOrders SAVE: $serializedActiveOrders")
             Logging.i(
                 tag,
-                "sharedPreferences currentInfoMsgId SAVE: ${botProcessingRepository.currentInfoMsgId}"
+                "currentInfoMsgId SAVE: ${botProcessingRepository.currentInfoMsgId}"
             )
             Logging.i(
                 tag,
-                "sharedPreferences dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
+                "dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
             )
         }
     }
