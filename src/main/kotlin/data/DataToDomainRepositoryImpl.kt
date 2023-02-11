@@ -8,12 +8,14 @@ import data.database.shopWorkers.mapToShopWorkersDTO
 import data.database.shopWorkers.mapToShopWorkersParam
 import domain.models.ShopParameters
 import domain.models.ShopWorkersParam
+import domain.repository.ServerTSFactoryRepository
+import domain.repository.ServerTSRepository
 import domain.repository.ShopParametersDBRepository
 import domain.repository.WorkersDBRepository
 import java.util.*
 
 
-class WorkersDBRepositoryImpl() : WorkersDBRepository, ShopParametersDBRepository {
+class DataToDomainRepositoryImpl() : WorkersDBRepository, ShopParametersDBRepository, ServerTSFactoryRepository {
     private val tag = this::class.java.simpleName
 
     override suspend fun getAll(): MutableMap<UUID, ShopWorkersParam> {
@@ -41,5 +43,10 @@ class WorkersDBRepositoryImpl() : WorkersDBRepository, ShopParametersDBRepositor
     override fun updateDayConfirmedCount(shop: String, dayConfirmedCount: Int) {
         ShopParametersDB.updateDayConfirmedCount(shop, dayConfirmedCount)
     }
+
+    //ServerTSFactoryRepository
+    override val serverTSRepositoryInstance: ServerTSRepository
+        get() = ServerTSRepositoryImpl()
+
 }
 

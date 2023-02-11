@@ -3,20 +3,20 @@ package domain
 import dev.inmo.tgbotapi.types.ChatId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
+import domain.orderProcessing.OrderDaemon
 import domain.repository.BotWorkersRepository
+import domain.repository.ServerTSFactoryRepository
+import domain.repository.ShopParametersDBRepository
 import domain.repository.WorkersDBRepository
 import kotlinx.coroutines.*
-import domain.orderProcessing.OrderDaemon
-import domain.repository.ServerTSRepository
-import domain.repository.ShopParametersDBRepository
 import utils.Logging
 import java.util.*
 
 class ShopWorkersManager(
     private val workersDBRepository: WorkersDBRepository,
     private val botWorkersRepository: BotWorkersRepository,
-    private val serverTSRepository: ServerTSRepository,
-    private val shopParametersDBRepository: ShopParametersDBRepository
+    private val shopParametersDBRepository: ShopParametersDBRepository,
+    private val serverTSFactoryRepository: ServerTSFactoryRepository
 ) {
     private val tag = this::class.java.simpleName
     private val scopesList: MutableMap<UUID, Job> = mutableMapOf()
@@ -51,7 +51,6 @@ class ShopWorkersManager(
                 else -> return@forEach
             }
         }
-//        shopWorkersRepository.setAll(shopWorkersList)
     }
 
     private suspend fun updateShopWorker(shopWorkersParam: ShopWorkersParam) {
@@ -80,14 +79,17 @@ class ShopWorkersManager(
             val scope =
                 CoroutineScope(Dispatchers.Default).launch(CoroutineName(shopWorkersParam.workerId.toString())) {
 
+                    // создаем новый экземпляр serverTSRepositoryInstance
+                    val serverTSRepositoryInstance = serverTSFactoryRepository.serverTSRepositoryInstance
+
                     val orderDaemon = OrderDaemon(
                         shopWorkersParam.login,
                         shopWorkersParam.password,
                         shopWorkersParam.shop,
-                        serverTSRepository
+                        serverTSRepositoryInstance
                     )
 
-                    // создаем новый экземпляр
+                    // создаем новый экземпляр botProcessingRepositoryInstance
                     val botProcessingRepositoryInstance = botWorkersRepository.botProcessingRepositoryInstance
                     botProcessingRepositoryInstance.build(
                         shop = shopWorkersParam.shop,
