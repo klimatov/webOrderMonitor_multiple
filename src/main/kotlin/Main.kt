@@ -1,6 +1,7 @@
 import bot.BotCore
 import bot.BotWorkersRepositoryImpl
-import data.BotRepositoryDBImpl
+import data.BotTSRepositoryImpl
+import data.DataToBotRepositoryImpl
 import data.DataToDomainRepositoryImpl
 import domain.ShopWorkersManager
 import kotlinx.coroutines.CoroutineScope
@@ -13,8 +14,13 @@ import orderProcessing.data.SecurityData.POSTGRES_USER
 import org.jetbrains.exposed.sql.Database
 
 val job = SupervisorJob()
-private val botRepositoryDB = BotRepositoryDBImpl()
-val botCore by lazy { BotCore(job = job, botRepositoryDB = botRepositoryDB) }
+val botCore by lazy {
+    BotCore(
+        job = job,
+        botRepositoryDB = DataToBotRepositoryImpl(),
+        botTSRepository = BotTSRepositoryImpl()
+    )
+}
 private val dataToDomainRepositoryImpl = DataToDomainRepositoryImpl()
 private val botWorkersRepository = BotWorkersRepositoryImpl
 private val shopWorkersManager by lazy(LazyThreadSafetyMode.NONE) {

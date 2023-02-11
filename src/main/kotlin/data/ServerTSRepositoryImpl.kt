@@ -1,9 +1,6 @@
 package data
 
-import data.restTS.models.Items
-import data.restTS.models.RemainsLocal
-import data.restTS.models.UserInfo
-import data.restTS.models.WebOrder
+import data.restTS.models.*
 import data.restTS.net.NetClient
 import domain.models.OrderListSimple
 import domain.repository.ServerTSRepository
@@ -14,15 +11,21 @@ class ServerTSRepositoryImpl: ServerTSRepository {
     private val tag = this::class.java.simpleName
     private var loginTime = LocalDateTime.now()
     val netClient = NetClient()
-    override suspend fun login(login: String, password: String, werk: String): UserInfo? {
+    override suspend fun login(login: String, password: String, werk: String): LoginResult {
         if (netClient.login(login, password, werk)) {
             Logging.i(tag, "Connected to base ${netClient.userInfo}")
             loginTime = LocalDateTime.now()
             netClient.getDBVersion()
-            return netClient.userInfo
+            return LoginResult(
+                result = Result(success = true, errorMessage = null, errorCode = netClient.errorCode),
+                userInfo = netClient.userInfo
+            )
         } else {
             Logging.e(tag, "Login failed with Error: ${netClient.error}")
-            return null
+            return LoginResult(
+                result = Result(success = false, errorMessage = netClient.error, errorCode = netClient.errorCode),
+                userInfo = null
+            )
         }
     }
 

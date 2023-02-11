@@ -4,15 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- сохранение накопительных переменных в БД (замена sharedPreferences)">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/domain/repository/ServerTSFactoryRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="07eef300-15fa-4fe4-9dba-a14124083778" name="Changes" comment="- отдельный экземпляр класса работы с базой TS (был общий)">
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotTSRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/data/BotTSRepositoryImpl.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/data/restTS/models/EldoServerInteraction.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotCore.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/bot/BotRepositoryTS.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/bot/BotTSOperations.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/BotRepositoryDBImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/DataToBotRepositoryImpl.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/ServerTSRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/ServerTSRepositoryImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/data/WorkersDBRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/data/DataToDomainRepositoryImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/ShopWorkersManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/repository/BotWorkersRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/repository/BotWorkersRepository.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/domain/repository/ServerTSRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/domain/repository/ServerTSRepository.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -41,10 +42,10 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Kotlin File" />
-        <option value="Kotlin Class" />
-        <option value="Kotlin Data Class" />
         <option value="Kotlin Object" />
         <option value="Kotlin Interface" />
+        <option value="Kotlin Class" />
+        <option value="Kotlin Data Class" />
       </list>
     </option>
   </component>
@@ -282,7 +283,14 @@
       <option name="project" value="LOCAL" />
       <updated>1676091685748</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="- отдельный экземпляр класса работы с базой TS (был общий)">
+      <created>1676095542205</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1676095542205</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -332,7 +340,8 @@
     <MESSAGE value="- рефакторинг" />
     <MESSAGE value="- проверка открытия/закрытия магазина" />
     <MESSAGE value="- сохранение накопительных переменных в БД (замена sharedPreferences)" />
-    <option name="LAST_COMMIT_MESSAGE" value="- сохранение накопительных переменных в БД (замена sharedPreferences)" />
+    <MESSAGE value="- отдельный экземпляр класса работы с базой TS (был общий)" />
+    <option name="LAST_COMMIT_MESSAGE" value="- отдельный экземпляр класса работы с базой TS (был общий)" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

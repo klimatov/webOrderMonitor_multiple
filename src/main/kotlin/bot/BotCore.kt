@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import domain.orderProcessing.BotMessage
 import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
-import orderProcessing.data.SecurityData.TELEGRAM_CHAT_ID
 import data.restTS.models.WebOrder
 import dev.inmo.tgbotapi.types.ChatIdentifier
 import utils.Logging
@@ -85,7 +84,11 @@ data class BotInstanceParameters(
     var notConfirmedOrders: Int = 0,  //активных не подтвержденных
 )
 
-class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotRepositoryDB) {
+class BotCore(
+    private val job: CompletableJob,
+    private val botRepositoryDB: BotRepositoryDB,
+    private val botTSRepository: BotTSRepository,
+) {
 
     private val tag = this::class.java.simpleName
 
@@ -93,7 +96,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
 
     private val botToken = TELEGRAM_BOT_TOKEN
     private val bot = telegramBot(token = botToken)
-    private val botRepositoryTS = BotRepositoryTS()
+    private val botTSOperations = BotTSOperations(botTSRepository = botTSRepository)
     private var allBotUsers: MutableMap<Identifier, BotUser> = botRepositoryDB.getAll()
     private var newBotUsers: MutableMap<Identifier, BotUser> = mutableMapOf()
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
@@ -157,7 +160,8 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                 )
 
                 // проверка и коннект с апи магазина
-                val resultCheckTs = botRepositoryTS.checkUserDataInTS(newBotUsers[it.context.chatId])
+//                val resultCheckTs = botTSOperations.checkUserDataInTS(newBotUsers[it.context.chatId])
+                val resultCheckTs = botTSOperations.checkUserDataInTS(newBotUsers[it.context.chatId], it.context.chatId)
 
                 if (it.sourceMessage.content.parseCommandsWithParams().keys.contains("start")) {
                     //внесение в бд, если все ок или запрос по новой если не ок
@@ -425,7 +429,7 @@ class BotCore(private val job: CompletableJob, private val botRepositoryDB: BotR
                             "\nмагазин:${newBotUsers[it.context.chatId]?.tsShop}"
                 )
                 // проверка и коннект с апи магазина
-                val resultCheckTs = botRepositoryTS.checkUserDataInTS(newBotUsers[it.context.chatId])
+                val resultCheckTs = botTSOperations.checkUserDataInTS(newBotUsers[it.context.chatId], it.context.chatId)
 
                 //внесение в бд, если все ок
                 if (resultCheckTs) {

@@ -1,18 +1,16 @@
 package data
 
-import bot.BotRepositoryDB
-import bot.BotUser
-import bot.NewWorker
-import bot.UserRole
+import bot.*
 import data.database.botUsers.BotUsersDB
 import data.database.botUsers.mapToBotUsers
 import data.database.botUsers.mapToBotUsersDTO
 import data.database.shopWorkers.ShopWorkersDB
 import data.database.shopWorkers.mapToNewWorker
 import data.database.shopWorkers.mapToShopWorkersDTO
+import data.restTS.models.UserInfo
 import dev.inmo.tgbotapi.types.Identifier
 
-class BotRepositoryDBImpl: BotRepositoryDB {
+class DataToBotRepositoryImpl: BotRepositoryDB {
 
     override fun setUserBy(botUser: BotUser): Boolean {
         BotUsersDB.insert(botUser.mapToBotUsersDTO())
@@ -53,4 +51,5 @@ class BotRepositoryDBImpl: BotRepositoryDB {
         ShopWorkersDB.update(newWorker.mapToShopWorkersDTO())
         return true
     }
+
 }
