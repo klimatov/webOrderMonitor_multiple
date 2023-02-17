@@ -21,7 +21,7 @@ class NetClient {
     lateinit var userInfo: UserInfo
     var error = ""
     var errorCode: Int? = null
-    private val dbVersion = "22"
+    var dbVersion = "0"
     private val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault())
     val gmt = SimpleDateFormat("Z").format(calendar.time)
     var remoteDbVersion: Int? = null
@@ -195,7 +195,8 @@ class NetClient {
         }
     }
 
-    fun getDBVersion(): Int? {
+    fun getDBVersion(werk: String = this.shop): Int? {
+        this.shop = werk
         try {
             val response = RetrofitInstance.eldoApi.getDBVersion(shop)?.execute()
             this.errorCode = response?.code()

@@ -7,15 +7,17 @@ import domain.repository.ServerTSRepository
 import utils.Logging
 import java.time.LocalDateTime
 
-class ServerTSRepositoryImpl: ServerTSRepository {
+class ServerTSRepositoryImpl : ServerTSRepository {
     private val tag = this::class.java.simpleName
     private var loginTime = LocalDateTime.now()
     val netClient = NetClient()
     override suspend fun login(login: String, password: String, werk: String): LoginResult {
+        val ver = netClient.getDBVersion(werk) ?: 0
+        if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
         if (netClient.login(login, password, werk)) {
             Logging.i(tag, "Connected to base ${netClient.userInfo}")
             loginTime = LocalDateTime.now()
-            netClient.getDBVersion()
+//            netClient.getDBVersion()
             return LoginResult(
                 result = Result(success = true, errorMessage = null, errorCode = netClient.errorCode),
                 userInfo = netClient.userInfo
@@ -36,7 +38,9 @@ class ServerTSRepositoryImpl: ServerTSRepository {
 
     override var errorCode: Int?
         get() = netClient.errorCode
-        set(value) {netClient.errorCode = value}
+        set(value) {
+            netClient.errorCode = value
+        }
 
     override suspend fun getRemains(goodCode: String?): List<RemainsLocal> {
         val remains = netClient.localRemains(goodCode)
@@ -51,7 +55,7 @@ class ServerTSRepositoryImpl: ServerTSRepository {
     override suspend fun getOrderListSimple(): OrderListSimple? {
         val orderListSimple = netClient.getWebOrderListSimple("new") //all or new  --- получаем список неподтвержденных
         return OrderListSimple(
-            errorCode = netClient.errorCode?:0,
+            errorCode = netClient.errorCode ?: 0,
             error = netClient.error,
             listWebOrdersSimply = orderListSimple
         )
