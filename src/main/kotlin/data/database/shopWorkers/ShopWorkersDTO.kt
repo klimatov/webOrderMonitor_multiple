@@ -16,7 +16,8 @@ data class ShopWorkersDTO(
     val isActive: Boolean,
     val shopOpen: Int,
     val shopClose: Int,
-    val telegramChatId: Long
+    val telegramChatId: Long,
+    val gmt: String
 )
 
 fun ShopWorkersParam.mapToShopWorkersDTO(): ShopWorkersDTO =
@@ -29,7 +30,8 @@ fun ShopWorkersParam.mapToShopWorkersDTO(): ShopWorkersDTO =
         isActive = isActive,
         shopOpen = shopOpen,
         shopClose = shopClose,
-        telegramChatId = telegramChatId
+        telegramChatId = telegramChatId,
+        gmt = gmt
     )
 
 fun ShopWorkersDTO.mapToShopWorkersParam(): ShopWorkersParam =
@@ -43,7 +45,8 @@ fun ShopWorkersDTO.mapToShopWorkersParam(): ShopWorkersParam =
         shopOpen = shopOpen,
         shopClose = shopClose,
         telegramChatId = telegramChatId,
-        workerState = WorkerState.CREATE
+        workerState = WorkerState.CREATE,
+        gmt = gmt
     )
 
 fun NewWorker.mapToShopWorkersDTO(): ShopWorkersDTO =
@@ -56,7 +59,8 @@ fun NewWorker.mapToShopWorkersDTO(): ShopWorkersDTO =
         isActive = isActive,
         shopOpen = shopOpen,
         shopClose = shopClose,
-        telegramChatId = telegramChatId
+        telegramChatId = telegramChatId,
+        gmt = gmt
     )
 
 fun ShopWorkersDTO.mapToNewWorker(): NewWorker =
@@ -70,5 +74,6 @@ fun ShopWorkersDTO.mapToNewWorker(): NewWorker =
         shopOpen = shopOpen,
         shopClose = shopClose,
         telegramChatId = telegramChatId,
-        workerState = WorkerState.WORK
+        workerState = WorkerState.WORK,
+        gmt = gmt
     )

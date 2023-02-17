@@ -16,6 +16,7 @@ object ShopWorkersDB : Table("shop_workers") {
     private val shopOpen = ShopWorkersDB.varchar("shop_open", 2)
     private val shopClose = ShopWorkersDB.varchar("shop_close", 2)
     private val telegramChatId = ShopWorkersDB.varchar("chat_id", 20)
+    private val gmt = ShopWorkersDB.varchar("timezone", 5)
 
     fun insert(shopWorkersDTO: ShopWorkersDTO) {
         transaction {
@@ -30,6 +31,8 @@ object ShopWorkersDB : Table("shop_workers") {
                 it[shopOpen] = shopWorkersDTO.shopOpen.toString()
                 it[shopClose] = shopWorkersDTO.shopClose.toString()
                 it[telegramChatId] = shopWorkersDTO.telegramChatId.toString()
+                it[gmt] = shopWorkersDTO.gmt
+
             }
         }
     }
@@ -47,6 +50,7 @@ object ShopWorkersDB : Table("shop_workers") {
                 it[shopOpen] = shopWorkersDTO.shopOpen.toString()
                 it[shopClose] = shopWorkersDTO.shopClose.toString()
                 it[telegramChatId] = shopWorkersDTO.telegramChatId.toString()
+                it[gmt] = shopWorkersDTO.gmt
             }
         }
     }
@@ -65,7 +69,8 @@ object ShopWorkersDB : Table("shop_workers") {
                         isActive = it[isActive],
                         shopOpen = it[shopOpen].toInt(),
                         shopClose = it[shopClose].toInt(),
-                        telegramChatId = it[telegramChatId].toLong()
+                        telegramChatId = it[telegramChatId].toLong(),
+                        gmt = it[gmt]
                     )
                 }
             }
@@ -89,7 +94,8 @@ object ShopWorkersDB : Table("shop_workers") {
                     isActive = worker[isActive],
                     shopOpen = worker[shopOpen].toInt(),
                     shopClose = worker[shopClose].toInt(),
-                    telegramChatId = worker[telegramChatId].toLong()
+                    telegramChatId = worker[telegramChatId].toLong(),
+                    gmt = worker[gmt]
                 )
             }
         } catch (e: Exception) {

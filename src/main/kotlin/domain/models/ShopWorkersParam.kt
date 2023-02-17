@@ -12,7 +12,8 @@ data class ShopWorkersParam(
     val shopOpen: Int,
     val shopClose: Int,
     val telegramChatId: Long,
-    var workerState: WorkerState
+    var workerState: WorkerState,
+    val gmt: String
 )
 
 enum class WorkerState{

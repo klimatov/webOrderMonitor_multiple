@@ -52,6 +52,7 @@ data class UserStopState(override val context: ChatId, val sourceMessage: Common
 data class BotExpectChatId(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotExpectOpenTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotExpectCloseTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class BotExpectTimezone(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 data class BotStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
 
 data class DeleteExpectConfirmation(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
@@ -233,7 +234,8 @@ class BotCore(
                     shopOpen = 10,
                     shopClose = 21,
                     telegramChatId = 0,
-                    workerState = WorkerState.CREATE
+                    workerState = WorkerState.CREATE,
+                    gmt = "+0300"
                 )
                 stateUser[it.context.chatId] = it
                 send(it.context) {
@@ -325,6 +327,30 @@ class BotCore(
                 when (contentMessage.content.text.toIntOrNull()) {
                     in 0..23 -> {
                         newWorkers[it.context.chatId]?.shopClose = contentMessage.text!!.toInt()
+                        BotExpectTimezone(it.context, it.sourceMessage)
+                    }
+
+                    else -> {
+                        sendMessage(
+                            it.context,
+                            buildEntities { +"Некорректное значение '${contentMessage.content.text}'" })
+                        it
+                    }
+                }
+            }
+
+            strictlyOn<BotExpectTimezone> {
+                stateUser[it.context.chatId] = it
+                send(it.context) { +"Введите часовой пояс по гринвичу GMT (в часах, например Москва 3, Красноярск 7)" }
+                val contentMessage = waitTextMessage().filter { message ->
+                    message.sameChat(it.sourceMessage)
+                }.first()
+
+                val gmtNew = contentMessage.content.text.toIntOrNull()
+                when (gmtNew) {
+                    in 0..12 -> {
+                        val gmtNewTxt = if (gmtNew!! < 10) "0$gmtNew" else gmtNew.toString()
+                        newWorkers[it.context.chatId]?.gmt = "+${gmtNewTxt}00"
                         BotStopState(it.context, it.sourceMessage)
                     }
 
@@ -336,6 +362,7 @@ class BotCore(
                     }
                 }
             }
+
 
             strictlyOn<BotStopState> {
                 stateUser.remove(it.context.chatId)
@@ -453,7 +480,8 @@ class BotCore(
                                 shopOpen = requiredShopWorker.shopOpen,
                                 shopClose = requiredShopWorker.shopClose,
                                 telegramChatId = requiredShopWorker.telegramChatId,
-                                workerState = WorkerState.UPDATE
+                                workerState = WorkerState.UPDATE,
+                                gmt = requiredShopWorker.gmt
                             )
                             Logging.i(tag, "Update worker in DB ${newWorkers[it.context.chatId]!!.shop}")
                             // обновляем воркер в БД

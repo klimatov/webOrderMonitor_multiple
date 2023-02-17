@@ -1,6 +1,5 @@
 package bot
 
-import data.database.shopWorkers.ShopWorkersDTO
 import dev.inmo.tgbotapi.types.Identifier
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
@@ -17,7 +16,8 @@ data class NewWorker(
     var shopOpen: Int,
     var shopClose: Int,
     var telegramChatId: Long,
-    var workerState: WorkerState
+    var workerState: WorkerState,
+    var gmt: String
 )
 
 
@@ -47,5 +47,6 @@ fun NewWorker.mapToShopWorkersParam(): ShopWorkersParam =
         shopOpen = shopOpen,
         shopClose = shopClose,
         telegramChatId = telegramChatId,
-        workerState = workerState
+        workerState = workerState,
+        gmt = gmt
     )
