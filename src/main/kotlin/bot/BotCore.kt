@@ -245,7 +245,7 @@ class BotCore(
                     +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию " +
                             "(или введите /stop для отмены создания)" +
                             "\nДанный ID может быть со знаком минус (-). " +
-                            "Узнать ID можно введя команду /getchatid В ЧАТЕ куда добавлен бот."
+                            "Узнать ID можно введя команду /id В ЧАТЕ куда добавлен бот."
                 }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
@@ -489,7 +489,7 @@ class BotCore(
                         it.chat,
                         "Доступные команды:" +
                                 "\n/start - список команд" +
-                                "\n/getchatid - ваш telegram ID" +
+                                "\n/id - ID чата (можно написать в группе)" +
                                 "\n/password - обновить пароль TS" +
                                 "\n/update - обновить все данные TS" +
                                 "\n/create - создать бота магазина" +
@@ -502,14 +502,13 @@ class BotCore(
                 }
             }
 
-            onCommand("getchatid",
+            onCommand("id",
                 initialFilter = {
                     stateUser[it.chat.id.chatId] == null
                 }
             ) {
-                val userId = it.asFromUser()?.user?.id?.chatId
-                val chatId = it.chat.id.chatId
-                sendTextMessage(it.chat, "Твой user ID: $userId\nТекущий chat ID: $chatId")
+                sendTextMessage(it.chat, "ID данного чата:")
+                sendTextMessage(it.chat, it.chat.id.chatId.toString())
             }
 
             onCommand("lasterrors",
@@ -669,9 +668,9 @@ class BotCore(
 
                 sendTextMessage(
                     it.chat,
-                    "ID данного чата: ${it.chat.id.chatId}" +
-                            "\nЕго нужно указать при создании чат-бота вашего магазина написав боту ${getMe().username.username}"
+                    "ID чата нужно указать при создании чат-бота вашего магазина написав боту ${getMe().username.username}\nID данного чата:"
                 )
+                sendTextMessage(it.chat, it.chat.id.chatId.toString())
             }
 
             onCommandWithArgs("test",
