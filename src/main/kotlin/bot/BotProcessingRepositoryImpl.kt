@@ -47,20 +47,32 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
         set(value) {
             botCore.botInstancesParameters[shop]?.notConfirmedOrders = value
         }
-
+    
     override suspend fun build(
-        shop: String,
+        shopNew: String,
         targetChatId: ChatIdentifier,
         shopOpenTime: Int,
         shopCloseTime: Int,
     ) {
-        if (botCore.botInstancesParameters[shop] == null) {
-            botCore.botInstancesParameters[shop] = BotInstanceParameters() //инициализируем параметры
+        println("build $shopNew $targetChatId $shopOpenTime $shopCloseTime")
+        if (botCore.botInstancesParameters[shopNew] == null) {
+            botCore.botInstancesParameters[shopNew] = BotInstanceParameters(
+                shopOpenTime = shopOpenTime,
+                shopCloseTime = shopCloseTime,
+                targetChatId = targetChatId,
+                msgNotification = botCore.msgConvert.shopInWork(shopOpenTime, shopCloseTime)
+            ) //инициализируем параметры
         }
-        this.shop = shop
-        this.targetChatId = targetChatId
-        this.shopOpenTime = shopOpenTime
-        this.shopCloseTime = shopCloseTime
+        println(botCore.botInstancesParameters)
+        this.shop = shopNew
+//        this.targetChatId = targetChatId
+//        this.shopOpenTime = shopOpenTime
+//        this.shopCloseTime = shopCloseTime
+
+        botCore.botInstancesParameters[shopNew]?.targetChatId = targetChatId
+        botCore.botInstancesParameters[shopNew]?.shopOpenTime = shopOpenTime
+        botCore.botInstancesParameters[shopNew]?.shopCloseTime = shopCloseTime
+
     }
 
     override suspend fun botSendInfoMessage() {

@@ -76,8 +76,7 @@ class ShopWorkersManager(
     private suspend fun createShopWorker(shopWorkersParam: ShopWorkersParam) {
         if ((!scopesList.containsKey(shopWorkersParam.workerId)) && (shopWorkersParam.isActive)) {
             Logging.i(tag, "New worker ${shopWorkersParam.workerId}, STARTING")
-            val scope =
-                CoroutineScope(Dispatchers.Default).launch(CoroutineName(shopWorkersParam.workerId.toString())) {
+
 
                     // создаем новый экземпляр serverTSRepositoryInstance
                     val serverTSRepositoryInstance = serverTSFactoryRepository.serverTSRepositoryInstance
@@ -97,6 +96,9 @@ class ShopWorkersManager(
                         shopOpenTime = shopWorkersParam.shopOpen,
                         shopCloseTime = shopWorkersParam.shopClose
                     )
+
+            val scope =
+                CoroutineScope(Dispatchers.Default).launch(CoroutineName(shopWorkersParam.workerId.toString())) {
                     orderDaemon.start(botProcessingRepositoryInstance, shopParametersDBRepository)
                 }
             scope.start()

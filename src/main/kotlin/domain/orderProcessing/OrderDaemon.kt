@@ -31,7 +31,7 @@ class OrderDaemon(
         shopParametersDBRepository: ShopParametersDBRepository,
     ) {
 
-        Logging.i(tag, "Запускаем...")
+        Logging.i(tag, "$werk Запускаем...")
 
         var serializedActiveOrders: String? = null
         var currentInfoMsgId: Long? = null
@@ -58,25 +58,25 @@ class OrderDaemon(
             val type = object : TypeToken<MutableMap<String?, WebOrder?>>() {}.type
             processing.activeOrders =
                 Gson().fromJson(serializedActiveOrders, type)
-            Logging.i(tag, "activeOrders READ: $serializedActiveOrders")
+            Logging.i(tag, "$werk activeOrders READ: $serializedActiveOrders")
         }
 
         if (currentInfoMsgId != null) {
             botProcessingRepository.currentInfoMsgId = currentInfoMsgId.toLong()
             botProcessingRepository.newInfoMsgId = botProcessingRepository.currentInfoMsgId
-            Logging.i(tag, "currentInfoMsgId READ: $currentInfoMsgId")
+            Logging.i(tag, "$werk currentInfoMsgId READ: $currentInfoMsgId")
         }
 
         if (dayConfirmedCount != null) {
             botProcessingRepository.dayConfirmedCount = dayConfirmedCount.toInt()
-            Logging.i(tag, "dayConfirmedCount READ: $dayConfirmedCount")
+            Logging.i(tag, "$werk dayConfirmedCount READ: $dayConfirmedCount")
         }
 
 
         serverTSRepository.login(login, password, werk)
 
         while (true) {  // основной цикл проверки
-            Logging.i(tag, "Обновляем данные...")
+            Logging.i(tag, "$werk Обновляем данные...")
 
             // проверяем открыт ли магазин, триггерим звук уведомлений
             if (botMessage.shopInWork(
@@ -102,7 +102,7 @@ class OrderDaemon(
                 }
             }
             Logging.d(
-                tag, "Shop open: ${
+                tag, "$werk Shop open: ${
                     botMessage.shopInWork(
                         shopOpenTime = botProcessingRepository.shopOpenTime,
                         shopCloseTime = botProcessingRepository.shopCloseTime
@@ -120,16 +120,16 @@ class OrderDaemon(
                 )
 
                 401 -> serverTSRepository.login(login, password, werk)
-                else -> Logging.e(tag, "ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}")
+                else -> Logging.e(tag, "$werk $werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}")
             }
 
 
-            Logging.i(tag, "Код ответа сервера: ${orderListSimple?.errorCode.toString()}")
-            Logging.i(tag, "Ждем следующего обновления...")
-//            Logging.i(tag, "Версия базы на сервере: ${netClient.remoteDbVersion}")
+            Logging.i(tag, "$werk Код ответа сервера: ${orderListSimple?.errorCode.toString()}")
+            Logging.i(tag, "$werk Ждем следующего обновления...")
+//            Logging.i(tag, "$werk $werk Версия базы на сервере: ${netClient.remoteDbVersion}")
 
 
-            Logging.i(tag, "Wait next iteration 30 second")
+            Logging.i(tag, "$werk Wait next iteration 30 second")
             delay(30000L)
         }
 

@@ -39,9 +39,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import domain.orderProcessing.BotMessage
-import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
 import data.restTS.models.WebOrder
 import dev.inmo.tgbotapi.types.ChatIdentifier
+import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
 import utils.Logging
 import java.util.*
 
@@ -73,8 +73,7 @@ data class BotInstanceParameters(
     var shopCloseTime: Int = 22,
     // из староого WOM Bot
     var targetChatId: ChatIdentifier = ChatId(0),
-    val msgConvert: BotMessage = BotMessage(),
-    var msgNotification: Boolean = msgConvert.shopInWork(shopOpenTime, shopCloseTime),
+    var msgNotification: Boolean = true,
     var dayConfirmedCount: Int = 0,  //подтверждено за день
 
     // из старого WOM TGInfoMessage
@@ -91,6 +90,9 @@ class BotCore(
 ) {
 
     private val tag = this::class.java.simpleName
+
+    val msgConvert: BotMessage = BotMessage()
+
 
     val botInstancesParameters: MutableMap<String, BotInstanceParameters> = mutableMapOf()
 
@@ -682,14 +684,15 @@ class BotCore(
             onDataCallbackQuery {
                 Logging.d(
                     tag,
-                    "Callback: ${it.data} from ${it.user.firstName} ${it.user.lastName} ${it.user.username?.usernameWithoutAt}"
+                    "Callback: ${it.data} from ${it.user.firstName} ${it.user.lastName} ${it.user.username?.usernameWithoutAt} " +
+                            "Chat: ${it.chatInstance}"
                 )
 //                val shop =  allBotUsers[it.chat.id.chatId].tsShop
                 val shop = allBotUsers[it.user.id.chatId]?.tsShop ?: ""
                 println(botInstancesParameters)
                 answer(
                     it,
-                    botInstancesParameters[shop]?.msgConvert?.popupMessage(
+                    msgConvert?.popupMessage(
                         botInstancesParameters[shop]?.dayConfirmedCount ?: 0
                     ),
                     showAlert = true
@@ -706,18 +709,19 @@ class BotCore(
     }
 
     suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {
+        println(botInstancesParameters)
         println(botInstancesParameters[shop])
         println(shop)
 
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                botInstancesParameters[shop]!!.msgConvert!!.inworkMessage(webOrder),
+                msgConvert!!.inworkMessage(webOrder),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "$shop $shop Exception: ${e.stackTraceToString()}}")
             return botInstancesParameters[shop]?.currentInfoMsgId ?: 0
         }
     }
@@ -727,27 +731,29 @@ class BotCore(
             bot.editMessageText(
                 botInstancesParameters[shop]!!.targetChatId,
                 webOrder?.messageId ?: 0,
-                botInstancesParameters[shop]!!.msgConvert.completeMessage(webOrder),
+                msgConvert.completeMessage(webOrder),
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "$shop $shop Exception: ${e.stackTraceToString()}}")
         }
     }
 
     suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
-            if (webOrder?.activeTime != botInstancesParameters[shop]!!.msgConvert.timeDiff(webOrder?.docDate)) {
+            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate)) {
+                println("Bug? ${botInstancesParameters}")
+                println(shop)
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
-                    botInstancesParameters[shop]!!.msgConvert.inworkMessage(webOrder),
+                    msgConvert.inworkMessage(webOrder),
                     disableWebPagePreview = true,
                     replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
                 )
             }
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "$shop $shop Exception: ${e.stackTraceToString()}")
         }
     }
 
@@ -755,7 +761,7 @@ class BotCore(
         try {
             bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                botInstancesParameters[shop]!!.msgConvert.notificationMessage(
+                msgConvert.notificationMessage(
                     botInstancesParameters[shop]!!.msgNotification,
                     botInstancesParameters[shop]!!.dayConfirmedCount
                 ),
@@ -763,7 +769,7 @@ class BotCore(
                 disableNotification = !(botInstancesParameters[shop]!!.msgNotification)
             ).messageId
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
         }
     }
 
@@ -778,7 +784,7 @@ class BotCore(
             }
 
             val updMsg =
-                botInstancesParameters[shop]!!.msgConvert.infoMessage(botInstancesParameters[shop]!!.notConfirmedOrders)
+                msgConvert.infoMessage(botInstancesParameters[shop]!!.notConfirmedOrders)
 
 
             val infoMsg = inlineKeyboard {
@@ -795,7 +801,7 @@ class BotCore(
                         replyMarkup = infoMsg
                     ).reply_markup
                 } catch (e: Exception) {
-                    Logging.e(tag, "Exception: ${e.message}")
+                    Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
                 }
             }
         }
@@ -809,7 +815,7 @@ class BotCore(
                 replyMarkup = null
             )
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
         }
     }
 

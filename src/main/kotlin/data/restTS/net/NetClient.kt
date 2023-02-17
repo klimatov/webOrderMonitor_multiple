@@ -21,7 +21,7 @@ class NetClient {
     lateinit var userInfo: UserInfo
     var error = ""
     var errorCode: Int? = null
-    private val dbVersion = "21"
+    private val dbVersion = "22"
     private val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault())
     val gmt = SimpleDateFormat("Z").format(calendar.time)
     var remoteDbVersion: Int? = null
