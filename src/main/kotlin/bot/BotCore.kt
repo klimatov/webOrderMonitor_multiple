@@ -769,7 +769,7 @@ class BotCore(
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
         } catch (e: Exception) {
-            Logging.e(tag, "$shop $shop Exception: ${e.stackTraceToString()}}")
+            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
             return botInstancesParameters[shop]?.currentInfoMsgId ?: 0
         }
     }
@@ -783,7 +783,7 @@ class BotCore(
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
-            Logging.e(tag, "$shop $shop Exception: ${e.stackTraceToString()}}")
+            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
         }
     }
 
@@ -799,7 +799,7 @@ class BotCore(
                 )
             }
         } catch (e: Exception) {
-            Logging.e(tag, "$shop $shop Exception: ${e.stackTraceToString()}")
+            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}")
         }
     }
 

@@ -97,18 +97,18 @@ class OrderDaemon(
 
                     Logging.i(
                         tag,
-                        "dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
+                        "$werk dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
                     )
                 }
             }
-            Logging.d(
-                tag, "$werk Shop open: ${
-                    botMessage.shopInWork(
-                        shopOpenTime = botProcessingRepository.shopOpenTime,
-                        shopCloseTime = botProcessingRepository.shopCloseTime
-                    )
-                }"
-            )
+//            Logging.d(
+//                tag, "$werk Shop open: ${
+//                    botMessage.shopInWork(
+//                        shopOpenTime = botProcessingRepository.shopOpenTime,
+//                        shopCloseTime = botProcessingRepository.shopCloseTime
+//                    )
+//                }"
+//            )
 
             val orderListSimple = serverTSRepository.getOrderListSimple()
 
@@ -120,16 +120,13 @@ class OrderDaemon(
                 )
 
                 401 -> serverTSRepository.login(login, password, werk)
-                else -> Logging.e(tag, "$werk $werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}")
+                else -> Logging.e(tag, "$werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}")
             }
 
 
-            Logging.i(tag, "$werk Код ответа сервера: ${orderListSimple?.errorCode.toString()}")
-            Logging.i(tag, "$werk Ждем следующего обновления...")
-//            Logging.i(tag, "$werk $werk Версия базы на сервере: ${netClient.remoteDbVersion}")
+            Logging.i(tag, "$werk Wait next iteration 30 second Код ответа сервера: ${orderListSimple?.errorCode.toString()}")
+//            Logging.i(tag, "$werk Версия базы на сервере: ${netClient.remoteDbVersion}")
 
-
-            Logging.i(tag, "$werk Wait next iteration 30 second")
             delay(30000L)
         }
 

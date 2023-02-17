@@ -17,7 +17,7 @@ class NetClient {
 
     //private var baseURL: String
     private var token = ""
-    private var shop = ""
+    var shop = ""
     lateinit var userInfo: UserInfo
     var error = ""
     var errorCode: Int? = null
@@ -51,7 +51,7 @@ class NetClient {
             val response =
                 RetrofitInstance.eldoApi.login(werk, dbVersion, dbVersion, values)?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             if (response?.isSuccessful!!) {
                 val responseJson = Gson().fromJson(response.body(), Auth::class.java)
@@ -69,7 +69,7 @@ class NetClient {
                 return false
             }
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return false
@@ -98,13 +98,13 @@ class NetClient {
                 hashMap
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
             if (this.errorCode == 200) {
                 val responseJson = Gson().fromJson(response?.body(), ListWebOrderSimply::class.java)
                 return responseJson.webOrderSimply
             } else return emptyList()
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return emptyList()
@@ -137,12 +137,12 @@ class NetClient {
                 hashMap
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), ListWebOrder::class.java)
             return responseJson
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return ListWebOrder()
@@ -161,12 +161,12 @@ class NetClient {
                 type // WRQST ?
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), WebOrderDetail::class.java)
             return responseJson
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return WebOrderDetail()
@@ -183,12 +183,12 @@ class NetClient {
                 id
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), Remains::class.java)
             return responseJson.remainsLocal
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return emptyList()
@@ -200,16 +200,17 @@ class NetClient {
         try {
             val response = RetrofitInstance.eldoApi.getDBVersion(shop)?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
             if (this.errorCode == 200) {
                 val responseJson = Gson().fromJson(response?.body(), DbVersion::class.java)
                 this.remoteDbVersion = responseJson.version
+                Logging.d(tag, "${this.shop} DB version: ${responseJson.version}")
                 return responseJson.version
             } else {
                 return 0
             }
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return 0
@@ -228,12 +229,12 @@ class NetClient {
                 str // INWORK ASSEMBLY ISSUED
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), OrderCount::class.java)
             return responseJson.quantity!!
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return 0
@@ -249,12 +250,12 @@ class NetClient {
                 token
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), Storage::class.java)
             return responseJson.localStorageDtos
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return emptyList()
@@ -272,12 +273,12 @@ class NetClient {
                 hashMap
             )?.execute()
             this.errorCode = response?.code()
-            Logging.d(tag, "Authentication result code: ${response?.code()}")
+            // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), mainRemains::class.java)
             return responseJson.remains
         } catch (e: Exception) {
-            Logging.e(tag, "Exception: ${e.message}")
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.error = e.message.toString()
             this.errorCode = null
             return emptyList()

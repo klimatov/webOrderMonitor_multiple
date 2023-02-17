@@ -15,7 +15,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         val ver = netClient.getDBVersion(werk) ?: 0
         if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
         if (netClient.login(login, password, werk)) {
-            Logging.i(tag, "Connected to base ${netClient.userInfo}")
+            Logging.i(tag, "${netClient.shop} Connected to base ${netClient.userInfo}")
             loginTime = LocalDateTime.now()
 //            netClient.getDBVersion()
             return LoginResult(
@@ -23,7 +23,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
                 userInfo = netClient.userInfo
             )
         } else {
-            Logging.e(tag, "Login failed with Error: ${netClient.error}")
+            Logging.e(tag, "${netClient.shop} Login failed with Error: ${netClient.error}")
             return LoginResult(
                 result = Result(success = false, errorMessage = netClient.error, errorCode = netClient.errorCode),
                 userInfo = null
