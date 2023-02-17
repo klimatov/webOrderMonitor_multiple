@@ -92,6 +92,19 @@ class BotMessage {
         }
     }
 
+    fun orderStarting(order: Int): String {
+        return order.let {
+            if (it % 100 in 11..14) {
+                "упало"
+            } else {
+                when ((it % 10)) {
+                    1 -> "упала"
+                    else -> "упало"
+                }
+            }
+        }
+    }
+
     fun infoMessage(notConfirmedOrders: Int): String {
         val resTxt: String
         if (notConfirmedOrders == 0) {
@@ -108,12 +121,12 @@ class BotMessage {
             return "\uD83D\uDD08 Магазин открыт, включаем уведомления!"
         } else {
             return "\uD83D\uDD07 Магазин закрыт, отключаем уведомления!\n" +
-                    "\uD83D\uDE2B Сегодня за день упало ${orderEnding(dayConfirmedCount)}"
+                    "\uD83D\uDE2B Сегодня за день ${orderStarting(dayConfirmedCount)} ${orderEnding(dayConfirmedCount)}"
         }
     }
 
     fun popupMessage(dayConfirmedCount: Int): String {
-        return "Сегодня упало ${orderEnding(dayConfirmedCount)}"
+        return "Сегодня ${orderStarting(dayConfirmedCount)} ${orderEnding(dayConfirmedCount)}"
     }
 
     fun statusCodeResolve(docStatus: String?): String {

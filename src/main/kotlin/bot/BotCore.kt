@@ -40,6 +40,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import domain.orderProcessing.BotMessage
 import data.restTS.models.WebOrder
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.message
+import dev.inmo.tgbotapi.extensions.utils.requireDataCallbackQuery
 import dev.inmo.tgbotapi.types.ChatIdentifier
 import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
 import utils.Logging
@@ -682,17 +684,21 @@ class BotCore(
             }
 
             onDataCallbackQuery {
+
+                val shop = botInstancesParameters.filter { current ->
+                    current.value.targetChatId == it.message?.chat?.id
+                }.keys.first()
+
                 Logging.d(
                     tag,
                     "Callback: ${it.data} from ${it.user.firstName} ${it.user.lastName} ${it.user.username?.usernameWithoutAt} " +
-                            "Chat: ${it.chatInstance}"
+                            "Chat: ${it.message?.chat?.id?.chatId} " +
+                            "Shop: $shop"
                 )
-//                val shop =  allBotUsers[it.chat.id.chatId].tsShop
-                val shop = allBotUsers[it.user.id.chatId]?.tsShop ?: ""
-                println(botInstancesParameters)
+
                 answer(
                     it,
-                    msgConvert?.popupMessage(
+                    msgConvert.popupMessage(
                         botInstancesParameters[shop]?.dayConfirmedCount ?: 0
                     ),
                     showAlert = true
