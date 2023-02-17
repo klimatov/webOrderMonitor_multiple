@@ -1,6 +1,7 @@
 package bot
 
 import cache.InMemoryCache
+import data.restTS.models.WebOrder
 import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
@@ -13,36 +14,30 @@ import dev.inmo.tgbotapi.extensions.api.send.sendTextMessage
 import dev.inmo.tgbotapi.extensions.api.telegramBot
 import dev.inmo.tgbotapi.extensions.behaviour_builder.buildBehaviourWithFSMAndStartLongPolling
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
-import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
-import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommandWithArgs
-import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onDataCallbackQuery
-import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onNewChatMembers
+import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.*
 import dev.inmo.tgbotapi.extensions.utils.asFromUser
 import dev.inmo.tgbotapi.extensions.utils.extensions.parseCommandsWithParams
-import dev.inmo.tgbotapi.extensions.utils.extensions.raw.reply_markup
-import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.*
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.row
 import dev.inmo.tgbotapi.types.ChatId
+import dev.inmo.tgbotapi.types.ChatIdentifier
 import dev.inmo.tgbotapi.types.Identifier
 import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.chat.*
+import dev.inmo.tgbotapi.types.message.ChatEvents.MigratedToSupergroup
 import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.utils.buildEntities
 import domain.models.WorkerState
+import domain.orderProcessing.BotMessage
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import domain.orderProcessing.BotMessage
-import data.restTS.models.WebOrder
-import dev.inmo.tgbotapi.extensions.utils.extensions.raw.message
-import dev.inmo.tgbotapi.extensions.utils.requireDataCallbackQuery
-import dev.inmo.tgbotapi.types.ChatIdentifier
 import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
 import utils.Logging
 import java.util.*
@@ -660,17 +655,71 @@ class BotCore(
             }
 
             onNewChatMembers { it ->
-                it.chatEvent.members.forEach { println(it.id.chatId) }
-                println(getMe().id.chatId.toString())
                 if (it.chatEvent.members.any { it.id == getMe().id }) {
                     Logging.d(tag, "Бота добавили в группу ${it.chat}")
+                    sendTextMessage(
+                        it.chat,
+                        "При создании чат-бота вашего магазина нужно указать ID чата, написав боту ${getMe().username.username}\nID данного чата:"
+                    )
+                    sendTextMessage(it.chat, it.chat.id.chatId.toString())
                 }
+            }
 
+            onGroupChatCreated {
+                Logging.d(tag, "Создана новая группа с ботом ${it.chat.id.chatId} ${it.new_chat_title.toString()}")
                 sendTextMessage(
                     it.chat,
-                    "ID чата нужно указать при создании чат-бота вашего магазина написав боту ${getMe().username.username}\nID данного чата:"
+                    "При создании чат-бота вашего магазина нужно указать ID чата, написав боту ${getMe().username.username}\nID данного чата:"
                 )
                 sendTextMessage(it.chat, it.chat.id.chatId.toString())
+            }
+
+            onGroupEvent {
+//                Logging.d(tag, "onGroupEvent: ${it}\n${it.chatEvent}\n")
+                if (it.chatEvent is MigratedToSupergroup) {
+                    Logging.d(
+                        tag,
+                        "Миграция из группы ${it.migrate_from_chat_id?.chatId} в супергруппу ${it.chat.id.chatId}"
+                    )
+
+                    val shop =
+                        try {
+                            botInstancesParameters.filter { current ->
+                                current.value.targetChatId == it.migrate_from_chat_id
+                            }.keys.first()
+                        } catch (e : Exception) {
+                            "ZZZZ"
+                        }
+
+                    if (botInstancesParameters.containsKey(shop)) {
+                        Logging.d(
+                            tag,
+                            "Меняем ID группы магазина $shop со старого ${it.migrate_from_chat_id?.chatId} на новый ${it.chat.id.chatId}"
+                        )
+                        botInstancesParameters[shop]?.targetChatId = it.chat.id
+
+                        val requiredShopWorker =
+                            botRepositoryDB.getWorkerByShop(shop)
+
+                        if (requiredShopWorker != null) {
+                            Logging.i(tag, "Update worker in DB $shop")
+                            requiredShopWorker.workerState = WorkerState.UPDATE // меняем стэйт на обновление
+                            requiredShopWorker.telegramChatId = it.chat.id.chatId
+                            botRepositoryDB.updateWorkerBy(requiredShopWorker) // обновляем воркер в БД
+                            BotWorkersRepositoryImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // обновляем запущенный воркер
+                            sendMessage(ChatId(requiredShopWorker.ownerTgId),
+                                "Изменился ID чата. Данные магазина $shop обновлены"
+                            )
+                        }
+
+                    } else {
+                        sendTextMessage(
+                            it.chat,
+                            "ID данной группы изменился. При создании чат-бота вашего магазина нужно указать ID чата, написав боту ${getMe().username.username}\nНовый ID данного чата:"
+                        )
+                        sendTextMessage(it.chat, it.chat.id.chatId.toString())
+                    }
+                }
             }
 
             onCommandWithArgs("test",
@@ -705,8 +754,6 @@ class BotCore(
             }
 
 
-
-
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
         }.start()
 
@@ -714,10 +761,6 @@ class BotCore(
     }
 
     suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {
-        println(botInstancesParameters)
-        println(botInstancesParameters[shop])
-        println(shop)
-
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
@@ -747,8 +790,6 @@ class BotCore(
     suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
             if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate)) {
-                println("Bug? ${botInstancesParameters}")
-                println(shop)
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
