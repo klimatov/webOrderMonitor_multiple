@@ -9,6 +9,7 @@ import orderProcessing.data.SecurityData.POSTGRES_PASSWORD
 import orderProcessing.data.SecurityData.POSTGRES_URL
 import orderProcessing.data.SecurityData.POSTGRES_USER
 import org.jetbrains.exposed.sql.Database
+import utils.Logging
 
 val job = SupervisorJob()
 val botCore by lazy {
@@ -40,9 +41,10 @@ suspend fun main() {
     CoroutineScope(Dispatchers.Default + job).launch {
         botCore.start()
         shopWorkersManager.start()
-    }.start()
+    }.join()
 
     while (true) {
+        Logging.d("main", "Tick in main scope!")
         delay(60000L)
     }
 }

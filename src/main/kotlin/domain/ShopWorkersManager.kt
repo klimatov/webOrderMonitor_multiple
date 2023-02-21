@@ -55,14 +55,14 @@ class ShopWorkersManager(
 
     private suspend fun updateShopWorker(shopWorkersParam: ShopWorkersParam) {
         if (scopesList.containsKey(shopWorkersParam.workerId)) {
-            Logging.i(tag, "Update worker ${shopWorkersParam.workerId}, UPDATING")
+            Logging.i(tag, "Update worker ${shopWorkersParam.shop} - ${shopWorkersParam.workerId}, UPDATING")
             cancelShopWorker(shopWorkersParam.workerId)
         }
         createShopWorker(shopWorkersParam)
     }
 
     private suspend fun deleteShopWorker(shopWorkersParam: ShopWorkersParam) {
-        Logging.i(tag, "Delete worker ${shopWorkersParam.workerId}, DELETING")
+        Logging.i(tag, "Delete worker ${shopWorkersParam.shop} - ${shopWorkersParam.workerId}, DELETING")
         cancelShopWorker(shopWorkersParam.workerId)
         shopWorkersList[shopWorkersParam.workerId]?.workerState = WorkerState.DELETED
     }
@@ -75,7 +75,7 @@ class ShopWorkersManager(
 
     private suspend fun createShopWorker(shopWorkersParam: ShopWorkersParam) {
         if ((!scopesList.containsKey(shopWorkersParam.workerId)) && (shopWorkersParam.isActive)) {
-            Logging.i(tag, "New worker ${shopWorkersParam.workerId}, STARTING")
+            Logging.i(tag, "New worker ${shopWorkersParam.shop} - ${shopWorkersParam.workerId}, STARTING")
 
 
                     // создаем новый экземпляр serverTSRepositoryInstance
@@ -108,7 +108,7 @@ class ShopWorkersManager(
             shopWorkersList[shopWorkersParam.workerId]?.workerState = WorkerState.WORK
         } else {
             Logging.e(
-                tag, "Worker ${shopWorkersParam.workerId} is already running or not active and NOT STARTED!"
+                tag, "Worker ${shopWorkersParam.shop} - ${shopWorkersParam.workerId} is already running or not active and NOT STARTED!"
             )
         }
     }

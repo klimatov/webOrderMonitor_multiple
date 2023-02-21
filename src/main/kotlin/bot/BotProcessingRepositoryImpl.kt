@@ -58,7 +58,6 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
         shopCloseTime: Int,
         gmt: String
     ) {
-        println("build $shopNew $targetChatId $shopOpenTime $shopCloseTime")
         if (botCore.botInstancesParameters[shopNew] == null) {
             botCore.botInstancesParameters[shopNew] = BotInstanceParameters(
                 shopOpenTime = shopOpenTime,
@@ -67,16 +66,17 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
                 msgNotification = botCore.msgConvert.shopInWork(shopOpenTime, shopCloseTime, gmt)
             ) //инициализируем параметры
         }
-        println(botCore.botInstancesParameters)
-        this.shop = shopNew
-//        this.targetChatId = targetChatId
-//        this.shopOpenTime = shopOpenTime
-//        this.shopCloseTime = shopCloseTime
 
-        botCore.botInstancesParameters[shopNew]?.targetChatId = targetChatId
-        botCore.botInstancesParameters[shopNew]?.shopOpenTime = shopOpenTime
-        botCore.botInstancesParameters[shopNew]?.shopCloseTime = shopCloseTime
-        botCore.botInstancesParameters[shopNew]?.gmt = gmt
+        this.shop = shopNew
+        this.targetChatId = targetChatId
+        this.shopOpenTime = shopOpenTime
+        this.shopCloseTime = shopCloseTime
+        this.gmt = gmt
+
+//        botCore.botInstancesParameters[shopNew]?.targetChatId = targetChatId
+//        botCore.botInstancesParameters[shopNew]?.shopOpenTime = shopOpenTime
+//        botCore.botInstancesParameters[shopNew]?.shopCloseTime = shopCloseTime
+//        botCore.botInstancesParameters[shopNew]?.gmt = gmt
 
     }
 

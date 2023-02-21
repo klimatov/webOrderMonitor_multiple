@@ -10,6 +10,7 @@ import domain.repository.ShopParametersDBRepository
 import kotlinx.coroutines.delay
 import utils.Logging
 import java.time.LocalDateTime
+import kotlin.reflect.full.*
 
 class OrderDaemon(
     private val login: String,
@@ -20,7 +21,7 @@ class OrderDaemon(
 ) {
     private val tag = this::class.java.simpleName
 
-    private val processing = Processing(serverTSRepository, gmt = gmt)
+    private val processing = Processing(serverTSRepository, gmt = gmt, shop = werk)
 
     private val botMessage = BotMessage()
 
@@ -31,8 +32,14 @@ class OrderDaemon(
         botProcessingRepository: BotProcessingRepository,
         shopParametersDBRepository: ShopParametersDBRepository,
     ) {
-
-        Logging.i(tag, "$werk Запускаем...")
+        // проходим по всем полям класса и выводим их со значениями в лог
+        Logging.i(
+            tag, "$werk Запускаем... ${
+                BotProcessingRepository::class.declaredMemberProperties.joinToString{
+                    "${it.name} = ${it.get(botProcessingRepository)}"
+                }
+            }"
+        )
 
         var serializedActiveOrders: String? = null
         var currentInfoMsgId: Long? = null

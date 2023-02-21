@@ -11,7 +11,7 @@ import domain.repository.ShopParametersDBRepository
 import utils.Logging
 
 
-class Processing(private val serverTSRepository: ServerTSRepository, val gmt: String) {
+class Processing(private val serverTSRepository: ServerTSRepository, val gmt: String, val shop: String) {
     private val tag = this::class.java.simpleName
     var activeOrders: MutableMap<String?, WebOrder?> = mutableMapOf() //иниц. список активных вебок
 
@@ -41,7 +41,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
         }
         var msg = ""
         activeOrders.forEach { msg += " ${it.key}, ${it.value?.docDate} |" }
-        Logging.i(tag, "Active orders: (${activeOrders.count()} pc.) $msg")
+        Logging.i(tag, "$shop Active orders: (${activeOrders.count()} pc.) $msg")
 
         // проверка, исчезли (подтверждены) ли ранее сохраненные вебки?
         // +обновляем таймера в сообщениях активных вебок
@@ -75,14 +75,14 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
                 dayConfirmedCount = botProcessingRepository.dayConfirmedCount
             ))
 
-            Logging.i(tag, "activeOrders SAVE: $serializedActiveOrders")
+            Logging.i(tag, "$shop activeOrders SAVE: $serializedActiveOrders")
             Logging.i(
                 tag,
-                "currentInfoMsgId SAVE: ${botProcessingRepository.currentInfoMsgId}"
+                "$shop currentInfoMsgId SAVE: ${botProcessingRepository.currentInfoMsgId}"
             )
             Logging.i(
                 tag,
-                "dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
+                "$shop dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
             )
         }
     }
@@ -108,7 +108,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
         }
         activeOrders[webNum]?.itemsUpdateStatus =
             result // обновляем items  и остатки по каждому, если все ок, то статус true
-        Logging.d(tag, "$webNum Items and remains update result: $result")
+        Logging.d(tag, "$shop $webNum Items and remains update result: $result")
     }
 
     suspend fun newOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
