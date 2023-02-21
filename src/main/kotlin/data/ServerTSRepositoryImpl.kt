@@ -12,14 +12,21 @@ class ServerTSRepositoryImpl : ServerTSRepository {
     private val tag = this::class.java.simpleName
     private var loginTime = LocalDateTime.now()
     val netClient = NetClient()
+    override val remoteDbVersion: Int
+        get() = netClient.remoteDbVersion ?: 0
+    override val lastErrorMessage: String
+        get() = netClient.error
+    override val lastErrorCode: Int?
+        get() = netClient.errorCode
+
     override suspend fun login(login: String, password: String, werk: String, gmt: String): LoginResult {
         val ver = netClient.getDBVersion(werk) ?: 0
         if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
         if (netClient.login(login, password, werk, gmt)) {
             Logging.i(tag, "${netClient.shop} Connected to base ${netClient.userInfo}")
-            loginTime = LocalDateTime.now(ZoneId.of(gmt))
+            loginTime = LocalDateTime.now()
 
-            Logging.d(tag, "$werk GMT: ${gmt} LocalTime: ${loginTime}")
+            Logging.d(tag, "$werk GMT: ${gmt} LocalTime: ${LocalDateTime.now(ZoneId.of(gmt))}")
 //            netClient.getDBVersion()
             return LoginResult(
                 result = Result(success = true, errorMessage = null, errorCode = netClient.errorCode),

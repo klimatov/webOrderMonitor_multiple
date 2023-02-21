@@ -10,6 +10,7 @@ import domain.repository.ShopParametersDBRepository
 import domain.repository.WorkersDBRepository
 import kotlinx.coroutines.*
 import utils.Logging
+import java.time.LocalDateTime
 import java.util.*
 
 class ShopWorkersManager(
@@ -22,7 +23,11 @@ class ShopWorkersManager(
     private val scopesList: MutableMap<UUID, Job> = mutableMapOf()
     private var shopWorkersList: MutableMap<UUID, ShopWorkersParam> = mutableMapOf()
 
+    val appStartTime: LocalDateTime = LocalDateTime.now()
+
     suspend fun start() {
+        botWorkersRepository.appStartTime = appStartTime
+
         shopWorkersList = workersDBRepository.getAll()
         shopWorkersList.forEach {
             if (it.value.isActive) it.value.workerState = WorkerState.CREATE
@@ -86,7 +91,8 @@ class ShopWorkersManager(
                         shopWorkersParam.password,
                         shopWorkersParam.shop,
                         shopWorkersParam.gmt,
-                        serverTSRepositoryInstance
+                        serverTSRepositoryInstance,
+                        botWorkersRepository
                     )
 
                     // создаем новый экземпляр botProcessingRepositoryInstance
@@ -106,6 +112,7 @@ class ShopWorkersManager(
             scope.start()
             scopesList[shopWorkersParam.workerId] = scope
             shopWorkersList[shopWorkersParam.workerId]?.workerState = WorkerState.WORK
+            botWorkersRepository.shopWorkersList = shopWorkersList.values.toMutableList()
         } else {
             Logging.e(
                 tag, "Worker ${shopWorkersParam.shop} - ${shopWorkersParam.workerId} is already running or not active and NOT STARTED!"

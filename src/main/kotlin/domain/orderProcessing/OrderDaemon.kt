@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import data.restTS.models.WebOrder
 import domain.models.ShopParameters
 import domain.repository.BotProcessingRepository
+import domain.repository.BotWorkersRepository
 import domain.repository.ServerTSRepository
 import domain.repository.ShopParametersDBRepository
 import kotlinx.coroutines.delay
@@ -18,6 +19,7 @@ class OrderDaemon(
     private val werk: String,
     private val gmt: String,
     private val serverTSRepository: ServerTSRepository,
+    private val botWorkersRepository: BotWorkersRepository,
 ) {
     private val tag = this::class.java.simpleName
 
@@ -25,7 +27,6 @@ class OrderDaemon(
 
     private val botMessage = BotMessage()
 
-    //    val appStartTime: LocalDateTime = LocalDateTime.now()
     //var loginTime: LocalDateTime = LocalDateTime.now()
 
     suspend fun start(
@@ -35,7 +36,7 @@ class OrderDaemon(
         // проходим по всем полям класса и выводим их со значениями в лог
         Logging.i(
             tag, "$werk Запускаем... ${
-                BotProcessingRepository::class.declaredMemberProperties.joinToString{
+                BotProcessingRepository::class.declaredMemberProperties.joinToString {
                     "${it.name} = ${it.get(botProcessingRepository)}"
                 }
             }"
@@ -110,14 +111,6 @@ class OrderDaemon(
                     )
                 }
             }
-//            Logging.d(
-//                tag, "$werk Shop open: ${
-//                    botMessage.shopInWork(
-//                        shopOpenTime = botProcessingRepository.shopOpenTime,
-//                        shopCloseTime = botProcessingRepository.shopCloseTime
-//                    )
-//                }"
-//            )
 
             val orderListSimple = serverTSRepository.getOrderListSimple()
 
@@ -128,13 +121,27 @@ class OrderDaemon(
                     shopParametersDBRepository
                 )
 
-                401 -> serverTSRepository.login(login, password, werk, gmt)
+                401 -> {
+                    serverTSRepository.login(login, password, werk, gmt)
+                    //сохраняем дату логина для BotCore
+                    botWorkersRepository.shopWorkersList.replaceAll {
+                        if (it.shop == werk) {
+                            it.loginTime = LocalDateTime.now()
+                            it
+                        } else it
+                    }
+                }
+
                 else -> Logging.e(
                     tag,
                     "$werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}"
                 )
             }
 
+            //сохраняем данные для BotCore
+            botWorkersRepository.remoteDbVersion = serverTSRepository.remoteDbVersion
+            botWorkersRepository.lastErrorCode = serverTSRepository.lastErrorCode
+            botWorkersRepository.lastErrorMessage = serverTSRepository.lastErrorMessage
 
             Logging.i(
                 tag,

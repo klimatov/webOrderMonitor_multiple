@@ -752,13 +752,33 @@ class BotCore(
                 }
             }
 
-            onCommandWithArgs("test",
+            onCommand(
+                "status",
                 initialFilter = {
                     (stateUser[it.chat.id.chatId] == null) &&
                             (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
                 }
-            ) { it, myContent ->
+            ) {
+                if (allBotUsers.containsKey(it.chat.id.chatId)) {
+                    val serverTimeOnline = msgConvert.DateDiff(BotWorkersRepositoryImpl.appStartTime)
 
+                    sendTextMessage(
+                        it.chat,
+                        "Remote DB version: ${BotWorkersRepositoryImpl.remoteDbVersion}\n" +
+                        "Server online: ${serverTimeOnline.days}d ${serverTimeOnline.hours}h ${serverTimeOnline.minutes}m\n" +
+                        "Last error code: ${BotWorkersRepositoryImpl.lastErrorCode}\n" +
+                        "Last error message: ${BotWorkersRepositoryImpl.lastErrorMessage}\n" +
+
+                            BotWorkersRepositoryImpl.shopWorkersList.joinToString(separator = "") { shopWorkersParam ->
+                                val loginT = msgConvert.DateDiff(shopWorkersParam.loginTime)
+                                "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
+                            }
+
+                    )
+
+                } else {
+                    sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
+                }
             }
 
             onDataCallbackQuery {
@@ -783,18 +803,17 @@ class BotCore(
                 )
             }
 
-
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
         }.start()
 
 
     }
 
-    suspend fun botSendMessage(webOrder: WebOrder?, shop: String, gmt: String): Long? {
+    suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                msgConvert!!.inworkMessage(webOrder, gmt = gmt),
+                msgConvert!!.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
@@ -804,12 +823,12 @@ class BotCore(
         }
     }
 
-    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String, gmt: String) {
+    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
         try {
             bot.editMessageText(
                 botInstancesParameters[shop]!!.targetChatId,
                 webOrder?.messageId ?: 0,
-                msgConvert.completeMessage(webOrder, gmt = gmt),
+                msgConvert.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
@@ -817,13 +836,13 @@ class BotCore(
         }
     }
 
-    suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String, gmt: String) {
+    suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
-            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate, gmt = gmt)) {
+            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate, gmt = botInstancesParameters[shop]!!.gmt)) {
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
-                    msgConvert.inworkMessage(webOrder, gmt = gmt),
+                    msgConvert.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                     disableWebPagePreview = true,
                     replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
                 )

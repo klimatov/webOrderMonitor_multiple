@@ -89,14 +89,14 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
     }
 
     override suspend fun botSendMessage(webOrder: WebOrder?): Long? {
-        return botCore.botSendMessage(webOrder, shop, gmt)
+        return botCore.botSendMessage(webOrder, shop)
     }
 
     override suspend fun botConfirmMessage(webOrder: WebOrder?) {
-        botCore.botConfirmMessage(webOrder, shop, gmt)
+        botCore.botConfirmMessage(webOrder, shop)
     }
 
     override suspend fun botTimerUpdate(webOrder: WebOrder?) {
-        botCore.botTimerUpdate(webOrder, shop, gmt)
+        botCore.botTimerUpdate(webOrder, shop)
     }
 }

@@ -11,14 +11,14 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-class BotMessage {
+class BotMessage: DateTimeProcess() {
 
     fun orderMessage(webOrder: WebOrder?): TextSourcesList {
         val resultMessage = buildEntities {
             regularln("#️⃣${webOrder?.webNum}/${webOrder?.orderId}")
             regular("${webOrder?.ordType} ")
             if (webOrder?.isLegalEntity == "Y") bold("СЧЁТ КОНТРАГЕНТА")
-            underlineln("\n\uD83D\uDCC6${DateTimeProcess().replaceDateTime(webOrder?.docDate ?: "")}")
+            underlineln("\n\uD83D\uDCC6${replaceDateTime(webOrder?.docDate ?: "")}")
             regularln("${if (webOrder?.paid == "Y") "\uD83D\uDCB0Онлайн оплата" else "\uD83E\uDDFEНе оплачен"} \uD83D\uDCB5${webOrder?.docSum} руб.")
             regular("\uD83D\uDC68${webOrder?.fioCustomer} ")
             phone("+${webOrder?.phone}")

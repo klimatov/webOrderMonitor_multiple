@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-class DateTimeProcess {
+open class DateTimeProcess {
 
     fun dateFormat(docDate: String): LocalDateTime {
         val docDateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
@@ -15,7 +15,7 @@ class DateTimeProcess {
         return dateFormat(docDate).format(DateTimeFormatter.ofPattern("HH:mm:ss dd.MM.yyyy"))
     }
 
-    class dateDiff(startDate: LocalDateTime, endDate: LocalDateTime = LocalDateTime.now()) {
+    inner class DateDiff(startDate: LocalDateTime, endDate: LocalDateTime = LocalDateTime.now()) {
         private val period = startDate.until(endDate, ChronoUnit.MINUTES)
         val days = period / 1440
         val hours = period % 1440 / 60

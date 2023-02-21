@@ -1,5 +1,6 @@
 package domain.models
 
+import java.time.LocalDateTime
 import java.util.*
 
 data class ShopWorkersParam(
@@ -13,7 +14,8 @@ data class ShopWorkersParam(
     val shopClose: Int,
     val telegramChatId: Long,
     var workerState: WorkerState,
-    val gmt: String
+    val gmt: String,
+    var loginTime: LocalDateTime = LocalDateTime.now()
 )
 
 enum class WorkerState{
