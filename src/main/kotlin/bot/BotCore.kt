@@ -79,6 +79,7 @@ data class BotInstanceParameters(
     var newInfoMsgId: Long? = null,
     var currentInfoMsg: InlineKeyboardMarkup? = null,
     var notConfirmedOrders: Int = 0,  //активных не подтвержденных
+    var gmt: String = "+0300"
 )
 
 class BotCore(
@@ -715,7 +716,7 @@ class BotCore(
                             botInstancesParameters.filter { current ->
                                 current.value.targetChatId == it.migrate_from_chat_id
                             }.keys.first()
-                        } catch (e : Exception) {
+                        } catch (e: Exception) {
                             "ZZZZ"
                         }
 
@@ -735,7 +736,8 @@ class BotCore(
                             requiredShopWorker.telegramChatId = it.chat.id.chatId
                             botRepositoryDB.updateWorkerBy(requiredShopWorker) // обновляем воркер в БД
                             BotWorkersRepositoryImpl.changedWorkers.add(requiredShopWorker.mapToShopWorkersParam()) // обновляем запущенный воркер
-                            sendMessage(ChatId(requiredShopWorker.ownerTgId),
+                            sendMessage(
+                                ChatId(requiredShopWorker.ownerTgId),
                                 "Изменился ID чата. Данные магазина $shop обновлены"
                             )
                         }
@@ -788,11 +790,11 @@ class BotCore(
 
     }
 
-    suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {
+    suspend fun botSendMessage(webOrder: WebOrder?, shop: String, gmt: String): Long? {
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                msgConvert!!.inworkMessage(webOrder),
+                msgConvert!!.inworkMessage(webOrder, gmt = gmt),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
@@ -802,12 +804,12 @@ class BotCore(
         }
     }
 
-    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
+    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String, gmt: String) {
         try {
             bot.editMessageText(
                 botInstancesParameters[shop]!!.targetChatId,
                 webOrder?.messageId ?: 0,
-                msgConvert.completeMessage(webOrder),
+                msgConvert.completeMessage(webOrder, gmt = gmt),
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
@@ -815,13 +817,13 @@ class BotCore(
         }
     }
 
-    suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
+    suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String, gmt: String) {
         try {
-            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate)) {
+            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate, gmt = gmt)) {
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
-                    msgConvert.inworkMessage(webOrder),
+                    msgConvert.inworkMessage(webOrder, gmt = gmt),
                     disableWebPagePreview = true,
                     replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
                 )
@@ -858,7 +860,7 @@ class BotCore(
             }
 
             val updMsg =
-                msgConvert.infoMessage(botInstancesParameters[shop]!!.notConfirmedOrders)
+                msgConvert.infoMessage(botInstancesParameters[shop]!!.notConfirmedOrders, botInstancesParameters[shop]!!.gmt)
 
 
             val infoMsg = inlineKeyboard {

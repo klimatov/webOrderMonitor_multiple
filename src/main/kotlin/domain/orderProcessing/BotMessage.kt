@@ -6,6 +6,7 @@ import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -34,33 +35,36 @@ class BotMessage {
         return resultMessage
     }
 
-    fun inworkMessage(webOrder: WebOrder?): TextSourcesList {
+    fun inworkMessage(webOrder: WebOrder?, gmt: String): TextSourcesList {
         val resultMessage = buildEntities {
-            codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate))}!")
+            codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }.plus(orderMessage(webOrder))
         return resultMessage
     }
 
-    fun completeMessage(webOrder: WebOrder?): TextSourcesList {
+    fun completeMessage(webOrder: WebOrder?, gmt: String): TextSourcesList {
         val resultMessage = buildEntities {
-            boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate))}!")
+            boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }.plus(italic(orderMessage(webOrder)))
         return resultMessage
     }
 
-    fun timeDiff(docDate: String?, lateDate: LocalDateTime = LocalDateTime.now()): Long {
+    fun timeDiff(docDate: String?, gmt: String): Long {
+        val lateDate: LocalDateTime = LocalDateTime.now(ZoneId.of(gmt))
         if (docDate == null) return 0
         val docDateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
         val docDateFormatting = LocalDateTime.parse(docDate, docDateFormat)
         return docDateFormatting.until(lateDate, ChronoUnit.MINUTES)
     }
 
-    fun timeNow(time: LocalTime = LocalTime.now()): String {
+    fun timeNow(gmt: String): String {
+        val time: LocalTime = LocalTime.now(ZoneId.of(gmt))
         val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
         return formatter.format(time)
     }
 
-    fun shopInWork(shopOpenTime: Int, shopCloseTime: Int, time: LocalTime = LocalTime.now()): Boolean {
+    fun shopInWork(shopOpenTime: Int, shopCloseTime: Int, gmt: String): Boolean {
+        val time: LocalTime = LocalTime.now(ZoneId.of(gmt))
         return time.hour in shopOpenTime until shopCloseTime
     }
 
@@ -105,13 +109,13 @@ class BotMessage {
         }
     }
 
-    fun infoMessage(notConfirmedOrders: Int): String {
+    fun infoMessage(notConfirmedOrders: Int, gmt: String): String {
         val resTxt: String
         if (notConfirmedOrders == 0) {
-            resTxt = "✅ Все заявки подтверждены ${timeNow()}"
+            resTxt = "✅ Все заявки подтверждены ${timeNow(gmt = gmt)}"
         } else {
             resTxt =
-                "⭕\uD83D\uDEE0 В подборе ${orderEnding(notConfirmedOrders)} ${timeNow()}"
+                "⭕\uD83D\uDEE0 В подборе ${orderEnding(notConfirmedOrders)} ${timeNow(gmt = gmt)}"
         }
         return resTxt
     }

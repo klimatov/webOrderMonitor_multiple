@@ -4,10 +4,7 @@ import data.BotTSRepositoryImpl
 import data.DataToBotRepositoryImpl
 import data.DataToDomainRepositoryImpl
 import domain.ShopWorkersManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import orderProcessing.data.SecurityData.POSTGRES_PASSWORD
 import orderProcessing.data.SecurityData.POSTGRES_URL
 import orderProcessing.data.SecurityData.POSTGRES_USER
@@ -32,7 +29,7 @@ private val shopWorkersManager by lazy(LazyThreadSafetyMode.NONE) {
     )
 }
 
-fun main() {
+suspend fun main() {
     Database.connect(
         url = POSTGRES_URL,
         driver = "org.postgresql.Driver",
@@ -46,5 +43,6 @@ fun main() {
     }.start()
 
     while (true) {
+        delay(60000L)
     }
 }

@@ -6,17 +6,20 @@ import domain.models.OrderListSimple
 import domain.repository.ServerTSRepository
 import utils.Logging
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 class ServerTSRepositoryImpl : ServerTSRepository {
     private val tag = this::class.java.simpleName
     private var loginTime = LocalDateTime.now()
     val netClient = NetClient()
-    override suspend fun login(login: String, password: String, werk: String): LoginResult {
+    override suspend fun login(login: String, password: String, werk: String, gmt: String): LoginResult {
         val ver = netClient.getDBVersion(werk) ?: 0
         if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
-        if (netClient.login(login, password, werk)) {
+        if (netClient.login(login, password, werk, gmt)) {
             Logging.i(tag, "${netClient.shop} Connected to base ${netClient.userInfo}")
-            loginTime = LocalDateTime.now()
+            loginTime = LocalDateTime.now(ZoneId.of(gmt))
+
+            Logging.d(tag, "$werk GMT: ${gmt} LocalTime: ${loginTime}")
 //            netClient.getDBVersion()
             return LoginResult(
                 result = Result(success = true, errorMessage = null, errorCode = netClient.errorCode),

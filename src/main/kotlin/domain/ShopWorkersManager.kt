@@ -85,6 +85,7 @@ class ShopWorkersManager(
                         shopWorkersParam.login,
                         shopWorkersParam.password,
                         shopWorkersParam.shop,
+                        shopWorkersParam.gmt,
                         serverTSRepositoryInstance
                     )
 
@@ -94,7 +95,8 @@ class ShopWorkersManager(
                         shop = shopWorkersParam.shop,
                         targetChatId = ChatId(shopWorkersParam.telegramChatId),
                         shopOpenTime = shopWorkersParam.shopOpen,
-                        shopCloseTime = shopWorkersParam.shopClose
+                        shopCloseTime = shopWorkersParam.shopClose,
+                        gmt = shopWorkersParam.gmt
                     )
 
             val scope =

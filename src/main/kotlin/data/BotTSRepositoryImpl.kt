@@ -13,7 +13,8 @@ class BotTSRepositoryImpl : BotTSRepository {
         return serverTSRepository.login(
             login = login,
             password = password,
-            werk = werk
+            werk = werk,
+            gmt = "+0300"
         )
     }
 

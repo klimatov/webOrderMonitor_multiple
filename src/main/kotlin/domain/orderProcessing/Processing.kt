@@ -11,7 +11,7 @@ import domain.repository.ShopParametersDBRepository
 import utils.Logging
 
 
-class Processing(private val serverTSRepository: ServerTSRepository) {
+class Processing(private val serverTSRepository: ServerTSRepository, val gmt: String) {
     private val tag = this::class.java.simpleName
     var activeOrders: MutableMap<String?, WebOrder?> = mutableMapOf() //иниц. список активных вебок
 
@@ -33,7 +33,7 @@ class Processing(private val serverTSRepository: ServerTSRepository) {
                     itemsUpdate(webOrder.webNum) // обновляем items  и остатки по каждому, если все ок, то статус true
 
                     activeOrders[webOrder.webNum]?.activeTime =
-                        BotMessage().timeDiff(webOrder.docDate) // время активности
+                        BotMessage().timeDiff(webOrder.docDate, gmt = gmt) // время активности
                     newOrder(webOrder.webNum, botProcessingRepository)
                     newFlag = true
                 }
@@ -125,7 +125,7 @@ class Processing(private val serverTSRepository: ServerTSRepository) {
     suspend fun updateOrderTimer(webNum: String?, botProcessingRepository: BotProcessingRepository) {
         botProcessingRepository.botTimerUpdate(activeOrders[webNum])
         activeOrders[webNum]?.activeTime =
-            BotMessage().timeDiff(activeOrders[webNum]?.docDate) // время активности
+            BotMessage().timeDiff(activeOrders[webNum]?.docDate, gmt = gmt) // время активности
     }
 
 

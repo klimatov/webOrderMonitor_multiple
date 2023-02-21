@@ -13,12 +13,15 @@ interface BotProcessingRepository {
     var notConfirmedOrders: Int
     var shopOpenTime: Int
     var shopCloseTime: Int
+    var gmt: String
 
     suspend fun build(
         shop: String,
         targetChatId: ChatIdentifier,
         shopOpenTime: Int,
-        shopCloseTime: Int
+        shopCloseTime: Int,
+        gmt: String
+
     )
     suspend fun botSendInfoMessage()
     suspend fun updateInfoMsg()

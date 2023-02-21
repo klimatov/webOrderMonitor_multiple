@@ -15,6 +15,9 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
     override var shopCloseTime: Int
         get() = botCore.botInstancesParameters[shop]?.shopCloseTime ?:0
         set(value) {botCore.botInstancesParameters[shop]?.shopCloseTime = value}
+    override var gmt: String
+        get() = botCore.botInstancesParameters[shop]?.gmt ?:"+0300"
+        set(value) {botCore.botInstancesParameters[shop]?.gmt = value}
     override var targetChatId: ChatIdentifier
         get() = botCore.botInstancesParameters[shop]?.targetChatId ?: ChatId(0)
         set(value) {
@@ -53,6 +56,7 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
         targetChatId: ChatIdentifier,
         shopOpenTime: Int,
         shopCloseTime: Int,
+        gmt: String
     ) {
         println("build $shopNew $targetChatId $shopOpenTime $shopCloseTime")
         if (botCore.botInstancesParameters[shopNew] == null) {
@@ -60,7 +64,7 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
                 shopOpenTime = shopOpenTime,
                 shopCloseTime = shopCloseTime,
                 targetChatId = targetChatId,
-                msgNotification = botCore.msgConvert.shopInWork(shopOpenTime, shopCloseTime)
+                msgNotification = botCore.msgConvert.shopInWork(shopOpenTime, shopCloseTime, gmt)
             ) //инициализируем параметры
         }
         println(botCore.botInstancesParameters)
@@ -72,6 +76,7 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
         botCore.botInstancesParameters[shopNew]?.targetChatId = targetChatId
         botCore.botInstancesParameters[shopNew]?.shopOpenTime = shopOpenTime
         botCore.botInstancesParameters[shopNew]?.shopCloseTime = shopCloseTime
+        botCore.botInstancesParameters[shopNew]?.gmt = gmt
 
     }
 
@@ -84,14 +89,14 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
     }
 
     override suspend fun botSendMessage(webOrder: WebOrder?): Long? {
-        return botCore.botSendMessage(webOrder, shop)
+        return botCore.botSendMessage(webOrder, shop, gmt)
     }
 
     override suspend fun botConfirmMessage(webOrder: WebOrder?) {
-        botCore.botConfirmMessage(webOrder, shop)
+        botCore.botConfirmMessage(webOrder, shop, gmt)
     }
 
     override suspend fun botTimerUpdate(webOrder: WebOrder?) {
-        botCore.botTimerUpdate(webOrder, shop)
+        botCore.botTimerUpdate(webOrder, shop, gmt)
     }
 }

@@ -15,16 +15,17 @@ class OrderDaemon(
     private val login: String,
     private val password: String,
     private val werk: String,
+    private val gmt: String,
     private val serverTSRepository: ServerTSRepository,
 ) {
     private val tag = this::class.java.simpleName
 
-    private val processing = Processing(serverTSRepository)
+    private val processing = Processing(serverTSRepository, gmt = gmt)
 
     private val botMessage = BotMessage()
 
     //    val appStartTime: LocalDateTime = LocalDateTime.now()
-    var loginTime: LocalDateTime = LocalDateTime.now()
+    //var loginTime: LocalDateTime = LocalDateTime.now()
 
     suspend fun start(
         botProcessingRepository: BotProcessingRepository,
@@ -73,7 +74,7 @@ class OrderDaemon(
         }
 
 
-        serverTSRepository.login(login, password, werk)
+        serverTSRepository.login(login, password, werk, gmt)
 
         while (true) {  // основной цикл проверки
             Logging.i(tag, "$werk Обновляем данные...")
@@ -81,7 +82,8 @@ class OrderDaemon(
             // проверяем открыт ли магазин, триггерим звук уведомлений
             if (botMessage.shopInWork(
                     shopOpenTime = botProcessingRepository.shopOpenTime,
-                    shopCloseTime = botProcessingRepository.shopCloseTime
+                    shopCloseTime = botProcessingRepository.shopCloseTime,
+                    gmt = gmt
                 ) != botProcessingRepository.msgNotification
             ) {
                 botProcessingRepository.msgNotification = !botProcessingRepository.msgNotification
@@ -119,12 +121,18 @@ class OrderDaemon(
                     shopParametersDBRepository
                 )
 
-                401 -> serverTSRepository.login(login, password, werk)
-                else -> Logging.e(tag, "$werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}")
+                401 -> serverTSRepository.login(login, password, werk, gmt)
+                else -> Logging.e(
+                    tag,
+                    "$werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}"
+                )
             }
 
 
-            Logging.i(tag, "$werk Wait next iteration 30 second Код ответа сервера: ${orderListSimple?.errorCode.toString()}")
+            Logging.i(
+                tag,
+                "$werk Wait next iteration 30 second Код ответа сервера: ${orderListSimple?.errorCode.toString()}"
+            )
 //            Logging.i(tag, "$werk Версия базы на сервере: ${netClient.remoteDbVersion}")
 
             delay(30000L)

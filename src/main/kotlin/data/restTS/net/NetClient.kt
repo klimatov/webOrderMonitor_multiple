@@ -23,7 +23,7 @@ class NetClient {
     var errorCode: Int? = null
     var dbVersion = "0"
     private val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault())
-    val gmt = SimpleDateFormat("Z").format(calendar.time)
+    var gmt = SimpleDateFormat("Z").format(calendar.time) // +0700
     var remoteDbVersion: Int? = null
 //    var timeZone = TimeZone.getTimeZone("GMT+07:00")
 //    val gmt = timeZone.rawOffset.toString()
@@ -37,8 +37,31 @@ class NetClient {
         return format
     }
 
-    fun login(login: String, password: String, werk: String): Boolean {
+    fun getDBVersion(werk: String = this.shop): Int? {
         this.shop = werk
+        try {
+            val response = RetrofitInstance.eldoApi.getDBVersion(shop)?.execute()
+            this.errorCode = response?.code()
+            //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
+            if (this.errorCode == 200) {
+                val responseJson = Gson().fromJson(response?.body(), DbVersion::class.java)
+                this.remoteDbVersion = responseJson.version
+                Logging.d(tag, "${this.shop} DB version: ${responseJson.version}")
+                return responseJson.version
+            } else {
+                return 0
+            }
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+            this.error = e.message.toString()
+            this.errorCode = null
+            return 0
+        }
+    }
+
+    fun login(login: String, password: String, werk: String, gmt: String): Boolean {
+        this.shop = werk
+        this.gmt = gmt
 
         val values =
             hashMapOf(
@@ -192,28 +215,6 @@ class NetClient {
             this.error = e.message.toString()
             this.errorCode = null
             return emptyList()
-        }
-    }
-
-    fun getDBVersion(werk: String = this.shop): Int? {
-        this.shop = werk
-        try {
-            val response = RetrofitInstance.eldoApi.getDBVersion(shop)?.execute()
-            this.errorCode = response?.code()
-            //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
-            if (this.errorCode == 200) {
-                val responseJson = Gson().fromJson(response?.body(), DbVersion::class.java)
-                this.remoteDbVersion = responseJson.version
-                Logging.d(tag, "${this.shop} DB version: ${responseJson.version}")
-                return responseJson.version
-            } else {
-                return 0
-            }
-        } catch (e: Exception) {
-            Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
-            this.errorCode = null
-            return 0
         }
     }
 
