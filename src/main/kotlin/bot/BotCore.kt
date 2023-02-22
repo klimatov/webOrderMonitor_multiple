@@ -79,7 +79,7 @@ data class BotInstanceParameters(
     var newInfoMsgId: Long? = null,
     var currentInfoMsg: InlineKeyboardMarkup? = null,
     var notConfirmedOrders: Int = 0,  //активных не подтвержденных
-    var gmt: String = "+0300"
+    var gmt: String = "+0300",
 )
 
 class BotCore(
@@ -113,7 +113,16 @@ class BotCore(
         bot.buildBehaviourWithFSMAndStartLongPolling<BotState>(scope) {
 
             strictlyOn<UserExpectLogin> {
-                newBotUsers[it.context.chatId] = BotUser("", "", "", it.context.chatId, UserRole.USER.toString())
+                newBotUsers[it.context.chatId] = BotUser(
+                    tsLogin = "",
+                    tsPassword = "",
+                    tsShop = "",
+                    tgUserId = it.context.chatId,
+                    userRole = UserRole.USER.toString(),
+                    sapFio = null,
+                    sapPosition = null,
+                    sapId = null
+                )
 
                 stateUser[it.context.chatId] = it
                 send(it.context) { +"Введите ваш логин в TS (буквами)" }
@@ -166,8 +175,13 @@ class BotCore(
 
                 if (it.sourceMessage.content.parseCommandsWithParams().keys.contains("start")) {
                     //внесение в бд, если все ок или запрос по новой если не ок
-                    if (resultCheckTs) {
+                    if (resultCheckTs.result.success) {
                         Logging.i(tag, "Create new user ${newBotUsers[it.context.chatId]!!.tsLogin}")
+                        // сохраняем информацию полученную с сервера
+                        newBotUsers[it.context.chatId]?.sapFio = resultCheckTs.userInfo?.fio
+                        newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
+                        newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
+
                         botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
                         allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 
@@ -177,9 +191,15 @@ class BotCore(
 
                     } else UserExpectLogin(it.context, it.sourceMessage)
                 } else {        // /update
-                    if (resultCheckTs) {
+                    if (resultCheckTs.result.success) {
                         val oldShop = allBotUsers[it.context.chatId]!!.tsShop
                         Logging.i(tag, "Update user data ${newBotUsers[it.context.chatId]!!.tsLogin}")
+
+                        // сохраняем информацию полученную с сервера
+                        newBotUsers[it.context.chatId]?.sapFio = resultCheckTs.userInfo?.fio
+                        newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
+                        newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
+
                         botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
                         allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 
@@ -459,9 +479,15 @@ class BotCore(
                 val resultCheckTs = botTSOperations.checkUserDataInTS(newBotUsers[it.context.chatId], it.context.chatId)
 
                 //внесение в бд, если все ок
-                if (resultCheckTs) {
+                if (resultCheckTs.result.success) {
                     sendMessage(it.context, "Пароль пользователя TS изменен!")
                     Logging.i(tag, "Update password user ${newBotUsers[it.context.chatId]!!.tsLogin}")
+
+                    // сохраняем информацию полученную с сервера
+                    newBotUsers[it.context.chatId]?.sapFio = resultCheckTs.userInfo?.fio
+                    newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
+                    newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
+
                     botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
                     allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 
@@ -765,14 +791,14 @@ class BotCore(
                     sendTextMessage(
                         it.chat,
                         "Remote DB version: ${BotWorkersRepositoryImpl.remoteDbVersion}\n" +
-                        "Server online: ${serverTimeOnline.days}d ${serverTimeOnline.hours}h ${serverTimeOnline.minutes}m\n" +
-                        "Last error code: ${BotWorkersRepositoryImpl.lastErrorCode}\n" +
-                        "Last error message: ${BotWorkersRepositoryImpl.lastErrorMessage}\n" +
+                                "Server online: ${serverTimeOnline.days}d ${serverTimeOnline.hours}h ${serverTimeOnline.minutes}m\n" +
+                                "Last error code: ${BotWorkersRepositoryImpl.lastErrorCode}\n" +
+                                "Last error message: ${BotWorkersRepositoryImpl.lastErrorMessage}\n" +
 
-                            BotWorkersRepositoryImpl.shopWorkersList.joinToString(separator = "") { shopWorkersParam ->
-                                val loginT = msgConvert.DateDiff(shopWorkersParam.loginTime)
-                                "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
-                            }
+                                BotWorkersRepositoryImpl.shopWorkersList.joinToString(separator = "") { shopWorkersParam ->
+                                    val loginT = msgConvert.DateDiff(shopWorkersParam.loginTime)
+                                    "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
+                                }
 
                     )
 
@@ -838,7 +864,11 @@ class BotCore(
 
     suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
-            if (webOrder?.activeTime != msgConvert.timeDiff(webOrder?.docDate, gmt = botInstancesParameters[shop]!!.gmt)) {
+            if (webOrder?.activeTime != msgConvert.timeDiff(
+                    webOrder?.docDate,
+                    gmt = botInstancesParameters[shop]!!.gmt
+                )
+            ) {
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
@@ -879,7 +909,10 @@ class BotCore(
             }
 
             val updMsg =
-                msgConvert.infoMessage(botInstancesParameters[shop]!!.notConfirmedOrders, botInstancesParameters[shop]!!.gmt)
+                msgConvert.infoMessage(
+                    botInstancesParameters[shop]!!.notConfirmedOrders,
+                    botInstancesParameters[shop]!!.gmt
+                )
 
 
             val infoMsg = inlineKeyboard {

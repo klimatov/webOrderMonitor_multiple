@@ -12,6 +12,9 @@ object BotUsersDB : Table("bot_users") {
     private val shop = BotUsersDB.varchar("ts_shop", 4)
     private val telegramUserId = BotUsersDB.varchar("tg_user_id", 20)
     private val userRole = BotUsersDB.varchar("user_role", 20)
+    private val sapFio = BotUsersDB.varchar("sap_fio", 100)
+    private val sapPosition = BotUsersDB.varchar("sap_position", 40)
+    private val sapId = BotUsersDB.varchar("sap_id", 20)
 
     fun insert(botUsersDTO: BotUsersDTO) {
 
@@ -24,6 +27,9 @@ object BotUsersDB : Table("bot_users") {
                     it[shop] = botUsersDTO.shop
                     it[telegramUserId] = botUsersDTO.telegramUserId.toString()
                     it[userRole] = botUsersDTO.userRole
+                    it[sapFio] = botUsersDTO.sapFio ?: ""
+                    it[sapPosition] = botUsersDTO.sapPosition ?: ""
+                    it[sapId] = botUsersDTO.sapId ?: ""
                 }
             }
 
@@ -32,12 +38,15 @@ object BotUsersDB : Table("bot_users") {
             if (e.sqlState == "23505") {
                 transaction {
                     addLogger(StdOutSqlLogger)
-                    BotUsersDB.update ({BotUsersDB.telegramUserId eq botUsersDTO.telegramUserId.toString()}){
+                    BotUsersDB.update({ BotUsersDB.telegramUserId eq botUsersDTO.telegramUserId.toString() }) {
                         it[login] = botUsersDTO.login
                         it[password] = botUsersDTO.password
                         it[shop] = botUsersDTO.shop
 //                        it[telegramUserId] = botUsersDTO.telegramUserId.toString()
                         it[userRole] = botUsersDTO.userRole
+                        it[sapFio] = botUsersDTO.sapFio ?: ""
+                        it[sapPosition] = botUsersDTO.sapPosition ?: ""
+                        it[sapId] = botUsersDTO.sapId ?: ""
                     }
                 }
             } else Logging.e(tag, e.message.toString())
@@ -54,7 +63,10 @@ object BotUsersDB : Table("bot_users") {
                         password = it[password],
                         shop = it[shop],
                         telegramUserId = it[telegramUserId].toLong(),
-                        userRole = it[userRole]
+                        userRole = it[userRole],
+                        sapFio = it[sapFio],
+                        sapPosition = it[sapPosition],
+                        sapId = it[sapId]
                     )
                 }
             }

@@ -10,7 +10,10 @@ data class BotUsersDTO(
     val password: String,
     val shop: String,
     val telegramUserId: Identifier,
-    val userRole: String
+    val userRole: String,
+    val sapFio: String?,
+    val sapPosition: String?,
+    val sapId: String?,
 )
 
 fun BotUser.mapToBotUsersDTO(): BotUsersDTO =
@@ -19,7 +22,10 @@ fun BotUser.mapToBotUsersDTO(): BotUsersDTO =
         password = tsPassword,
         shop = tsShop,
         telegramUserId = tgUserId,
-        userRole = userRole
+        userRole = userRole,
+        sapFio = sapFio,
+        sapPosition = sapPosition,
+        sapId = sapId
     )
 
 fun BotUsersDTO.mapToBotUsers(): BotUser =
@@ -28,5 +34,8 @@ fun BotUsersDTO.mapToBotUsers(): BotUser =
         tsPassword = password,
         tsShop = shop,
         tgUserId = telegramUserId,
-        userRole = userRole
-        )
+        userRole = userRole,
+        sapFio = sapFio,
+        sapPosition = sapPosition,
+        sapId = sapId
+    )

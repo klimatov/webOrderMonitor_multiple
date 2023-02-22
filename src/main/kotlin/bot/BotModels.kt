@@ -17,7 +17,7 @@ data class NewWorker(
     var shopClose: Int,
     var telegramChatId: Long,
     var workerState: WorkerState,
-    var gmt: String
+    var gmt: String,
 )
 
 
@@ -26,7 +26,10 @@ data class BotUser(
     var tsPassword: String,
     var tsShop: String,
     var tgUserId: Identifier,
-    var userRole: String
+    var userRole: String,
+    var sapFio: String?,
+    var sapPosition: String?,
+    var sapId: String?,
 )
 
 enum class UserRole {

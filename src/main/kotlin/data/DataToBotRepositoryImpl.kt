@@ -28,7 +28,10 @@ class DataToBotRepositoryImpl: BotRepositoryDB {
             tsPassword = resultWorker.password,
             tsShop = resultWorker.shop,
             tgUserId = resultWorker.ownerTgId,
-            userRole = UserRole.USER.toString()
+            userRole = UserRole.USER.toString(),
+            sapFio = null,
+            sapPosition = null,
+            sapId = null
             )
     }
 
