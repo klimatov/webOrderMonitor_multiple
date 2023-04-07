@@ -5,9 +5,9 @@ import data.DataToBotRepositoryImpl
 import data.DataToDomainRepositoryImpl
 import domain.ShopWorkersManager
 import kotlinx.coroutines.*
-import orderProcessing.data.SecurityData.POSTGRES_PASSWORD
-import orderProcessing.data.SecurityData.POSTGRES_URL
-import orderProcessing.data.SecurityData.POSTGRES_USER
+import SecurityData.POSTGRES_PASSWORD
+import SecurityData.POSTGRES_URL
+import SecurityData.POSTGRES_USER
 import org.jetbrains.exposed.sql.Database
 import utils.Logging
 

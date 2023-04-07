@@ -84,6 +84,7 @@ class OrderDaemon(
 
         serverTSRepository.login(login, password, werk, gmt)
 
+        mainLoop@
         while (true) {  // основной цикл проверки
             Logging.i(tag, "$werk Обновляем данные...")
 
@@ -122,20 +123,41 @@ class OrderDaemon(
                 )
 
                 401 -> {
-                    serverTSRepository.login(login, password, werk, gmt)
-                    //сохраняем дату логина для BotCore
-                    botWorkersRepository.shopWorkersList.replaceAll {
-                        if (it.shop == werk) {
-                            it.loginTime = LocalDateTime.now()
-                            it
-                        } else it
+                    val loginResult = serverTSRepository.login(login, password, werk, gmt)
+                    Logging.d(tag, "$werk Login result: Sucess:${loginResult.result.success} " +
+                                "ErrorCode:${loginResult.result.errorCode} " +
+                                "ErrorMessage:${loginResult.result.errorMessage}"
+                    )
+                    if (loginResult.result.success) { // если логин прошел успешно
+                        //сохраняем дату логина для BotCore
+                        botWorkersRepository.shopWorkersList.replaceAll {
+                            if (it.shop == werk) {
+                                it.loginTime = LocalDateTime.now()
+                                it
+                            } else it
+                        }
+                    } else { // если логин прошел НЕуспешно
+                        // FIXME: вставить проброс инфы на инфокнопку и сообщение владельцу чата 
+                        Logging.e(tag, "$werk Ошибка входа. Ждем 5 минут. " +
+                                "Код ошибки:${loginResult.result.errorCode} " +
+                                "Сообщение: ${loginResult.result.errorMessage}")
+                        delay(5*1000*60)
                     }
+
+                    // продолжаем цикл со следующей итерации
+                    continue@mainLoop
                 }
 
-                else -> Logging.e(
-                    tag,
-                    "$werk ErrorCode: ${orderListSimple?.errorCode} Error: ${orderListSimple?.error}"
-                )
+                else -> {
+                    Logging.e(
+                        tag, "$werk Ошибка! Ждем 5 минут. " +
+                                "Код ошибки:${orderListSimple?.errorCode} " +
+                                "Сообщение: ${orderListSimple?.error}"
+                    )
+                    delay(5 * 1000 * 60)
+                    // продолжаем цикл со следующей итерации
+                    continue@mainLoop
+                }
             }
 
             //сохраняем данные для BotCore

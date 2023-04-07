@@ -1,5 +1,6 @@
 package bot
 
+import SecurityData
 import cache.InMemoryCache
 import data.restTS.models.WebOrder
 import dev.inmo.micro_utils.fsm.common.State
@@ -38,7 +39,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import orderProcessing.data.SecurityData.TELEGRAM_BOT_TOKEN
+import SecurityData.TELEGRAM_BOT_TOKEN
 import utils.Logging
 import java.util.*
 
