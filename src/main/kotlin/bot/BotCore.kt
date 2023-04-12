@@ -190,7 +190,14 @@ class BotCore(
                             it.context,
                             buildEntities { +"Пользователь создан. Доступные команды по команде /start" })
 
-                    } else UserExpectLogin(it.context, it.sourceMessage)
+                    } else {
+                        sendMessage(
+                            it.context,
+                            "Проверка на сервере компании НЕ пройдена. " +
+                                    errorResultMessage(resultCheckTs.result.errorMessage ?: "")
+                        )
+//                        UserExpectLogin(it.context, it.sourceMessage)
+                    }
                 } else {        // /update
                     if (resultCheckTs.result.success) {
                         val oldShop = allBotUsers[it.context.chatId]!!.tsShop
@@ -236,7 +243,9 @@ class BotCore(
                     } else {
                         sendMessage(
                             it.context,
-                            "Проверка на сервере компании НЕ пройдена. Данные пользователя TS НЕ обновлены."
+                            "Проверка на сервере компании НЕ пройдена. " +
+                                    "Данные пользователя TS НЕ обновлены. " +
+                                    errorResultMessage(resultCheckTs.result.errorMessage ?: "")
                         )
                     }
                 }
@@ -539,13 +548,13 @@ class BotCore(
                     sendMessage(
                         it.chat,
                         "Доступные команды:" +
-                                "\n/start - список команд" +
-                                "\n/id - ID чата (можно написать в группе)" +
+                                "\n/info - информация о боте вашего магазина" +
+                                "\n/id - ID чата (нужно написать в группе)" +
                                 "\n/password - обновить пароль TS" +
                                 "\n/update - обновить все данные TS" +
                                 "\n/create - создать бота магазина" +
                                 "\n/delete - удалить бота магазина" +
-                                "\n/info - информация о боте вашего магазина"
+                                "\n/start - список команд"
                     )
                 } else {
                     sendTextMessage(it.chat, "Регистрируем вас")
@@ -834,6 +843,22 @@ class BotCore(
         }.start()
 
 
+    }
+
+    private fun errorResultMessage(errorMessage: String): String {
+        return with(errorMessage) {
+            when {
+                contains("User not found in werk") -> "Не верный пользователь или пароль для магазина ${
+                    errorMessage.takeLast(4)
+                }"
+
+                contains("has been blocked for 5 minutes, with werk") -> "Пользователь ${
+                    errorMessage.removePrefix("This login: ").substringBefore(" ")
+                } заблокирован на 5 минут для магазина ${errorMessage.takeLast(4)}. Слишком много попыток входа с неверным паролем."
+
+                else -> "Ответ сервера: $errorMessage"
+            }
+        }
     }
 
     suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {

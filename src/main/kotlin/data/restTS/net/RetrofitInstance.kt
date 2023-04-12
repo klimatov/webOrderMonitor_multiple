@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitInstance {
     val baseUrl = "https://tsapp.eldorado.ru/"
 
-    private val httpLogger = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
+    private val httpLogger = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(30L, TimeUnit.SECONDS)
         .readTimeout(30L, TimeUnit.SECONDS)
