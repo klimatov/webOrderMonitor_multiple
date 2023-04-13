@@ -468,7 +468,7 @@ class BotCore(
 
                 newBotUsers[it.context.chatId] = allBotUsers[it.context.chatId]!!
 
-                send(it.context) { +"Введите ваш пароль в TS (не должен быть пустым)" }
+                send(it.context) { +"Введите ваш новый пароль в TS (не должен быть пустым)" }
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
@@ -531,7 +531,14 @@ class BotCore(
                         }
                     }
                     null
-                } else sendMessage(it.context, "Проверка в базе TS прошла неудачно, пароль НЕ изменен")
+                } else {
+                    sendMessage(
+                        it.context,
+                        "Проверка на сервере компании НЕ пройдена. " +
+                                "Пароль TS НЕ обновлен. " +
+                                errorResultMessage(resultCheckTs.result.errorMessage ?: "")
+                    )
+                }
                 null
             }
 
