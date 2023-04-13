@@ -28,4 +28,5 @@ interface BotProcessingRepository {
     suspend fun botSendMessage(webOrder: WebOrder?): Long?
     suspend fun botConfirmMessage(webOrder: WebOrder?)
     suspend fun botTimerUpdate(webOrder: WebOrder?)
+    suspend fun updateErrorInfoMsg(errorCode: Int)
 }

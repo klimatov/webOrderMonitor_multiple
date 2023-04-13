@@ -137,11 +137,15 @@ class OrderDaemon(
                             } else it
                         }
                     } else { // если логин прошел НЕуспешно
-                        // FIXME: вставить проброс инфы на инфокнопку и сообщение владельцу чата 
-                        Logging.e(tag, "$werk Ошибка входа. Ждем 5 минут. " +
+                        // FIXME: вставить сообщение владельцу чата
+
+                        // проброс инфы на инфокнопку
+                        botProcessingRepository.updateErrorInfoMsg(loginResult.result.errorCode?:0)
+
+                        Logging.e(tag, "$werk Ошибка входа. Ждем 6 минут. " +
                                 "Код ошибки:${loginResult.result.errorCode} " +
                                 "Сообщение: ${loginResult.result.errorMessage}")
-                        delay(5*1000*60)
+                        delay(6*1000*60)
                     }
 
                     // продолжаем цикл со следующей итерации
@@ -149,6 +153,9 @@ class OrderDaemon(
                 }
 
                 else -> {
+                    // проброс инфы на инфокнопку
+                    botProcessingRepository.updateErrorInfoMsg(orderListSimple?.errorCode?:0)
+
                     Logging.e(
                         tag, "$werk Ошибка! Ждем 5 минут. " +
                                 "Код ошибки:${orderListSimple?.errorCode} " +

@@ -836,12 +836,18 @@ class BotCore(
                             "Chat: ${it.message?.chat?.id?.chatId} " +
                             "Shop: $shop"
                 )
-
+                val popupMsg = when (it.data) {
+                    "infoRequest" -> msgConvert.popupMessage(
+                        botInstancesParameters[shop]?.dayConfirmedCount ?: 0
+                    )
+                    "error403", "error401" -> "Изменился пароль входа в TradeService администратора " +
+                            "чат-бота вашего магазина. " +
+                            "Сообщите ему о необходимости обновить пароль написав в личку боту."
+                    else -> "Ошибка связи с сервером компании"
+                }
                 answer(
                     it,
-                    msgConvert.popupMessage(
-                        botInstancesParameters[shop]?.dayConfirmedCount ?: 0
-                    ),
+                    popupMsg,
                     showAlert = true
                 )
             }
@@ -933,7 +939,7 @@ class BotCore(
 
 
     // из старого WOM TGInfoMessage
-    suspend fun updateInfoMsg(shop: String) {
+    private suspend fun doUpdateInfoMsg(shop: String, updMsg: String, infoMsgText: String) {
         if (botInstancesParameters[shop]?.newInfoMsgId != null) {
 
             if (botInstancesParameters[shop]!!.currentInfoMsgId != botInstancesParameters[shop]!!.newInfoMsgId) {
@@ -941,16 +947,9 @@ class BotCore(
                 botInstancesParameters[shop]!!.currentInfoMsgId = botInstancesParameters[shop]!!.newInfoMsgId
             }
 
-            val updMsg =
-                msgConvert.infoMessage(
-                    botInstancesParameters[shop]!!.notConfirmedOrders,
-                    botInstancesParameters[shop]!!.gmt
-                )
-
-
             val infoMsg = inlineKeyboard {
                 row {
-                    dataButton(updMsg, "infoRequest")
+                    dataButton(updMsg, infoMsgText)
                 }
             }
 
@@ -966,6 +965,25 @@ class BotCore(
                 }
             }
         }
+    }
+
+    suspend fun updateInfoMsg(shop: String) {
+        doUpdateInfoMsg(
+            shop = shop,
+            updMsg = msgConvert.infoMessage(
+                botInstancesParameters[shop]!!.notConfirmedOrders,
+                botInstancesParameters[shop]!!.gmt
+            ),
+            infoMsgText = "infoRequest"
+        )
+    }
+
+    suspend fun updateErrorInfoMsg(shop: String, errorCode: Int) {
+        doUpdateInfoMsg(
+            shop = shop,
+            updMsg = msgConvert.infoErrorMessage(errorCode),
+            infoMsgText = "error$errorCode"
+        )
     }
 
     suspend fun delInfoMsg(shop: String) {

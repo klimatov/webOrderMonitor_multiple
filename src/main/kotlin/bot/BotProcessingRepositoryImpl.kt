@@ -84,6 +84,10 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
         botCore.botSendInfoMessage(shop)
     }
 
+    override suspend fun updateErrorInfoMsg(errorCode: Int) {
+        botCore.updateErrorInfoMsg(shop, errorCode)
+    }
+
     override suspend fun updateInfoMsg() {
         botCore.updateInfoMsg(shop)
     }

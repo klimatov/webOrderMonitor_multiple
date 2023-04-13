@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-class BotMessage: DateTimeProcess() {
+class BotMessage : DateTimeProcess() {
 
     fun orderMessage(webOrder: WebOrder?): TextSourcesList {
         val resultMessage = buildEntities {
@@ -118,6 +118,14 @@ class BotMessage: DateTimeProcess() {
                 "⭕\uD83D\uDEE0 В подборе ${orderEnding(notConfirmedOrders)} ${timeNow(gmt = gmt)}"
         }
         return resTxt
+    }
+
+    fun infoErrorMessage(errorCode: Int): String {
+        return when (errorCode) {
+            403, 401 -> "\uD83C\uDD98Изменился пароль TS администратора!\uD83C\uDD98"
+            in 500..510 -> "\uD83D\uDD34Ошибка на сервере. Код: $errorCode\uD83D\uDD34"
+            else -> "\uD83D\uDD34Неизвестная ошибка. Код: $errorCode\uD83D\uDD34"
+        }
     }
 
     fun notificationMessage(notification: Boolean, dayConfirmedCount: Int): String {
