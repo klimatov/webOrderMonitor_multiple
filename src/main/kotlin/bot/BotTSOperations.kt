@@ -9,8 +9,11 @@ class BotTSOperations(
 ) {
 
     suspend fun checkUserDataInTS(botUserData: BotUser?, userId: Identifier): LoginResult {
-        val userResult = botTSRepository.login(botUserData?.tsLogin?:"", botUserData?.tsPassword?:"", botUserData?.tsShop?:"", userId)
-        return userResult
-        // FIXME: добавить проброс ошибки
+        return botTSRepository.login(
+            botUserData?.tsLogin ?: "",
+            botUserData?.tsPassword ?: "",
+            botUserData?.tsShop ?: "",
+            userId
+        )
     }
 }

@@ -26,7 +26,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
             Logging.i(tag, "${netClient.shop} Connected to base ${netClient.userInfo}")
             loginTime = LocalDateTime.now()
 
-            Logging.d(tag, "$werk GMT: ${gmt} LocalTime: ${LocalDateTime.now(ZoneId.of(gmt))}")
+            Logging.d(tag, "$werk GMT: $gmt LocalTime: ${LocalDateTime.now(ZoneId.of(gmt))}")
 //            netClient.getDBVersion()
             return LoginResult(
                 result = Result(success = true, errorMessage = null, errorCode = netClient.errorCode),
@@ -62,7 +62,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         if (orderList == null) return emptyList() else return orderList.webOrders
     }
 
-    override suspend fun getOrderListSimple(): OrderListSimple? {
+    override suspend fun getOrderListSimple(): OrderListSimple {
         val orderListSimple = netClient.getWebOrderListSimple("new") //all or new  --- получаем список неподтвержденных
         return OrderListSimple(
             errorCode = netClient.errorCode ?: 0,

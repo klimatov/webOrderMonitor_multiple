@@ -30,7 +30,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
                         newOrder[0]// добавляем новую вебку в список активных
                     botProcessingRepository.dayConfirmedCount++ // увеличиваем на 1 счетчик собранных за день
 
-                    itemsUpdate(webOrder.webNum) // обновляем items  и остатки по каждому, если все ок, то статус true
+                    itemsUpdate(webOrder.webNum) // обновляем items и остатки по каждому, если все ок, то статус true
 
                     activeOrders[webOrder.webNum]?.activeTime =
                         BotMessage().timeDiff(webOrder.docDate, gmt = gmt) // время активности
@@ -107,22 +107,22 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
             }
         }
         activeOrders[webNum]?.itemsUpdateStatus =
-            result // обновляем items  и остатки по каждому, если все ок, то статус true
+            result // обновляем items и остатки по каждому, если все ок, то статус true
         Logging.d(tag, "$shop $webNum Items and remains update result: $result")
     }
 
-    suspend fun newOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
+    private suspend fun newOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
         val messageId: Long? = botProcessingRepository.botSendMessage(activeOrders[webNum])
         botProcessingRepository.newInfoMsgId = messageId // messageID последнего сообщения для инфокнопки
         activeOrders[webNum]?.messageId = messageId
     }
 
-    suspend fun delOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
+    private suspend fun delOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
         botProcessingRepository.botConfirmMessage(activeOrders[webNum])
         activeOrders.remove(webNum)
     }
 
-    suspend fun updateOrderTimer(webNum: String?, botProcessingRepository: BotProcessingRepository) {
+    private suspend fun updateOrderTimer(webNum: String?, botProcessingRepository: BotProcessingRepository) {
         botProcessingRepository.botTimerUpdate(activeOrders[webNum])
         activeOrders[webNum]?.activeTime =
             BotMessage().timeDiff(activeOrders[webNum]?.docDate, gmt = gmt) // время активности

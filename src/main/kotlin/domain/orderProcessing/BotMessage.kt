@@ -1,19 +1,24 @@
 package domain.orderProcessing
 
 import data.restTS.models.WebOrder
-import dev.inmo.tgbotapi.extensions.utils.formatting.*
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
+import dev.inmo.tgbotapi.utils.*
+import dev.inmo.tgbotapi.utils.bold
+import dev.inmo.tgbotapi.utils.regular
+import dev.inmo.tgbotapi.utils.regularln
+import dev.inmo.tgbotapi.utils.underlineln
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
+import kotlin.collections.plus
 
 class BotMessage : DateTimeProcess() {
 
-    fun orderMessage(webOrder: WebOrder?): TextSourcesList {
+    private fun orderMessage(webOrder: WebOrder?): TextSourcesList {
         val resultMessage = buildEntities {
             regularln("#️⃣${webOrder?.webNum}/${webOrder?.orderId}")
             regular("${webOrder?.ordType} ")
@@ -57,7 +62,7 @@ class BotMessage : DateTimeProcess() {
         return docDateFormatting.until(lateDate, ChronoUnit.MINUTES)
     }
 
-    fun timeNow(gmt: String): String {
+    private fun timeNow(gmt: String): String {
         val time: LocalTime = LocalTime.now(ZoneId.of(gmt))
         val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
         return formatter.format(time)
@@ -68,8 +73,8 @@ class BotMessage : DateTimeProcess() {
         return time.hour in shopOpenTime until shopCloseTime
     }
 
-    fun minutesEnding(minute: Long): String {
-        return "${minute} " + minute.let {
+    private fun minutesEnding(minute: Long): String {
+        return "$minute " + minute.let {
             if (it % 100 in 11..14) {
                 "минут"
             } else {
@@ -82,8 +87,8 @@ class BotMessage : DateTimeProcess() {
         }
     }
 
-    fun orderEnding(order: Int): String {
-        return "${order} " + order.let {
+    private fun orderEnding(order: Int): String {
+        return "$order " + order.let {
             if (it % 100 in 11..14) {
                 "заявок"
             } else {
@@ -96,7 +101,7 @@ class BotMessage : DateTimeProcess() {
         }
     }
 
-    fun orderStarting(order: Int): String {
+    private fun orderStarting(order: Int): String {
         return order.let {
             if (it % 100 in 11..14) {
                 "упало"

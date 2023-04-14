@@ -54,7 +54,7 @@ data class LocalStorageDtos(
     @SerializedName("priority") var priority: Int? = null
 )
 
-data class mainRemains(
+data class MainRemains(
     @SerializedName("remains") var remains: List<RemainsLocal> = emptyList(),
     @SerializedName("needUpdate") var needUpdate: Boolean? = null
 )

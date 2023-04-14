@@ -29,7 +29,7 @@ class NetClient {
 //    val gmt = timeZone.rawOffset.toString()
 
     //хэшилка пароля для запроса
-    fun md5Hash(str: String): String {
+    private fun md5Hash(str: String): String {
         val instance: MessageDigest = MessageDigest.getInstance("MD5")
         val bytes = str.toByteArray(Charsets.UTF_8)
         val bigInteger = BigInteger(1, instance.digest(bytes))
@@ -276,7 +276,7 @@ class NetClient {
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
-            val responseJson = Gson().fromJson(response?.body(), mainRemains::class.java)
+            val responseJson = Gson().fromJson(response?.body(), MainRemains::class.java)
             return responseJson.remains
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")

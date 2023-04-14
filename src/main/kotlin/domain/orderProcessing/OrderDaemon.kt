@@ -137,7 +137,7 @@ class OrderDaemon(
                             } else it
                         }
                     } else { // если логин прошел НЕуспешно
-                        // FIXME: вставить сообщение владельцу чата
+                        // FIXME: отправить сообщение владельцу чата
 
                         // проброс инфы на инфокнопку
                         botProcessingRepository.updateErrorInfoMsg(loginResult.result.errorCode?:0)
@@ -174,7 +174,7 @@ class OrderDaemon(
 
             Logging.i(
                 tag,
-                "$werk Wait next iteration 30 second Код ответа сервера: ${orderListSimple?.errorCode.toString()}"
+                "$werk Wait next iteration 30 second Код ответа сервера: ${orderListSimple.errorCode}"
             )
 //            Logging.i(tag, "$werk Версия базы на сервере: ${netClient.remoteDbVersion}")
 

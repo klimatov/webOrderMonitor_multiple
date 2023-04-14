@@ -1,6 +1,6 @@
 package bot
 
-import SecurityData
+import SecurityData.TELEGRAM_BOT_TOKEN
 import cache.InMemoryCache
 import data.restTS.models.WebOrder
 import dev.inmo.micro_utils.fsm.common.State
@@ -22,9 +22,9 @@ import dev.inmo.tgbotapi.extensions.utils.extensions.raw.*
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
-import dev.inmo.tgbotapi.extensions.utils.types.buttons.row
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.ChatIdentifier
+import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.Identifier
 import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.chat.*
@@ -32,6 +32,7 @@ import dev.inmo.tgbotapi.types.message.ChatEvents.MigratedToSupergroup
 import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.utils.buildEntities
+import dev.inmo.tgbotapi.utils.row
 import domain.models.WorkerState
 import domain.orderProcessing.BotMessage
 import kotlinx.coroutines.CompletableJob
@@ -39,32 +40,31 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import SecurityData.TELEGRAM_BOT_TOKEN
 import utils.Logging
 import java.util.*
 
 sealed interface BotState : State
 
-data class UserExpectLogin(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class UserExpectPassword(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class UserExpectShop(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class UserStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class UserExpectLogin(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class UserExpectPassword(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class UserExpectShop(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class UserStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
 
-data class BotExpectChatId(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotExpectOpenTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotExpectCloseTime(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotExpectTimezone(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class BotExpectChatId(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class BotExpectOpenTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class BotExpectCloseTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class BotExpectTimezone(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class BotStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
 
-data class DeleteExpectConfirmation(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
+data class DeleteExpectConfirmation(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
-data class DeleteStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) : BotState
+data class DeleteStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
 
-data class PasswordUpdateExpectPassword(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
+data class PasswordUpdateExpectPassword(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
-data class PasswordUpdateStopState(override val context: ChatId, val sourceMessage: CommonMessage<TextContent>) :
+data class PasswordUpdateStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
 data class BotInstanceParameters(
@@ -104,9 +104,9 @@ class BotCore(
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
-    init {
+/*    init {
 
-    }
+    }*/
 
     suspend fun start() {
 
@@ -178,7 +178,7 @@ class BotCore(
                     //внесение в бд, если все ок или запрос по новой если не ок
                     if (resultCheckTs.result.success) {
                         Logging.i(tag, "Create new user ${newBotUsers[it.context.chatId]!!.tsLogin}")
-                        // сохраняем информацию полученную с сервера
+                        // сохраняем информацию, полученную с сервера
                         newBotUsers[it.context.chatId]?.sapFio = resultCheckTs.userInfo?.fio
                         newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
                         newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
@@ -203,7 +203,7 @@ class BotCore(
                         val oldShop = allBotUsers[it.context.chatId]!!.tsShop
                         Logging.i(tag, "Update user data ${newBotUsers[it.context.chatId]!!.tsLogin}")
 
-                        // сохраняем информацию полученную с сервера
+                        // сохраняем информацию, полученную с сервера
                         newBotUsers[it.context.chatId]?.sapFio = resultCheckTs.userInfo?.fio
                         newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
                         newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
@@ -493,7 +493,7 @@ class BotCore(
                     sendMessage(it.context, "Пароль пользователя TS изменен!")
                     Logging.i(tag, "Update password user ${newBotUsers[it.context.chatId]!!.tsLogin}")
 
-                    // сохраняем информацию полученную с сервера
+                    // сохраняем информацию, полученную с сервера
                     newBotUsers[it.context.chatId]?.sapFio = resultCheckTs.userInfo?.fio
                     newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
                     newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
@@ -874,11 +874,11 @@ class BotCore(
         }
     }
 
-    suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long? {
+    suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long {
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                msgConvert!!.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                msgConvert.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
@@ -986,7 +986,7 @@ class BotCore(
         )
     }
 
-    suspend fun delInfoMsg(shop: String) {
+    private suspend fun delInfoMsg(shop: String) {
         try {
             bot.editMessageReplyMarkup(
                 botInstancesParameters[shop]!!.targetChatId,

@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit
 
 open class DateTimeProcess {
 
-    fun dateFormat(docDate: String): LocalDateTime {
+    private fun dateFormat(docDate: String): LocalDateTime {
         val docDateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
         return LocalDateTime.parse(docDate, docDateFormat)
     }
