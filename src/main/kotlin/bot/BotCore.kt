@@ -45,26 +45,52 @@ import java.util.*
 
 sealed interface BotState : State
 
-data class UserExpectLogin(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class UserExpectPassword(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class UserExpectShop(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class UserStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-
-data class BotExpectChatId(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotExpectOpenTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotExpectCloseTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotExpectTimezone(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-data class BotStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-
-data class DeleteExpectConfirmation(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+data class UserExpectLogin(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
-data class DeleteStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) : BotState
-
-data class PasswordUpdateExpectPassword(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+data class UserExpectPassword(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
     BotState
 
-data class PasswordUpdateStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+data class UserExpectShop(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class UserStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class BotExpectChatId(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class BotExpectOpenTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class BotExpectCloseTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class BotExpectTimezone(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class BotStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class DeleteExpectConfirmation(
+    override val context: IdChatIdentifier,
+    val sourceMessage: CommonMessage<TextContent>,
+) :
+    BotState
+
+data class DeleteStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+    BotState
+
+data class PasswordUpdateExpectPassword(
+    override val context: IdChatIdentifier,
+    val sourceMessage: CommonMessage<TextContent>,
+) :
+    BotState
+
+data class PasswordUpdateStopState(
+    override val context: IdChatIdentifier,
+    val sourceMessage: CommonMessage<TextContent>,
+) :
     BotState
 
 data class BotInstanceParameters(
@@ -91,7 +117,7 @@ class BotCore(
 
     private val tag = this::class.java.simpleName
 
-    val msgConvert: BotMessage = BotMessage()
+    val botMessage: BotMessage = BotMessage()
 
 
     val botInstancesParameters: MutableMap<String, BotInstanceParameters> = mutableMapOf()
@@ -104,9 +130,9 @@ class BotCore(
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
-/*    init {
+    /*    init {
 
-    }*/
+        }*/
 
     suspend fun start() {
 
@@ -130,8 +156,19 @@ class BotCore(
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                newBotUsers[it.context.chatId]?.tsLogin = contentMessage.content.text
-                UserExpectPassword(it.context, it.sourceMessage)
+                val newLogin = contentMessage.content.text.lowercase()
+                when {
+                    newLogin.toIntOrNull() != null -> {
+                        sendMessage(it.context, buildEntities { +"Логин должен состоять из букв" })
+                        it
+                    }
+
+                    else -> {
+                        newBotUsers[it.context.chatId]?.tsLogin = newLogin
+                        UserExpectPassword(it.context, it.sourceMessage)
+                    }
+                }
+
             }
 
             strictlyOn<UserExpectPassword> {
@@ -272,7 +309,7 @@ class BotCore(
                 send(it.context) {
                     +"Введите ID чата в который добавлен бот и куда он будет скидывать информацию " +
                             "(или введите /stop для отмены создания)" +
-                            "\nДанный ID может быть со знаком минус (-). " +
+                            "\nДанный ID должен быть со знаком минус (-). " +
                             "Узнать ID можно введя команду /id В ЧАТЕ куда добавлен бот."
                 }
                 val contentMessage = waitTextMessage().filter { message ->
@@ -286,11 +323,17 @@ class BotCore(
                         it.context,
                         contentMessage
                     )
+                    contentMessage.text == it.context.chatId.toString() -> {
+                        send(it.context) { +"Вы ввели свой личный chat ID, а нужен chat ID группы" }
+                        it
+                    }
 
                     else -> {
                         if (contentMessage.text?.toLongOrNull() != null) {
+                            var newChatId = contentMessage.text?.toLong() ?: 0
+                            if (newChatId > 0 ) newChatId *= -1 // добавляем минус, если его нет
                             try {
-                                val msgChatId = ChatId(contentMessage.text?.toLong()!!)
+                                val msgChatId = ChatId(newChatId)
                                 val msgResult = getChat(msgChatId)
                                 val chatTitle = when (msgResult) {
                                     is ExtendedSupergroupChatImpl -> msgResult.title
@@ -304,7 +347,7 @@ class BotCore(
                                 }
 
                                 send(it.context) { +"Чат $chatTitle доступен для бота" }
-                                newWorkers[it.context.chatId]?.telegramChatId = contentMessage.text!!.toLong()
+                                newWorkers[it.context.chatId]?.telegramChatId = newChatId
                                 BotExpectOpenTime(it.context, it.sourceMessage)
 
                             } catch (e: Exception) {
@@ -564,6 +607,7 @@ class BotCore(
                                 "\n/start - список команд"
                     )
                 } else {
+                    sendTextMessage(it.chat, botMessage.descriptionMessage())
                     sendTextMessage(it.chat, "Регистрируем вас")
                     startChain(UserExpectLogin(it.chat.id, it))
                 }
@@ -670,6 +714,8 @@ class BotCore(
                     val requiredShopWorker = botRepositoryDB.getWorkerByShop(currentUser!!.tsShop)
 
                     if (requiredShopWorker != null) {
+
+                        sendTextMessage(it.chat, botMessage.descriptionMessage())
 
                         sendMessage(
                             it.chat,
@@ -803,7 +849,7 @@ class BotCore(
                 }
             ) {
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
-                    val serverTimeOnline = msgConvert.DateDiff(BotWorkersRepositoryImpl.appStartTime)
+                    val serverTimeOnline = botMessage.DateDiff(BotWorkersRepositoryImpl.appStartTime)
 
                     sendTextMessage(
                         it.chat,
@@ -813,8 +859,11 @@ class BotCore(
                                 "Last error message: ${BotWorkersRepositoryImpl.lastErrorMessage}\n" +
 
                                 BotWorkersRepositoryImpl.shopWorkersList.joinToString(separator = "") { shopWorkersParam ->
-                                    val loginT = msgConvert.DateDiff(shopWorkersParam.loginTime)
-                                    "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
+                                    println(shopWorkersParam)
+                                    if (shopWorkersParam.workerState == WorkerState.WORK) {
+                                        val loginT = botMessage.DateDiff(shopWorkersParam.loginTime)
+                                        "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
+                                    } else ""
                                 }
 
                     )
@@ -837,12 +886,14 @@ class BotCore(
                             "Shop: $shop"
                 )
                 val popupMsg = when (it.data) {
-                    "infoRequest" -> msgConvert.popupMessage(
+                    "infoRequest" -> botMessage.popupMessage(
                         botInstancesParameters[shop]?.dayConfirmedCount ?: 0
                     )
+
                     "error403", "error401" -> "Изменился пароль входа в TradeService администратора " +
                             "чат-бота вашего магазина. " +
                             "Сообщите ему о необходимости обновить пароль написав в личку боту."
+
                     else -> "Ошибка связи с сервером компании"
                 }
                 answer(
@@ -878,7 +929,7 @@ class BotCore(
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                msgConvert.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
@@ -893,7 +944,7 @@ class BotCore(
             bot.editMessageText(
                 botInstancesParameters[shop]!!.targetChatId,
                 webOrder?.messageId ?: 0,
-                msgConvert.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
@@ -903,7 +954,7 @@ class BotCore(
 
     suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
-            if (webOrder?.activeTime != msgConvert.timeDiff(
+            if (webOrder?.activeTime != botMessage.timeDiff(
                     webOrder?.docDate,
                     gmt = botInstancesParameters[shop]!!.gmt
                 )
@@ -911,7 +962,7 @@ class BotCore(
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
-                    msgConvert.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                    botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
                     disableWebPagePreview = true,
                     replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
                 )
@@ -925,7 +976,7 @@ class BotCore(
         try {
             bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                msgConvert.notificationMessage(
+                botMessage.notificationMessage(
                     botInstancesParameters[shop]!!.msgNotification,
                     botInstancesParameters[shop]!!.dayConfirmedCount
                 ),
@@ -970,7 +1021,7 @@ class BotCore(
     suspend fun updateInfoMsg(shop: String) {
         doUpdateInfoMsg(
             shop = shop,
-            updMsg = msgConvert.infoMessage(
+            updMsg = botMessage.infoMessage(
                 botInstancesParameters[shop]!!.notConfirmedOrders,
                 botInstancesParameters[shop]!!.gmt
             ),
@@ -981,7 +1032,7 @@ class BotCore(
     suspend fun updateErrorInfoMsg(shop: String, errorCode: Int) {
         doUpdateInfoMsg(
             shop = shop,
-            updMsg = msgConvert.infoErrorMessage(errorCode),
+            updMsg = botMessage.infoErrorMessage(errorCode),
             infoMsgText = "error$errorCode"
         )
     }

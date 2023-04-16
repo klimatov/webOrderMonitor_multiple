@@ -63,7 +63,7 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
                 shopOpenTime = shopOpenTime,
                 shopCloseTime = shopCloseTime,
                 targetChatId = targetChatId,
-                msgNotification = botCore.msgConvert.shopInWork(shopOpenTime, shopCloseTime, gmt)
+                msgNotification = botCore.botMessage.shopInWork(shopOpenTime, shopCloseTime, gmt)
             ) //инициализируем параметры
         }
 

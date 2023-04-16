@@ -157,11 +157,11 @@ class OrderDaemon(
                     botProcessingRepository.updateErrorInfoMsg(orderListSimple?.errorCode?:0)
 
                     Logging.e(
-                        tag, "$werk Ошибка! Ждем 5 минут. " +
+                        tag, "$werk Ошибка! Ждем 30 секунд. " +
                                 "Код ошибки:${orderListSimple?.errorCode} " +
                                 "Сообщение: ${orderListSimple?.error}"
                     )
-                    delay(5 * 1000 * 60)
+                    delay(30 * 1000)
                     // продолжаем цикл со следующей итерации
                     continue@mainLoop
                 }
