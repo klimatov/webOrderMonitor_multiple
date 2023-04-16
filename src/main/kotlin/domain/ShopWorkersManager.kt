@@ -70,6 +70,7 @@ class ShopWorkersManager(
         Logging.i(tag, "Delete worker ${shopWorkersParam.shop} - ${shopWorkersParam.workerId}, DELETING")
         cancelShopWorker(shopWorkersParam.workerId)
         shopWorkersList[shopWorkersParam.workerId]?.workerState = WorkerState.DELETED
+        botWorkersRepository.shopWorkersList = shopWorkersList.values.toMutableList()
     }
 
     private suspend fun cancelShopWorker(workerId: UUID) {
