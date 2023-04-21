@@ -1,5 +1,6 @@
 package data.database.botUsers
 
+import dev.inmo.tgbotapi.types.Identifier
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -72,6 +73,28 @@ object BotUsersDB : Table("bot_users") {
             }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    fun getUserBy(userId: Identifier): BotUsersDTO? {
+        return try {
+            transaction {
+                addLogger(StdOutSqlLogger)
+                val user = BotUsersDB.select { BotUsersDB.telegramUserId eq userId.toString() }.single()
+                BotUsersDTO(
+                    login = user[login],
+                    password = user[password],
+                    shop = user[shop],
+                    telegramUserId = user[telegramUserId].toLong(),
+                    userRole = user[userRole],
+                    sapFio = user[sapFio],
+                    sapPosition = user[sapPosition],
+                    sapId = user[sapId]
+                )
+            }
+        } catch (e: Exception) {
+            Logging.e(tag, e.message.toString())
+            null
         }
     }
 }

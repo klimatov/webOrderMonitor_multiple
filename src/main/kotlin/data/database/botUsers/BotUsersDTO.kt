@@ -16,7 +16,7 @@ data class BotUsersDTO(
     val sapId: String?,
 )
 
-fun BotUser.mapToBotUsersDTO(): BotUsersDTO =
+fun BotUser.mapToBotUserDTO(): BotUsersDTO =
     BotUsersDTO(
         login = tsLogin,
         password = tsPassword,
@@ -28,7 +28,7 @@ fun BotUser.mapToBotUsersDTO(): BotUsersDTO =
         sapId = sapId
     )
 
-fun BotUsersDTO.mapToBotUsers(): BotUser =
+fun BotUsersDTO.mapToBotUser(): BotUser =
     BotUser(
         tsLogin = login,
         tsPassword = password,

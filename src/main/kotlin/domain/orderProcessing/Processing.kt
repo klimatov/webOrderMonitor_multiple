@@ -24,7 +24,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
         // проверка, появились ли новые вебки, отсутствующие в списке активных?
         inworkOrderList.forEach { webOrder ->
             if (!activeOrders.containsKey(webOrder.webNum)) {
-                val newOrder = serverTSRepository.getOrderList(webOrder.webNum)
+                val newOrder = serverTSRepository.getNewOrderList(webOrder.webNum)
                 if (newOrder.isNotEmpty()) {
                     activeOrders[webOrder.webNum] =
                         newOrder[0]// добавляем новую вебку в список активных

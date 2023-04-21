@@ -5,6 +5,7 @@ import dev.inmo.tgbotapi.types.Identifier
 interface BotRepositoryDB {
 
     fun setUserBy(botUser: BotUser): Boolean
+    fun getUserBy(userId: Identifier): BotUser?
 
     fun getAll(): MutableMap<Identifier, BotUser>
 

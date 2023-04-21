@@ -18,7 +18,7 @@ import kotlin.collections.plus
 
 class BotMessage : DateTimeProcess() {
 
-    private fun orderMessage(webOrder: WebOrder?): TextSourcesList {
+    fun orderMessage(webOrder: WebOrder?): TextSourcesList {
         val resultMessage = buildEntities {
             regularln("#️⃣${webOrder?.webNum}/${webOrder?.orderId}")
             regular("${webOrder?.ordType} ")
@@ -31,9 +31,11 @@ class BotMessage : DateTimeProcess() {
                 linkln("\n\n\uD83D\uDD35${it.goodCode} ${it.name}", "https://${it.eshopUrl}\n")
                 regular("\uD83D\uDCB0Цена: ${it.amount} ")
                 if ((it.quantity ?: 0) > 1) regular("\uD83E\uDDF3Кол-во: ${it.quantity}")
-                bold("\n\uD83D\uDED2Остатки:")
-                it.remains.forEach { remains ->
-                    bold(" ${remains.storageKind.toString()} - ${remains.quantity.toString()} шт.")
+                if (it.remains.isNotEmpty()) {
+                    bold("\n\uD83D\uDED2Остатки:")
+                    it.remains.forEach { remains ->
+                        bold(" ${remains.storageKind.toString()} - ${remains.quantity.toString()} шт.")
+                    }
                 }
             }
         }

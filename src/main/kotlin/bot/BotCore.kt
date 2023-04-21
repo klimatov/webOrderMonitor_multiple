@@ -124,7 +124,7 @@ class BotCore(
 
     private val botToken = TELEGRAM_BOT_TOKEN
     private val bot = telegramBot(token = botToken)
-    private val botTSOperations = BotTSOperations(botTSRepository = botTSRepository)
+    private val botTSOperations = BotTSOperations(botTSRepository = botTSRepository, botRepositoryDB = botRepositoryDB)
     private var allBotUsers: MutableMap<Identifier, BotUser> = botRepositoryDB.getAll()
     private var newBotUsers: MutableMap<Identifier, BotUser> = mutableMapOf()
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
@@ -323,6 +323,7 @@ class BotCore(
                         it.context,
                         contentMessage
                     )
+
                     contentMessage.text == it.context.chatId.toString() -> {
                         send(it.context) { +"Вы ввели свой личный chat ID, а нужен chat ID группы" }
                         it
@@ -331,7 +332,7 @@ class BotCore(
                     else -> {
                         if (contentMessage.text?.toLongOrNull() != null) {
                             var newChatId = contentMessage.text?.toLong() ?: 0
-                            if (newChatId > 0 ) newChatId *= -1 // добавляем минус, если его нет
+                            if (newChatId > 0) newChatId *= -1 // добавляем минус, если его нет
                             try {
                                 val msgChatId = ChatId(newChatId)
                                 val msgResult = getChat(msgChatId)
@@ -901,6 +902,46 @@ class BotCore(
                     popupMsg,
                     showAlert = true
                 )
+            }
+
+            onContentMessage(
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null) &&
+                            (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId) &&
+                            (allBotUsers.containsKey(it.chat.id.chatId))
+                }) {
+                val newMessage = it.text.toString()
+                Logging.d(tag, newMessage)
+
+                when {
+                    (newMessage.toLongOrNull() != null) && (newMessage.length == 9) -> {
+                        Logging.d(tag, "its web #$newMessage")
+
+                        val webOrder = botTSOperations.getWebOrder(it.chat.id.chatId, newMessage)
+                        Logging.d(tag, webOrder.toString())
+
+                        if (webOrder.result.success) {
+                            bot.sendMessage(
+                                it.chat.id,
+                                botMessage.orderMessage(webOrder.webOrder),
+                                disableWebPagePreview = true
+                            )
+
+                            bot.sendMessage(
+                                it.chat.id,
+                                botMessage.statusCodeResolve(webOrder.webOrder.docStatus),
+                                disableWebPagePreview = true
+                            )
+
+                        } else bot.sendMessage(
+                            it.chat.id,
+                            "Найти заявку №$newMessage не удалось",
+                            disableWebPagePreview = true
+                        )
+                    }
+                }
+
+
             }
 
             Logging.i(tag, "Telegram Bot started! ${getMe()}")

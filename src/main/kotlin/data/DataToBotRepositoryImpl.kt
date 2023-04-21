@@ -5,8 +5,8 @@ import bot.BotUser
 import bot.NewWorker
 import bot.UserRole
 import data.database.botUsers.BotUsersDB
-import data.database.botUsers.mapToBotUsers
-import data.database.botUsers.mapToBotUsersDTO
+import data.database.botUsers.mapToBotUser
+import data.database.botUsers.mapToBotUserDTO
 import data.database.shopWorkers.ShopWorkersDB
 import data.database.shopWorkers.mapToNewWorker
 import data.database.shopWorkers.mapToShopWorkersDTO
@@ -15,12 +15,17 @@ import dev.inmo.tgbotapi.types.Identifier
 class DataToBotRepositoryImpl: BotRepositoryDB {
 
     override fun setUserBy(botUser: BotUser): Boolean {
-        BotUsersDB.insert(botUser.mapToBotUsersDTO())
+        BotUsersDB.insert(botUser.mapToBotUserDTO())
         return true
     }
 
+    override fun getUserBy(userId: Identifier): BotUser? {
+        val resultUser = BotUsersDB.getUserBy(userId)
+        return resultUser?.mapToBotUser()
+    }
+
     override fun getAll(): MutableMap<Identifier, BotUser> {
-        return BotUsersDB.getAll().associate { it.telegramUserId to it.mapToBotUsers() }.toMutableMap()
+        return BotUsersDB.getAll().associate { it.telegramUserId to it.mapToBotUser() }.toMutableMap()
     }
 
     override fun checkWorker(requiredShop: String): BotUser? {

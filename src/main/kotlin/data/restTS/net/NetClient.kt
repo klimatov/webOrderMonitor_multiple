@@ -136,11 +136,14 @@ class NetClient {
 
     fun getWebOrderList(selection: String, webNum: String?): ListWebOrder? {
         val str = when (selection) {
-            "all" -> "WRQST_CRTD,PWRQT_DLVD,WRQST_ACPT,WRQST_RCVD,DOC_STORN"
+//            "all" -> "WRQST_CRTD,PWRQT_DLVD,WRQST_ACPT,WRQST_RCVD,DOC_STORN"
+//            "all" -> "*"
+            "all" -> "DOC_STORN,PWRQT_SHRT,WRQST_WAIT,PWRQT_DLVR,PWRQT_PRCH,WRQST_RCVD,DWRQT_PRCH,PWRQT_RCVD,WRQST_BNLY,WRQST_BNLN,WRQST_SHPD,PWRQT_PMNT,PWRQT_DLVD,WRQST_ACPT,PWRQT_CRTD,WRQST_CRTD,DWRQT_CRTD,ZEXPIRED"
             else -> "WRQST_CRTD"
         }
         val hashMap: HashMap<Any?, Any?> = hashMapOf(
-            "orderType" to "WRQST",
+            "orderType" to "",
+//            "orderType" to "WRQST,PWRQT,DWRQT",
             "dateFrom" to dateFrom(),
             "dateTo" to "01.01.2030",
             "docStatus" to str,
