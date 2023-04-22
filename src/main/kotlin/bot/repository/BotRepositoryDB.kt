@@ -1,5 +1,7 @@
-package bot
+package bot.repository
 
+import bot.models.BotUser
+import bot.models.NewWorker
 import dev.inmo.tgbotapi.types.Identifier
 
 interface BotRepositoryDB {

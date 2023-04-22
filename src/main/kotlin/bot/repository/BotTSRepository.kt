@@ -1,4 +1,4 @@
-package bot
+package bot.repository
 
 import data.restTS.models.LoginResult
 import data.restTS.models.WebOrderResult

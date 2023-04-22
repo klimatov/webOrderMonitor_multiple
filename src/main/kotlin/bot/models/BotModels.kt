@@ -1,4 +1,4 @@
-package bot
+package bot.models
 
 import dev.inmo.tgbotapi.types.Identifier
 import domain.models.ShopWorkersParam

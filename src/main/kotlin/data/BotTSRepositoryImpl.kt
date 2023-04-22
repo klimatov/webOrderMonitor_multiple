@@ -1,9 +1,8 @@
 package data
 
-import bot.BotTSRepository
+import bot.repository.BotTSRepository
 import data.restTS.models.*
 import dev.inmo.tgbotapi.types.Identifier
-import utils.Logging
 
 class BotTSRepositoryImpl : BotTSRepository {
     // создаем мапу с экземпляром клиента под каждого юзера

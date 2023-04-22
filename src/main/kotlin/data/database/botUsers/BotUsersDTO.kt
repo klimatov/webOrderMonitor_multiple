@@ -1,6 +1,6 @@
 package data.database.botUsers
 
-import bot.BotUser
+import bot.models.BotUser
 import dev.inmo.tgbotapi.types.Identifier
 import kotlinx.serialization.Serializable
 

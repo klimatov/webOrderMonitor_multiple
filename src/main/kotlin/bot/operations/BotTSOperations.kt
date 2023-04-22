@@ -1,5 +1,8 @@
-package bot
+package bot.operations
 
+import bot.models.BotUser
+import bot.repository.BotRepositoryDB
+import bot.repository.BotTSRepository
 import data.restTS.models.LoginResult
 import data.restTS.models.WebOrderResult
 import dev.inmo.tgbotapi.types.Identifier

@@ -1,9 +1,12 @@
 package bot
 
 import SecurityData.TELEGRAM_BOT_TOKEN
+import bot.models.*
+import bot.operations.BotTSOperations
+import bot.repository.BotRepositoryDB
+import bot.repository.BotTSRepository
 import cache.InMemoryCache
 import data.restTS.models.WebOrder
-import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
@@ -23,13 +26,9 @@ import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.types.ChatId
-import dev.inmo.tgbotapi.types.ChatIdentifier
-import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.Identifier
-import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.chat.*
 import dev.inmo.tgbotapi.types.message.ChatEvents.MigratedToSupergroup
-import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.row
@@ -42,72 +41,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import utils.Logging
 import java.util.*
-
-sealed interface BotState : State
-
-data class UserExpectLogin(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class UserExpectPassword(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class UserExpectShop(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class UserStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class BotExpectChatId(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class BotExpectOpenTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class BotExpectCloseTime(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class BotExpectTimezone(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class BotStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class DeleteExpectConfirmation(
-    override val context: IdChatIdentifier,
-    val sourceMessage: CommonMessage<TextContent>,
-) :
-    BotState
-
-data class DeleteStopState(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
-    BotState
-
-data class PasswordUpdateExpectPassword(
-    override val context: IdChatIdentifier,
-    val sourceMessage: CommonMessage<TextContent>,
-) :
-    BotState
-
-data class PasswordUpdateStopState(
-    override val context: IdChatIdentifier,
-    val sourceMessage: CommonMessage<TextContent>,
-) :
-    BotState
-
-data class BotInstanceParameters(
-    var shopOpenTime: Int = 9,
-    var shopCloseTime: Int = 22,
-    // из староого WOM Bot
-    var targetChatId: ChatIdentifier = ChatId(0),
-    var msgNotification: Boolean = true,
-    var dayConfirmedCount: Int = 0,  //подтверждено за день
-
-    // из старого WOM TGInfoMessage
-    var currentInfoMsgId: Long? = null,
-    var newInfoMsgId: Long? = null,
-    var currentInfoMsg: InlineKeyboardMarkup? = null,
-    var notConfirmedOrders: Int = 0,  //активных не подтвержденных
-    var gmt: String = "+0300",
-)
 
 class BotCore(
     private val job: CompletableJob,
@@ -129,10 +62,6 @@ class BotCore(
     private var newBotUsers: MutableMap<Identifier, BotUser> = mutableMapOf()
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
-
-    /*    init {
-
-        }*/
 
     suspend fun start() {
 
@@ -208,7 +137,6 @@ class BotCore(
                 )
 
                 // проверка и коннект с апи магазина
-//                val resultCheckTs = botTSOperations.checkUserDataInTS(newBotUsers[it.context.chatId])
                 val resultCheckTs = botTSOperations.checkUserDataInTS(newBotUsers[it.context.chatId], it.context.chatId)
 
                 if (it.sourceMessage.content.parseCommandsWithParams().keys.contains("start")) {

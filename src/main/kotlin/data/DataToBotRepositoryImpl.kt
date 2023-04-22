@@ -1,9 +1,9 @@
 package data
 
-import bot.BotRepositoryDB
-import bot.BotUser
-import bot.NewWorker
-import bot.UserRole
+import bot.repository.BotRepositoryDB
+import bot.models.BotUser
+import bot.models.NewWorker
+import bot.models.UserRole
 import data.database.botUsers.BotUsersDB
 import data.database.botUsers.mapToBotUser
 import data.database.botUsers.mapToBotUserDTO

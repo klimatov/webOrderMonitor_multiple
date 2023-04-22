@@ -1,6 +1,6 @@
 package data.database.shopWorkers
 
-import bot.NewWorker
+import bot.models.NewWorker
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
 import kotlinx.serialization.Serializable
