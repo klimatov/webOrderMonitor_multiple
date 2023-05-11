@@ -1,10 +1,14 @@
 package domain.repository
 
-import data.restTS.models.*
+import data.restTS.models.Items
+import data.restTS.models.LoginResult
+import data.restTS.models.RemainsLocal
+import data.restTS.models.WebOrder
 import domain.models.OrderListSimple
 
 interface ServerTSRepository {
     var errorCode: Int?
+    var errorMessage: String?
     val remoteDbVersion: Int
     val lastErrorMessage: String
     val lastErrorCode: Int?

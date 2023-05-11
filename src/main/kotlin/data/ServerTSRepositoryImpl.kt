@@ -15,9 +15,20 @@ class ServerTSRepositoryImpl : ServerTSRepository {
     override val remoteDbVersion: Int
         get() = netClient.remoteDbVersion ?: 0
     override val lastErrorMessage: String
-        get() = netClient.error
+        get() = netClient.errorMessage
     override val lastErrorCode: Int?
         get() = netClient.errorCode
+
+    override var errorCode: Int?
+        get() = netClient.errorCode
+        set(value) {
+            netClient.errorCode = value
+        }
+    override var errorMessage: String?
+        get() = netClient.errorMessage
+        set(value) {
+            netClient.errorMessage = value ?: ""
+        }
 
     override suspend fun login(login: String, password: String, werk: String, gmt: String): LoginResult {
         val ver = netClient.getDBVersion(werk) ?: 0
@@ -33,9 +44,9 @@ class ServerTSRepositoryImpl : ServerTSRepository {
                 userInfo = netClient.userInfo
             )
         } else {
-            Logging.e(tag, "${netClient.shop} Login failed with Error: ${netClient.error}")
+            Logging.e(tag, "${netClient.shop} Login failed with Error: ${netClient.errorMessage}")
             return LoginResult(
-                result = Result(success = false, errorMessage = netClient.error, errorCode = netClient.errorCode),
+                result = Result(success = false, errorMessage = netClient.errorMessage, errorCode = netClient.errorCode),
                 userInfo = null
             )
         }
@@ -45,12 +56,6 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         val orderItems = netClient.getWebOrderDetail(orderId, "WRQST")
         if (orderItems == null) return emptyList() else return orderItems.items
     }
-
-    override var errorCode: Int?
-        get() = netClient.errorCode
-        set(value) {
-            netClient.errorCode = value
-        }
 
     override suspend fun getRemains(goodCode: String?): List<RemainsLocal> {
         val remains = netClient.localRemains(goodCode)
@@ -71,7 +76,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         val orderListSimple = netClient.getWebOrderListSimple("new") //all or new  --- получаем список неподтвержденных
         return OrderListSimple(
             errorCode = netClient.errorCode ?: 0,
-            error = netClient.error,
+            error = netClient.errorMessage,
             listWebOrdersSimply = orderListSimple
         )
     }

@@ -4,6 +4,8 @@ import bot.models.BotUser
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import data.restTS.models.LoginResult
+import data.restTS.models.Result
+import data.restTS.models.WebOrder
 import data.restTS.models.WebOrderResult
 import dev.inmo.tgbotapi.types.Identifier
 import utils.Logging
@@ -11,7 +13,7 @@ import utils.Logging
 
 class BotTSOperations(
     private val botTSRepository: BotTSRepository,
-    private val botRepositoryDB: BotRepositoryDB
+    private val botRepositoryDB: BotRepositoryDB,
 ) {
     private val tag = this::class.java.simpleName
     suspend fun checkUserDataInTS(botUserData: BotUser?, userId: Identifier): LoginResult {
@@ -28,12 +30,22 @@ class BotTSOperations(
             Logging.d(tag, "Создаем инстанс юзера")
             val botUserData = botRepositoryDB.getUserBy(userId)
             Logging.d(tag, "Данные юзера из БД: $botUserData")
-            if (botUserData != null) botTSRepository.login(
-                botUserData?.tsLogin ?: "",
-                botUserData?.tsPassword ?: "",
-                botUserData?.tsShop ?: "",
-                userId
-            )
+            if (botUserData != null) {
+                val loginResult = checkUserDataInTS(botUserData, userId)
+                if (!loginResult.result.success) return WebOrderResult(
+                    Result(
+                        false,
+                        loginResult.result.errorMessage,
+                        loginResult.result.errorCode
+                    ), WebOrder()
+                )
+            } else return WebOrderResult(Result(false, null, 403), WebOrder())
+        }
+
+        val webOrder = botTSRepository.getWebOrder(userId, webNum)
+
+        if (webOrder.result.errorCode == 401) {
+            checkUserDataInTS(botUserData, userId)
         }
 
         return botTSRepository.getWebOrder(userId, webNum)

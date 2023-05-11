@@ -19,7 +19,7 @@ class NetClient {
     private var token = ""
     var shop = ""
     lateinit var userInfo: UserInfo
-    var error = ""
+    var errorMessage = ""
     var errorCode: Int? = null
     var dbVersion = "0"
     private val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault())
@@ -53,7 +53,7 @@ class NetClient {
             }
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return 0
         }
@@ -85,7 +85,7 @@ class NetClient {
                 this.userInfo = responseJson.userInfo!!
                 return true
             } else {
-                this.error = Gson().fromJson(
+                this.errorMessage = Gson().fromJson(
                     response.errorBody()?.string(),
                     Error::class.java
                 ).error.toString()
@@ -93,7 +93,7 @@ class NetClient {
             }
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return false
         }
@@ -128,7 +128,7 @@ class NetClient {
             } else return emptyList()
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return emptyList()
         }
@@ -169,7 +169,7 @@ class NetClient {
             return responseJson
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return ListWebOrder()
         }
@@ -193,7 +193,7 @@ class NetClient {
             return responseJson
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return WebOrderDetail()
         }
@@ -215,7 +215,7 @@ class NetClient {
             return responseJson.remainsLocal
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return emptyList()
         }
@@ -239,7 +239,7 @@ class NetClient {
             return responseJson.quantity!!
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return 0
         }
@@ -260,7 +260,7 @@ class NetClient {
             return responseJson.localStorageDtos
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return emptyList()
         }
@@ -283,7 +283,7 @@ class NetClient {
             return responseJson.remains
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
-            this.error = e.message.toString()
+            this.errorMessage = e.message.toString()
             this.errorCode = null
             return emptyList()
         }

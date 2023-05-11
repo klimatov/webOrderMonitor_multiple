@@ -3,6 +3,7 @@ package bot
 import SecurityData.TELEGRAM_BOT_TOKEN
 import bot.models.*
 import bot.operations.BotTSOperations
+import bot.operations.CommandProcessing
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import cache.InMemoryCache
@@ -52,7 +53,7 @@ class BotCore(
 
     val botMessage: BotMessage = BotMessage()
 
-
+    /** Мапа с параметрами магазина <shop, parameters>*/
     val botInstancesParameters: MutableMap<String, BotInstanceParameters> = mutableMapOf()
 
     private val botToken = TELEGRAM_BOT_TOKEN
@@ -62,6 +63,8 @@ class BotCore(
     private var newBotUsers: MutableMap<Identifier, BotUser> = mutableMapOf()
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
+
+    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository)
 
     suspend fun start() {
 
@@ -837,40 +840,7 @@ class BotCore(
                     (stateUser[it.chat.id.chatId] == null) &&
                             (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId) &&
                             (allBotUsers.containsKey(it.chat.id.chatId))
-                }) {
-                val newMessage = it.text.toString()
-                Logging.d(tag, newMessage)
-
-                when {
-                    (newMessage.toLongOrNull() != null) && (newMessage.length == 9) -> {
-                        Logging.d(tag, "its web #$newMessage")
-
-                        val webOrder = botTSOperations.getWebOrder(it.chat.id.chatId, newMessage)
-                        Logging.d(tag, webOrder.toString())
-
-                        if (webOrder.result.success) {
-                            bot.sendMessage(
-                                it.chat.id,
-                                botMessage.orderMessage(webOrder.webOrder),
-                                disableWebPagePreview = true
-                            )
-
-                            bot.sendMessage(
-                                it.chat.id,
-                                botMessage.statusCodeResolve(webOrder.webOrder.docStatus),
-                                disableWebPagePreview = true
-                            )
-
-                        } else bot.sendMessage(
-                            it.chat.id,
-                            "Найти заявку №$newMessage не удалось",
-                            disableWebPagePreview = true
-                        )
-                    }
-                }
-
-
-            }
+                }) { commandProcessing.incomingMessage(it) }
 
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
         }.start()

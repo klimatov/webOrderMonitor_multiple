@@ -1,10 +1,15 @@
 package data
 
 import bot.repository.BotTSRepository
-import data.restTS.models.*
+import data.restTS.models.LoginResult
+import data.restTS.models.Result
+import data.restTS.models.WebOrder
+import data.restTS.models.WebOrderResult
 import dev.inmo.tgbotapi.types.Identifier
 
 class BotTSRepositoryImpl : BotTSRepository {
+    private val tag = this::class.java.simpleName
+
     // создаем мапу с экземпляром клиента под каждого юзера
     // FIXME: сделать чистку неиспользуемых
     private val serverTSRepositoryInstances: MutableMap<Identifier, ServerTSRepositoryImpl> = mutableMapOf()
@@ -32,21 +37,23 @@ class BotTSRepositoryImpl : BotTSRepository {
     override suspend fun getWebOrder(userId: Identifier, webNum: String): WebOrderResult {
         val serverTSRepository = serverTSRepositoryInstance(userId)
         try {
-//        val response = serverTSRepository.getWebOrderDetail(webNum)
-            var webOrder = serverTSRepository.getAllOrderList(webNum)[0]
-            val webOrderDetail = serverTSRepository.getWebOrderDetail(webOrder.orderId.toString())
-            webOrder.items = webOrderDetail?.items ?: emptyList()
-            return if (serverTSRepository.errorCode == null) {
-                WebOrderResult(
-                    Result(false, null, null),
+            val response = serverTSRepository.getAllOrderList(webNum)
+
+            if (response.isNotEmpty()) {
+                val webOrder = response[0]
+                val webOrderDetail = serverTSRepository.getWebOrderDetail(webOrder.orderId.toString())
+                webOrder.items = webOrderDetail?.items ?: emptyList()
+
+
+                return WebOrderResult(
+                    Result((serverTSRepository.errorCode == 200), serverTSRepository.errorMessage, serverTSRepository.errorCode),
                     webOrder ?: WebOrder()
                 )
-            } else {
-                WebOrderResult(
-                    Result(true, null, serverTSRepository.errorCode),
-                    webOrder ?: WebOrder()
-                )
-            }
+
+            } else return WebOrderResult(
+                Result(false, serverTSRepository.errorMessage, serverTSRepository.errorCode),
+                WebOrder()
+            )
         } catch (e: Exception) {
             return WebOrderResult(
                 Result(false, e.message, null),
