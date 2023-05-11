@@ -46,6 +46,10 @@ class CommandProcessing(val bot: TelegramBot, botRepositoryDB: BotRepositoryDB, 
                             "Веб-заявка №$newMessage не найдена (возможно это доставка)"
                         }
 
+                        401, 403 -> {
+                            "Отказано в доступе к базе TS. Попробуйте обновить пароль по команде /password"
+                        }
+
                         else -> {
                             "Ошибка получения информации по веб-заявке №$newMessage. Код ошибки: ${webOrder.result.errorCode}"
                         }

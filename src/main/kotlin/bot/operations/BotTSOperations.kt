@@ -44,10 +44,16 @@ class BotTSOperations(
 
         val webOrder = botTSRepository.getWebOrder(userId, webNum)
 
-        if (webOrder.result.errorCode == 401) {
-            checkUserDataInTS(botUserData, userId)
+        if (webOrder.result.errorCode != 200) {
+//            val botUserData = botRepositoryDB.getUserBy(userId)
+//            checkUserDataInTS(botUserData, userId)
+            return WebOrderResult(Result(
+                false,
+                webOrder.result.errorMessage,
+                webOrder.result.errorCode
+            ), WebOrder())
         }
 
-        return botTSRepository.getWebOrder(userId, webNum)
+        return webOrder
     }
 }
