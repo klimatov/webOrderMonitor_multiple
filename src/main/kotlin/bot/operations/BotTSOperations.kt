@@ -42,7 +42,18 @@ class BotTSOperations(
             } else return WebOrderResult(Result(false, null, 403), WebOrder())
         }
 
-        val webOrder = botTSRepository.getWebOrder(userId, webNum)
+        var webOrder = botTSRepository.getWebOrder(userId, webNum)
+
+        if (webOrder.result.errorCode == 401) {
+            val botUserData = botRepositoryDB.getUserBy(userId)
+            if (botUserData != null) {
+                val loginResult = checkUserDataInTS(botUserData, userId)
+                if (loginResult.result.success) {
+                    webOrder = botTSRepository.getWebOrder(userId, webNum)
+                }
+            }
+
+        }
 
         if (webOrder.result.errorCode != 200) {
 //            val botUserData = botRepositoryDB.getUserBy(userId)
