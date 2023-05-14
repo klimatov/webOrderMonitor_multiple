@@ -4,15 +4,20 @@ plugins {
     kotlin("jvm") version "1.7.10"
 }
 
-group = "com.github.klimatov"
-version = "1"
+allprojects {
+    apply(plugin = "kotlin")
 
-repositories {
-    mavenCentral()
+    group = "com.github.klimatov"
+    version = "1"
+
+    repositories {
+        mavenCentral()
+    }
+
 }
 
 dependencies {
-    implementation ("dev.inmo:tgbotapi:7.0.1")
+    implementation("dev.inmo:tgbotapi:7.0.1")
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -27,7 +32,10 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.6")
     implementation("org.slf4j:slf4j-simple:2.0.6")
 
+    implementation(project(":restTS"))
+
     testImplementation(kotlin("test"))
+
 }
 
 tasks.test {
