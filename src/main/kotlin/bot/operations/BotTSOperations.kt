@@ -3,10 +3,10 @@ package bot.operations
 import bot.models.BotUser
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
-import data.restTS.models.LoginResult
-import data.restTS.models.Result
-import data.restTS.models.WebOrder
-import data.restTS.models.WebOrderResult
+import restTS.models.LoginResult
+import restTS.models.Result
+import restTS.models.WebOrder
+import restTS.models.WebOrderResult
 import dev.inmo.tgbotapi.types.Identifier
 import utils.Logging
 
@@ -58,7 +58,8 @@ class BotTSOperations(
         if (webOrder.result.errorCode != 200) {
 //            val botUserData = botRepositoryDB.getUserBy(userId)
 //            checkUserDataInTS(botUserData, userId)
-            return WebOrderResult(Result(
+            return WebOrderResult(
+                Result(
                 false,
                 webOrder.result.errorMessage,
                 webOrder.result.errorCode

@@ -1,4 +1,4 @@
-package data.restTS.net
+package restTS.net
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

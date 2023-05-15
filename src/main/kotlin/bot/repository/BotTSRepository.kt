@@ -1,7 +1,7 @@
 package bot.repository
 
-import data.restTS.models.LoginResult
-import data.restTS.models.WebOrderResult
+import restTS.models.LoginResult
+import restTS.models.WebOrderResult
 import dev.inmo.tgbotapi.types.Identifier
 
 interface BotTSRepository {

@@ -14,6 +14,10 @@ allprojects {
         mavenCentral()
     }
 
+//    dependencies {
+//        implementation(project(":simpleLogging"))
+//    }
+
 }
 
 dependencies {
@@ -33,6 +37,8 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.6")
 
     implementation(project(":restTS"))
+    implementation(project(":simpleLogging"))
+
 
     testImplementation(kotlin("test"))
 

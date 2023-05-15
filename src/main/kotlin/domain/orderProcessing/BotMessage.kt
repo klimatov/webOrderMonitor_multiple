@@ -1,6 +1,6 @@
 package domain.orderProcessing
 
-import data.restTS.models.WebOrder
+import restTS.models.WebOrder
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
 import dev.inmo.tgbotapi.utils.*

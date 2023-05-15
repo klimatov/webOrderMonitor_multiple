@@ -1,6 +1,6 @@
 package domain.repository
 
-import data.restTS.models.WebOrder
+import restTS.models.WebOrder
 import dev.inmo.tgbotapi.types.ChatIdentifier
 
 interface BotProcessingRepository {

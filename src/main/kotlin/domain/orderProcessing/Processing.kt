@@ -3,8 +3,8 @@ package domain.orderProcessing
 
 import com.google.gson.Gson
 import domain.repository.BotProcessingRepository
-import data.restTS.models.WebOrder
-import data.restTS.models.WebOrderSimply
+import restTS.models.WebOrder
+import restTS.models.WebOrderSimply
 import domain.models.ShopParameters
 import domain.repository.ServerTSRepository
 import domain.repository.ShopParametersDBRepository

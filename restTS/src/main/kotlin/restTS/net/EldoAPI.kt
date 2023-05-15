@@ -1,4 +1,4 @@
-package data.restTS.net
+package restTS.net
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import retrofit2.Call

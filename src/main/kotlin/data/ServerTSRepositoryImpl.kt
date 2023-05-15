@@ -1,9 +1,10 @@
 package data
 
-import data.restTS.models.*
-import data.restTS.net.NetClient
+import restTS.net.NetClient
 import domain.models.OrderListSimple
 import domain.repository.ServerTSRepository
+import restTS.models.*
+import restTS.models.Result
 import utils.Logging
 import java.time.LocalDateTime
 import java.time.ZoneId
