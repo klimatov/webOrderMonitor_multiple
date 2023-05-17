@@ -2,7 +2,7 @@ package domain.orderProcessing
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import data.restTS.models.WebOrder
+import restTS.models.WebOrder
 import domain.models.ShopParameters
 import domain.repository.BotProcessingRepository
 import domain.repository.BotWorkersRepository

@@ -1,4 +1,4 @@
-package data.restTS.models
+package restTS.models
 
 data class Result(
     val success: Boolean,

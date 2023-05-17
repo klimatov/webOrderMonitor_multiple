@@ -7,7 +7,7 @@ import bot.operations.CommandProcessing
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import cache.InMemoryCache
-import data.restTS.models.WebOrder
+import restTS.models.WebOrder
 import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat

@@ -1,4 +1,4 @@
-package data.restTS.net
+package restTS.net
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitInstance {
     private const val baseUrl = "https://tsapp.eldorado.ru/"
 
-    private val httpLogger = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
+    private val httpLogger = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS)
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(15L, TimeUnit.SECONDS)
         .readTimeout(15L, TimeUnit.SECONDS)

@@ -1,8 +1,9 @@
-package data.restTS.net
+package restTS.net
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import data.restTS.models.*
+import restTS.models.*
+import restTS.models.*
 import utils.Logging
 import java.math.BigInteger
 import java.security.MessageDigest
