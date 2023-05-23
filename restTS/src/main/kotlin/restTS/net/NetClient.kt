@@ -3,7 +3,6 @@ package restTS.net
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import restTS.models.*
-import restTS.models.*
 import utils.Logging
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -290,8 +289,102 @@ class NetClient {
         }
     }
 
+    fun getReasonForIncompliteness(orderId: String?, itemId: String?): List<ShortageReasonDto> {
+        try {
+            val response = RetrofitInstance.eldoApi.reasonForIncompliteness(
+                shop,
+                dbVersion,
+                dbVersion,
+                token,
+                orderId,
+                itemId
+            )?.execute()
+            this.errorCode = response?.code()
 
-    private fun dateFrom() : String {
+            val responseJson = Gson().fromJson(response?.body(), WebOrderReasonForIncompletenessItem::class.java)
+            return responseJson.shortageReasonDtos
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+            this.errorMessage = e.message.toString()
+            this.errorCode = null
+            return emptyList()
+        }
+    }
+
+    fun getShelfsAll(): List<ShelfItem> {
+        try {
+            val response = RetrofitInstance.eldoApi.getShelfsAll(
+                shop,
+                dbVersion,
+                dbVersion,
+                token
+            )?.execute()
+            this.errorCode = response?.code()
+
+            val responseJson = Gson().fromJson(response?.body(), Shelfs::class.java)
+            return responseJson.shelfItem
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+            this.errorMessage = e.message.toString()
+            this.errorCode = null
+            return emptyList()
+        }
+    }
+
+    fun getPrintersList(): List<PcNameList> {
+        try {
+            val response = RetrofitInstance.eldoApi.getPrintersList(
+                shop,
+                dbVersion,
+                dbVersion,
+                token
+            )?.execute()
+            this.errorCode = response?.code()
+
+            val responseJson = Gson().fromJson(response?.body(), PrintersList::class.java)
+            return responseJson.pcNameList
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+            this.errorMessage = e.message.toString()
+            this.errorCode = null
+            return emptyList()
+        }
+    }
+
+    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderResult? {
+        val hashMap: HashMap<String?, Any?> = hashMapOf(
+            "orderType" to orderType,
+            "orderId" to orderId,
+            "company" to company,
+            "type" to "ASSEMBLY",
+            "items" to items,
+            "isChange" to "N",
+            "collector" to collector,
+            "ordType" to ordType
+        )
+        try {
+            val response = RetrofitInstance.eldoApi.saveWebOrder(
+                shop,
+                dbVersion,
+                dbVersion,
+                gmt,
+                token,
+                hashMap
+            )?.execute()
+            this.errorCode = response?.code()
+
+            val responseJson = Gson().fromJson(response?.body(), SaveWebOrderResult::class.java)
+            return responseJson
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+            this.errorMessage = e.message.toString()
+            this.errorCode = null
+            return SaveWebOrderResult()
+        }
+    }
+
+
+    private fun dateFrom(): String {
         val result = LocalDate.now().minusDays(35)
         return result.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
     }

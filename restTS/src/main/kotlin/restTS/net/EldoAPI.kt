@@ -85,4 +85,56 @@ interface EldoAPI {
         @Query("type") str4: String?
     ): Call<JsonElement?>?
 
+    @GET("/web-order/reason-for-incompleteness") // список вариантов подтверждения
+    fun reasonForIncompliteness(
+        @Header("werk") str: String?,
+        @Header("ver") str6: String?,
+        @Header("dbvers") dbvers: String?,
+        @Header("Authorization") str2: String?,
+        @Query("orderId") str3: String?,
+        @Query("itemId") str4: String?
+    ): Call<JsonElement?>?
+
+    @GET("/shelf") // список всех доступных полок
+    fun getShelfsAll(
+        @Header("werk") str: String?,
+        @Header("ver") str6: String?,
+        @Header("dbvers") dbvers: String?,
+        @Header("Authorization") str2: String?
+    ): Call<JsonElement?>?
+
+    @GET("/web-order/printers-list") // список принтеров
+    fun getPrintersList(
+        @Header("werk") str: String?,
+        @Header("ver") str6: String?,
+        @Header("dbvers") dbvers: String?,
+        @Header("Authorization") str2: String?
+    ): Call<JsonElement?>?
+
+    @POST("/web-order/save") // запись подтверждения
+    fun saveWebOrder(
+        @Header("werk") str: String?,
+        @Header("ver") str6: String?,
+        @Header("dbvers") dbvers: String?,
+        @Header("gmt") gmt: String?,
+        @Header("Authorization") str2: String?,
+        @Body hashMap: HashMap<String?, Any?>?
+    ): Call<JsonElement?>?
+
+    @POST("/web-order/print") // печать подобранной веб-заявки
+    fun sendToPrint(
+        @Header("werk") str: String?,
+        @Header("ver") str6: String?,
+        @Header("dbvers") dbvers: String?,
+        @Header("Authorization") str2: String?,
+        @Body hashMap: HashMap<String?, Any?>?
+    ): Call<JsonElement?>?
+
+    @GET("/shelf/{id}")
+    fun getShelfDescription(
+        @Header("werk") str: String?,
+        @Header("Authorization") str2: String?,
+        @Path("id") str3: String?
+    ): Call<JsonElement?>?
+
 }

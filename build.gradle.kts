@@ -13,11 +13,6 @@ allprojects {
     repositories {
         mavenCentral()
     }
-
-//    dependencies {
-//        implementation(project(":simpleLogging"))
-//    }
-
 }
 
 dependencies {

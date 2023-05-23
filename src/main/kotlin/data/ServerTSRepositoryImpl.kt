@@ -1,10 +1,9 @@
 package data
 
-import restTS.net.NetClient
 import domain.models.OrderListSimple
 import domain.repository.ServerTSRepository
 import restTS.models.*
-import restTS.models.Result
+import restTS.net.NetClient
 import utils.Logging
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -85,4 +84,27 @@ class ServerTSRepositoryImpl : ServerTSRepository {
     suspend fun getWebOrderDetail(orderId: String): WebOrderDetail? {
         return netClient.getWebOrderDetail(orderId, "WRQST,PWRQT,DWRQT")
     }
+
+    fun getReasonForIncompliteness(orderId: String?, itemId: String?): List<ShortageReasonDto> {
+        val listReasons = netClient.getReasonForIncompliteness(orderId = orderId, itemId = itemId)
+        return listReasons ?: emptyList()
+    }
+
+    fun getShelfsAll(): List<ShelfItem> {
+        val listShelfs = netClient.getShelfsAll()
+        return listShelfs ?: emptyList()
+    }
+
+    fun getPrintersList(): List<PcNameList> {
+        val listShelfs = netClient.getPrintersList()
+        return listShelfs ?: emptyList()
+    }
+
+    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderResult {
+        return netClient.saveWebOrder(orderType, orderId, company, items, collector, ordType) ?: SaveWebOrderResult()
+    }
+
+
+
+
 }

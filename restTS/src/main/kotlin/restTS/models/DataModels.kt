@@ -78,7 +78,7 @@ data class ListWebOrder(
 
 data class Collector(
     @SerializedName("username") var username: String? = null,
-    @SerializedName("hrCode") var hrCode: Int? = null
+    @SerializedName("hrCode") var hrCode: String? = null
 )
 
 data class WebOrder(
@@ -104,7 +104,8 @@ data class WebOrder(
     @SerializedName("activeTime") var activeTime: Long? = null, // manual
     @SerializedName("items") var items: List<Items> = emptyList(), //manual
     @SerializedName("status") var status: Status? = Status(), //new 01.05.2022
-    @SerializedName("itemsUpdateStatus") var itemsUpdateStatus: Boolean = false // manual
+    @SerializedName("itemsUpdateStatus") var itemsUpdateStatus: Boolean = false, // manual
+    @SerializedName("company") var company: String? = null //new 20.05.2023
 )
 
 data class WebOrderDetail(
@@ -154,9 +155,49 @@ data class Params(
 )
 
 data class Status(
-
     @SerializedName("title") var title: String? = null,
     @SerializedName("description") var description: String? = null,
     @SerializedName("rgb") var rgb: String? = null
 
+)
+
+data class WebOrderReasonForIncompletenessItem(
+    @SerializedName("shortageReasonDtos") var shortageReasonDtos: List<ShortageReasonDto> = listOf(),
+    @SerializedName("needUpdate") var needUpdate: Boolean? = null
+)
+
+data class ShortageReasonDto(
+    @SerializedName("needComm") var needComm: String? = null,
+    @SerializedName("shipped") var shipped: String? = null,
+    @SerializedName("priority") var priority: Int? = null,
+    @SerializedName("name") var name: String? = null,
+    @SerializedName("reasonCode") var reasonCode: String? = null
+)
+
+data class Shelfs(
+    @SerializedName("shelfInfoDtoList") var shelfItem: List<ShelfItem> = listOf()
+)
+
+data class ShelfItem(
+    @SerializedName("shelfId") var shelfId: Int? = null,
+    @SerializedName("description") var description: String? = null,
+    @SerializedName("sectionNumber") var sectionNumber: Int? = null,
+    @SerializedName("rackNumber") var rackNumber: Int? = null,
+    @SerializedName("shelfNumber") var shelfNumber: Int? = null
+)
+
+data class PrintersList(
+    @SerializedName("pcNameList") var pcNameList: List<PcNameList> = listOf(),
+    @SerializedName("needUpdate") var needUpdate: Boolean? = null
+)
+
+data class PcNameList(
+    @SerializedName("pcName") var pcName: String? = null
+)
+
+data class SaveWebOrderResult(
+    @SerializedName("orderId") var orderId: String? = null,
+    @SerializedName("result") var result: String? = null,
+    @SerializedName("message") var message: String? = null,
+    @SerializedName("printOrders") var printOrders: String? = null
 )
