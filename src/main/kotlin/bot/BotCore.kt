@@ -7,10 +7,10 @@ import bot.operations.CommandProcessing
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import cache.InMemoryCache
-import restTS.models.WebOrder
 import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
+import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.reply_markup.editMessageReplyMarkup
 import dev.inmo.tgbotapi.extensions.api.edit.text.editMessageText
 import dev.inmo.tgbotapi.extensions.api.send.send
@@ -24,14 +24,17 @@ import dev.inmo.tgbotapi.extensions.utils.asFromUser
 import dev.inmo.tgbotapi.extensions.utils.extensions.parseCommandsWithParams
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.*
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
+import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.Identifier
+import dev.inmo.tgbotapi.types.Username
 import dev.inmo.tgbotapi.types.chat.*
 import dev.inmo.tgbotapi.types.message.ChatEvents.MigratedToSupergroup
 import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.utils.buildEntities
+import dev.inmo.tgbotapi.utils.link
 import dev.inmo.tgbotapi.utils.row
 import domain.models.WorkerState
 import domain.orderProcessing.BotMessage
@@ -40,6 +43,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import restTS.models.WebOrder
 import utils.Logging
 import java.util.*
 
@@ -58,6 +62,8 @@ class BotCore(
 
     private val botToken = TELEGRAM_BOT_TOKEN
     private val bot = telegramBot(token = botToken)
+    private var botName = Username("@")
+
     private val botTSOperations = BotTSOperations(botTSRepository = botTSRepository, botRepositoryDB = botRepositoryDB)
     private var allBotUsers: MutableMap<Identifier, BotUser> = botRepositoryDB.getAll()
     private var newBotUsers: MutableMap<Identifier, BotUser> = mutableMapOf()
@@ -67,6 +73,7 @@ class BotCore(
     private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository)
 
     suspend fun start() {
+        botName = bot.getMe().username
 
         val scope = CoroutineScope(Dispatchers.Default + job)
         bot.buildBehaviourWithFSMAndStartLongPolling<BotState>(scope) {
@@ -523,7 +530,8 @@ class BotCore(
                 initialFilter = {
                     (stateUser[it.chat.id.chatId] == null) &&
                             (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId)
-                }
+                },
+                requireOnlyCommandInMessage = true
             ) {
 
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
@@ -544,6 +552,16 @@ class BotCore(
                     startChain(UserExpectLogin(it.chat.id, it))
                 }
             }
+
+            onDeepLink { (it, deepLink) ->
+                delete(it.chat, it.messageId)
+                val source = String(Base64.getUrlDecoder().decode(deepLink))
+                send(it.chat, "Ok, I got deep link \"${source}\" in trigger")
+            }
+//            waitDeepLinks().subscribeSafelyWithoutExceptions(this) { (it, deepLink) ->
+//                reply(it, "Ok, I got deep link \"${deepLink}\" in waiter")
+//                println(triggersHolder.handleableCommandsHolder.handleable)
+//            }
 
             onCommand("id",
                 initialFilter = {
@@ -702,6 +720,22 @@ class BotCore(
                 } else {
                     sendTextMessage(it.chat, "Зарегистрируйтесь для использования данной команды")
                 }
+            }
+
+            onCommand(
+                "test",
+                initialFilter = {
+                    (stateUser[it.chat.id.chatId] == null)
+                }
+            ) {
+                Logging.d(tag, "/test")
+                val text = buildEntities {
+                    link("[Подробнее]",makeDeepLink(bot.getMe().username,"22"))
+                }
+                sendTextMessage(
+                    it.chat,
+                    text
+                )
             }
 
             onNewChatMembers { it ->
@@ -868,7 +902,7 @@ class BotCore(
         try {
             return bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
-                botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
             ).messageId
@@ -883,7 +917,7 @@ class BotCore(
             bot.editMessageText(
                 botInstancesParameters[shop]!!.targetChatId,
                 webOrder?.messageId ?: 0,
-                botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
@@ -901,7 +935,7 @@ class BotCore(
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
-                    botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt),
+                    botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                     disableWebPagePreview = true,
                     replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
                 )

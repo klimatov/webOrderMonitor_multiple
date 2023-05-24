@@ -1,20 +1,17 @@
 package domain.orderProcessing
 
-import restTS.models.WebOrder
+import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
+import dev.inmo.tgbotapi.types.Username
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
 import dev.inmo.tgbotapi.utils.*
-import dev.inmo.tgbotapi.utils.bold
-import dev.inmo.tgbotapi.utils.regular
-import dev.inmo.tgbotapi.utils.regularln
-import dev.inmo.tgbotapi.utils.underlineln
+import restTS.models.WebOrder
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
-import kotlin.collections.plus
 
 class BotMessage : DateTimeProcess() {
 
@@ -42,17 +39,37 @@ class BotMessage : DateTimeProcess() {
         return resultMessage
     }
 
-    fun inworkMessage(webOrder: WebOrder?, gmt: String): TextSourcesList {
+    fun inworkMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
             codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
-        }.plus(orderMessage(webOrder))
+        }
+            .plus(orderMessage(webOrder))
+            .plus(bottomLink(webOrder?.orderId, botName, false))
         return resultMessage
     }
 
-    fun completeMessage(webOrder: WebOrder?, gmt: String): TextSourcesList {
+    fun completeMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
             boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
-        }.plus(italic(orderMessage(webOrder)))
+        }
+            .plus(italic(orderMessage(webOrder)))
+            .plus(bottomLink(webOrder?.orderId, botName, true))
+        return resultMessage
+    }
+
+    private fun bottomLink(orderId: String?, botName: Username, complete: Boolean): TextSourcesList {
+        val resultMessage = buildEntities {
+            boldln("")
+            link("[СТАТУС]", makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("web-$orderId".toByteArray())))
+
+            if (!complete) {
+                regular("   ")
+                link(
+                    "[ПОДТВЕРДИТЬ]",
+                    makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("confirm-$orderId".toByteArray()))
+                )
+            }
+        }
         return resultMessage
     }
 
