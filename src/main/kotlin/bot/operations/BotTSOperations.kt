@@ -4,10 +4,7 @@ import bot.models.BotUser
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import dev.inmo.tgbotapi.types.Identifier
-import restTS.models.LoginResult
-import restTS.models.Result
-import restTS.models.WebOrder
-import restTS.models.WebOrderResult
+import restTS.models.*
 
 
 class BotTSOperations(
@@ -23,42 +20,46 @@ class BotTSOperations(
             userId
         )
     }
+    suspend fun saveWebOrder(
+        userId: Identifier,
+        orderType: String,
+        orderId: String,
+        company: String,
+        items: List<SaveItems>,
+        collector: Collector,
+        ordType: String
+    ): SaveWebOrderResult {
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return SaveWebOrderResult(checkUserInstanceResult, SaveWebOrderRes())
+        return botTSRepository.saveWebOrder(userId, orderType, orderId, company, items, collector, ordType)
+    }
+    suspend fun getPrintersList(userId: Identifier): PrintersListResult {
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return PrintersListResult(checkUserInstanceResult, emptyList())
+        return botTSRepository.getPrintersList(userId)
+    }
+    suspend fun getShelfs(userId: Identifier): ShelfsResult {
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return ShelfsResult(checkUserInstanceResult, emptyList())
+        return botTSRepository.getShelfs(userId)
+    }
 
-//    suspend fun getWebOrderDetail(userId: Identifier, orderId: String): WebOrderResult {
-//
-//    }
+    suspend fun getReasonForIncompliteness(userId: Identifier, orderId: String, itemId: String): ReasonsForIncompletnessResult {
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return ReasonsForIncompletnessResult(checkUserInstanceResult, emptyList())
+        return botTSRepository.getReasonForIncompliteness(userId, orderId, itemId)
+    }
+
+    suspend fun getWebOrderDetail(userId: Identifier, orderId: String): WebOrderResult {
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return WebOrderResult(checkUserInstanceResult, WebOrder())
+        return botTSRepository.getWebOrderDetail(userId, orderId)
+    }
 
     suspend fun getWebOrder(userId: Identifier, webNum: String): WebOrderResult {
-        val checkResult = checkOrMakeUserInstance(userId) //если инстанса юзера нет, то берем данные из БД и создаем
-        if (!checkResult.success) return WebOrderResult(checkResult, WebOrder())
-
-
-        var webOrder = botTSRepository.getWebOrder(userId, webNum)
-
-        if (webOrder.result.errorCode == 401) {
-            val botUserData = botRepositoryDB.getUserBy(userId)
-            if (botUserData != null) {
-                val loginResult = checkUserDataInTS(botUserData, userId)
-                if (loginResult.result.success) {
-                    webOrder = botTSRepository.getWebOrder(userId, webNum)
-                }
-            }
-
-        }
-
-        if (webOrder.result.errorCode != 200) {
-//            val botUserData = botRepositoryDB.getUserBy(userId)
-//            checkUserDataInTS(botUserData, userId)
-            return WebOrderResult(
-                Result(
-                    false,
-                    webOrder.result.errorMessage,
-                    webOrder.result.errorCode
-                ), WebOrder()
-            )
-        }
-
-        return webOrder
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return WebOrderResult(checkUserInstanceResult, WebOrder())
+        return botTSRepository.getWebOrder(userId, webNum)
     }
 
     private suspend fun checkOrMakeUserInstance(userId: Identifier): Result {

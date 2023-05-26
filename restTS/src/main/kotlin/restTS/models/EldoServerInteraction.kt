@@ -18,12 +18,12 @@ data class WebOrderResult(
 
 data class ReasonsForIncompletnessResult(
     val result: Result,
-    val reasonsForIncompletness: List<ShortageReasonDto>
+    val reasonsList: List<ShortageReasonDto>
 )
 
 data class ShelfsResult(
     val result: Result,
-    val shelfs: List<ShelfItem>
+    val shelfsList: List<ShelfItem>
 )
 
 data class PrintersListResult(
@@ -34,4 +34,7 @@ data class PrintersListResult(
 data class SaveWebOrderResult(
     val result: Result,
     val saveWebOrder: SaveWebOrderRes
+)
+data class PrintResult(
+    val result: Result
 )

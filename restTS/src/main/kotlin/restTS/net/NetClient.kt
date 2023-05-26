@@ -24,6 +24,8 @@ class NetClient {
     var dbVersion = "0"
     private val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault())
     var gmt = SimpleDateFormat("Z").format(calendar.time) // +0700
+    private var _login: String = ""
+    private var _password: String = ""
     var remoteDbVersion: Int? = null
 //    var timeZone = TimeZone.getTimeZone("GMT+07:00")
 //    val gmt = timeZone.rawOffset.toString()
@@ -59,9 +61,11 @@ class NetClient {
         }
     }
 
-    fun login(login: String, password: String, werk: String, gmt: String): Boolean {
+    fun login(login: String = this._login, password: String = this._password, werk: String = this.shop, gmt: String = this.gmt): Boolean {
         this.shop = werk
         this.gmt = gmt
+        this._login = login
+        this._password = password
 
         val values =
             hashMapOf(
@@ -380,6 +384,34 @@ class NetClient {
             this.errorMessage = e.message.toString()
             this.errorCode = null
             return SaveWebOrderRes()
+        }
+    }
+
+    fun sendToPrint(pcName: String?, printOrders: String?, printType: String?) {
+        val hashMap: HashMap<String?, Any?> = hashMapOf(
+            "pcName" to pcName,
+            "printOrders" to printOrders,
+            "guid" to "",
+            "printType" to printType
+        )
+        try {
+            val response = RetrofitInstance.eldoApi.sendToPrint(
+                shop,
+                dbVersion,
+                dbVersion,
+                gmt,
+                token,
+                hashMap
+            )?.execute()
+            this.errorCode = response?.code()
+
+            val responseJson = Gson().fromJson(response?.body(), PrintRes::class.java)
+//            return responseJson
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+            this.errorMessage = e.message.toString()
+            this.errorCode = null
+//            return PrintRes()
         }
     }
 

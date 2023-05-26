@@ -214,3 +214,6 @@ data class SaveIncomplet(
     @SerializedName("reasonCode") var reasonCode: String? = null,
     @SerializedName("comment") var comment: String? = null
 )
+data class PrintRes(
+    @SerializedName("needUpdate") var needUpdate: Boolean? = null
+)

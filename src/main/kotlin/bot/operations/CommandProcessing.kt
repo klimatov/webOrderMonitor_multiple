@@ -9,6 +9,7 @@ import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.MessageContent
 import domain.orderProcessing.BotMessage
+import restTS.models.ShortageReasonDto
 import utils.Logging
 import java.util.*
 
@@ -53,8 +54,19 @@ class CommandProcessing(val bot: TelegramBot, botRepositoryDB: BotRepositoryDB, 
     private suspend fun confirmWebOrder(chatId: IdChatIdentifier, orderId: String) {
         Logging.d(tag, "confirm order #$orderId")
 
-//        val webOrder = botTSOperations.getWebOrder(chatId.chatId, webNum)
+        val webOrder = botTSOperations.getWebOrderDetail(chatId.chatId, orderId)
+        val reasonsList: MutableMap<String, List<ShortageReasonDto>> = emptyMap<String, List<ShortageReasonDto>>().toMutableMap()
+        webOrder.webOrder.items.forEach { item ->
+            reasonsList[item.goodCode.toString()] = botTSOperations.getReasonForIncompliteness(chatId.chatId, orderId, item.goodCode.toString()).reasonsList
+        }
+        val shelfsList = botTSOperations.getShelfs(chatId.chatId)
+        val printersList = botTSOperations.getPrintersList(chatId.chatId)
 
+
+        Logging.d(tag, webOrder.toString())
+        Logging.d(tag, reasonsList.toString())
+        Logging.d(tag, shelfsList.toString())
+        Logging.d(tag, printersList.toString())
 
     }
 

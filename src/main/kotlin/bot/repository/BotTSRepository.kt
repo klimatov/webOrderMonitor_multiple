@@ -13,5 +13,5 @@ interface BotTSRepository {
     suspend fun getShelfs(userId: Identifier): ShelfsResult
     suspend fun getPrintersList(userId: Identifier): PrintersListResult
     suspend fun saveWebOrder(userId: Identifier, orderType: String, orderId: String, company: String, items: List<SaveItems>, collector: Collector, ordType: String): SaveWebOrderResult
-    suspend fun printWebOrder(userId: Identifier)
+    suspend fun printWebOrder(userId: Identifier, pcName: String?, printOrders: String?, printType: String?): PrintResult
 }
