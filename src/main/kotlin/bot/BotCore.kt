@@ -555,9 +555,16 @@ class BotCore(
 
             onDeepLink { (it, deepLink) ->
                 delete(it.chat, it.messageId)
-                val source = String(Base64.getUrlDecoder().decode(deepLink))
-                send(it.chat, "Ok, I got deep link \"${source}\" in trigger")
+
+                if (allBotUsers.containsKey(it.chat.id.chatId)) {
+                    commandProcessing.incomingDeepLink(deepLink, it.chat.id)
+                } else {
+                    sendTextMessage(it.chat, botMessage.descriptionMessage())
+                    sendTextMessage(it.chat, "Регистрируем вас")
+                    startChain(UserExpectLogin(it.chat.id, it))
+                }
             }
+
 //            waitDeepLinks().subscribeSafelyWithoutExceptions(this) { (it, deepLink) ->
 //                reply(it, "Ok, I got deep link \"${deepLink}\" in waiter")
 //                println(triggersHolder.handleableCommandsHolder.handleable)

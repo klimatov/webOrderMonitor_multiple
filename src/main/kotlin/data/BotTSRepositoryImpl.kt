@@ -1,11 +1,8 @@
 package data
 
 import bot.repository.BotTSRepository
-import restTS.models.LoginResult
-import restTS.models.Result
-import restTS.models.WebOrder
-import restTS.models.WebOrderResult
 import dev.inmo.tgbotapi.types.Identifier
+import restTS.models.*
 
 class BotTSRepositoryImpl : BotTSRepository {
     private val tag = this::class.java.simpleName
@@ -24,7 +21,7 @@ class BotTSRepositoryImpl : BotTSRepository {
             login = login,
             password = password,
             werk = werk,
-            gmt = "+0300"
+            gmt = "+0300" // TODO: подтягивавть GMT юзера
         )
     }
 
@@ -46,7 +43,11 @@ class BotTSRepositoryImpl : BotTSRepository {
 
 
                 return WebOrderResult(
-                    Result((serverTSRepository.errorCode == 200), serverTSRepository.errorMessage, serverTSRepository.errorCode),
+                    Result(
+                        (serverTSRepository.errorCode == 200),
+                        serverTSRepository.errorMessage,
+                        serverTSRepository.errorCode
+                    ),
                     webOrder ?: WebOrder()
                 )
 
@@ -60,6 +61,60 @@ class BotTSRepositoryImpl : BotTSRepository {
                 WebOrder()
             )
         }
+    }
+
+    override suspend fun getWebOrderDetail(userId: Identifier, orderId: String): WebOrderResult {
+        val serverTSRepository = serverTSRepositoryInstance(userId)
+        try {
+            val webOrderDetail = serverTSRepository.getWebOrderDetail(orderId)
+            return WebOrderResult(
+                Result(
+                    (serverTSRepository.errorCode == 200),
+                    serverTSRepository.errorMessage,
+                    serverTSRepository.errorCode
+                ),
+                webOrderDetail?.webOrder?.copy(items = webOrderDetail.items) ?: WebOrder()
+            )
+
+        } catch (e: Exception) {
+            return WebOrderResult(
+                Result(false, e.message, null),
+                WebOrder()
+            )
+        }
+
+    }
+
+    override suspend fun getReasonForIncompliteness(
+        userId: Identifier,
+        orderId: String,
+        itemId: String
+    ): ReasonsForIncompletnessResult {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getShelfs(userId: Identifier): ShelfsResult {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPrintersList(userId: Identifier): PrintersListResult {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun saveWebOrder(
+        userId: Identifier,
+        orderType: String,
+        orderId: String,
+        company: String,
+        items: List<SaveItems>,
+        collector: Collector,
+        ordType: String
+    ): SaveWebOrderResult {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun printWebOrder(userId: Identifier) {
+        TODO("Not yet implemented")
     }
 
     override suspend fun checkUserInstance(userId: Identifier): Boolean {

@@ -3,12 +3,11 @@ package bot.operations
 import bot.models.BotUser
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
+import dev.inmo.tgbotapi.types.Identifier
 import restTS.models.LoginResult
 import restTS.models.Result
 import restTS.models.WebOrder
 import restTS.models.WebOrderResult
-import dev.inmo.tgbotapi.types.Identifier
-import utils.Logging
 
 
 class BotTSOperations(
@@ -25,22 +24,14 @@ class BotTSOperations(
         )
     }
 
+//    suspend fun getWebOrderDetail(userId: Identifier, orderId: String): WebOrderResult {
+//
+//    }
+
     suspend fun getWebOrder(userId: Identifier, webNum: String): WebOrderResult {
-        if (!botTSRepository.checkUserInstance(userId)) { //если инстанса юзера нет, то берем данные из БД и создаем
-            Logging.d(tag, "Создаем инстанс юзера")
-            val botUserData = botRepositoryDB.getUserBy(userId)
-            Logging.d(tag, "Данные юзера из БД: $botUserData")
-            if (botUserData != null) {
-                val loginResult = checkUserDataInTS(botUserData, userId)
-                if (!loginResult.result.success) return WebOrderResult(
-                    Result(
-                        false,
-                        loginResult.result.errorMessage,
-                        loginResult.result.errorCode
-                    ), WebOrder()
-                )
-            } else return WebOrderResult(Result(false, null, 403), WebOrder())
-        }
+        val checkResult = checkOrMakeUserInstance(userId) //если инстанса юзера нет, то берем данные из БД и создаем
+        if (!checkResult.success) return WebOrderResult(checkResult, WebOrder())
+
 
         var webOrder = botTSRepository.getWebOrder(userId, webNum)
 
@@ -60,12 +51,28 @@ class BotTSOperations(
 //            checkUserDataInTS(botUserData, userId)
             return WebOrderResult(
                 Result(
-                false,
-                webOrder.result.errorMessage,
-                webOrder.result.errorCode
-            ), WebOrder())
+                    false,
+                    webOrder.result.errorMessage,
+                    webOrder.result.errorCode
+                ), WebOrder()
+            )
         }
 
         return webOrder
+    }
+
+    private suspend fun checkOrMakeUserInstance(userId: Identifier): Result {
+        if (!botTSRepository.checkUserInstance(userId)) { // если инстанса юзера нет, то создаем
+            val botUserData = botRepositoryDB.getUserBy(userId) // берем данные юзера из БД
+            if (botUserData != null) {
+                val loginResult = checkUserDataInTS(botUserData, userId)
+                if (!loginResult.result.success) return Result(
+                    false,
+                    loginResult.result.errorMessage,
+                    loginResult.result.errorCode
+                )
+            } else return Result(false, null, 403)
+        }
+        return Result(true, null, null)
     }
 }

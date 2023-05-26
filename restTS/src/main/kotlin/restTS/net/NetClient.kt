@@ -351,7 +351,7 @@ class NetClient {
         }
     }
 
-    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderResult? {
+    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderRes? {
         val hashMap: HashMap<String?, Any?> = hashMapOf(
             "orderType" to orderType,
             "orderId" to orderId,
@@ -373,13 +373,13 @@ class NetClient {
             )?.execute()
             this.errorCode = response?.code()
 
-            val responseJson = Gson().fromJson(response?.body(), SaveWebOrderResult::class.java)
+            val responseJson = Gson().fromJson(response?.body(), SaveWebOrderRes::class.java)
             return responseJson
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.errorMessage = e.message.toString()
             this.errorCode = null
-            return SaveWebOrderResult()
+            return SaveWebOrderRes()
         }
     }
 

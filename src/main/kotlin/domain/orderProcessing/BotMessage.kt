@@ -44,7 +44,7 @@ class BotMessage : DateTimeProcess() {
             codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }
             .plus(orderMessage(webOrder))
-            .plus(bottomLink(webOrder?.orderId, botName, false))
+            .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, false))
         return resultMessage
     }
 
@@ -53,20 +53,21 @@ class BotMessage : DateTimeProcess() {
             boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }
             .plus(italic(orderMessage(webOrder)))
-            .plus(bottomLink(webOrder?.orderId, botName, true))
+            .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, true))
         return resultMessage
     }
 
-    private fun bottomLink(orderId: String?, botName: Username, complete: Boolean): TextSourcesList {
+    private fun bottomLink(orderId: String?, webNum: String?, botName: Username, complete: Boolean): TextSourcesList {
         val resultMessage = buildEntities {
             boldln("")
-            link("[СТАТУС]", makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("web-$orderId".toByteArray())))
+            boldln("")
+            link("[СТАТУС]", makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=$webNum&order=$orderId".toByteArray())))
 
             if (!complete) {
                 regular("   ")
                 link(
                     "[ПОДТВЕРДИТЬ]",
-                    makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("confirm-$orderId".toByteArray()))
+                    makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=confirm&web=$webNum&order=$orderId".toByteArray()))
                 )
             }
         }

@@ -100,8 +100,8 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         return listShelfs ?: emptyList()
     }
 
-    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderResult {
-        return netClient.saveWebOrder(orderType, orderId, company, items, collector, ordType) ?: SaveWebOrderResult()
+    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderRes {
+        return netClient.saveWebOrder(orderType, orderId, company, items, collector, ordType) ?: SaveWebOrderRes()
     }
 
 
