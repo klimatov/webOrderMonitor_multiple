@@ -1,20 +1,17 @@
 package bot.models
 
 import dev.inmo.tgbotapi.types.IdChatIdentifier
-import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
-import dev.inmo.tgbotapi.types.message.content.TextContent
 
-data class ConfirmationExpectReason(override val context: IdChatIdentifier) :
+data class ConfirmationStart(override val context: IdChatIdentifier, val webNum: String, val orderId: String) :
+    BotState
+data class ConfirmationExpectReason(override val context: IdChatIdentifier, val orderSaveParam: OrderSaveParam) :
     BotState
 
-data class ConfirmationExpectShelf(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+data class ConfirmationExpectShelf(override val context: IdChatIdentifier , val orderSaveParam: OrderSaveParam) :
     BotState
 
-data class ConfirmationExpectPrinter(override val context: IdChatIdentifier, val sourceMessage: CommonMessage<TextContent>) :
+data class ConfirmationExpectPrinter(override val context: IdChatIdentifier, val orderSaveParam: OrderSaveParam) :
     BotState
 
-data class ConfirmationStopState(override val context: IdChatIdentifier) :
-    BotState {
-        var myTest: String = "test"
-    }
-
+data class ConfirmationStopState(override val context: IdChatIdentifier, val orderSaveParam: OrderSaveParam) :
+    BotState

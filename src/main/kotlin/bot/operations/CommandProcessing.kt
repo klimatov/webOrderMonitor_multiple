@@ -1,36 +1,43 @@
 package bot.operations
 
-import bot.models.BotState
-import bot.models.ConfirmationExpectReason
-import bot.models.ConfirmationStopState
+import bot.models.*
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import dev.inmo.tgbotapi.bot.TelegramBot
+import dev.inmo.tgbotapi.extensions.api.delete
+import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.api.send.sendMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.DefaultBehaviourContextWithFSM
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitDataCallbackQuery
-import dev.inmo.tgbotapi.extensions.utils.extensions.raw.reply_markup
+import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.message
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
+import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
+import dev.inmo.tgbotapi.types.ChatIdentifier
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.Identifier
+import dev.inmo.tgbotapi.types.MessageId
+import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.MessageContent
-import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.row
 import domain.orderProcessing.BotMessage
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import restTS.models.*
 import utils.Logging
 import java.util.*
+import kotlin.math.abs
 
 class CommandProcessing(
     val bot: TelegramBot,
     botRepositoryDB: BotRepositoryDB,
     botTSRepository: BotTSRepository,
-    private val stateUser: MutableMap<Identifier, BotState>
+    private val stateUser: MutableMap<Identifier, BotState>,
+    private val allBotUsers: MutableMap<Identifier, BotUser>
 ) {
 
     private val webOrder: WebOrderResult = WebOrderResult(
@@ -73,11 +80,28 @@ class CommandProcessing(
                     params = listOf(),
                     incomplet = null,
                     remains = listOf()
+                ),
+                Items(
+                    goodCode = "590018193",
+                    name = "Батарея Duracell Optimum АА 4 штz",
+                    amount = 399,
+                    quantity = 1,
+                    itemNo = 10,
+                    barCode = "5000394158696",
+                    kit = null,
+                    routeIsNeeded = "Y",
+                    eshopUrl = "www.eldorado.ru/cat/detail/590018193/?utm_a=A181",
+                    itemId = 15441505,
+                    parentiTemNo = null,
+                    shelf = "101",
+                    params = listOf(),
+                    incomplet = null,
+                    remains = listOf()
                 )
             ),
             status = Status(title = null, description = null, rgb = null),
             itemsUpdateStatus = false,
-            company = null
+            company = ""
         )
     )
 
@@ -731,6 +755,23 @@ class CommandProcessing(
         )
     )
 
+    private fun templateLoadData(webNum: String) =
+        "Запрашиваем данные для подтверждения веб-заявки №$webNum с сервера TS"
+
+    private fun templateAlredyConfirmed(webNum: String) = "Веб-заявка №$webNum уже подтверждена"
+    private fun templateReasonRequest(goodCode: String, name: String) = "Выберите тип подтверждения для $goodCode $name"
+    private fun templateCommentRequest(goodCode: String, name: String, reason: String) =
+        "Так как для $goodCode $name Вы выбрали \'$reason\', нужно ввести обязательный комментарий:"
+
+    private fun templateShelfRequest(goodCode: String, name: String) = "Выберите полку для $goodCode $name"
+    private fun templatePrinterRequest(webNum: String) =
+        "Выберите принтер для печати листа подтверждения веб-заявки №$webNum"
+
+    private fun templateIsTheDataCorrect(webNum: String) = "Для веб-заявки №$webNum вы выбрали:"
+    private fun templateCancelOrder(webNum: String) = "Подтверждение веб-заявки №$webNum отменено"
+    private fun templateConfirmedOk(webNum: String) = "Веб-заявка №$webNum успешно подтверждена"
+    private fun templateConfirmedFalse(webNum: String) =
+        "Подтверить веб-заявку №$webNum не удалось по техническим причинам"
 
     private val tag = this::class.java.simpleName
 
@@ -769,7 +810,7 @@ class CommandProcessing(
 
             "confirm" -> {
                 Logging.d(tag, "confirm")
-                dataMap["order"]?.let { confirmWebOrder(chatId, it, defaultBehaviourContextWithFSM) }
+                confirmWebOrder(chatId, dataMap["order"] ?: "", dataMap["web"] ?: "", defaultBehaviourContextWithFSM)
             }
         }
     }
@@ -777,76 +818,289 @@ class CommandProcessing(
     private suspend fun confirmWebOrder(
         chatId: IdChatIdentifier,
         orderId: String,
+        webNum: String,
         defaultBehaviourContextWithFSM: DefaultBehaviourContextWithFSM<BotState>
     ) {
         Logging.d(tag, "confirm order #$orderId")
 
+        defaultBehaviourContextWithFSM.startChain(ConfirmationStart(chatId, webNum, orderId))
+
+
+//        val printersList = botTSOperations.getPrintersList(chatId.chatId)
+
+
+//        if ((webOrder.result.success) && (reasonsList.isNotEmpty()) && (shelfsList.shelfsList.isNotEmpty())) {
+////            Logging.d(tag, webOrder.toString() + "\n\n" + reasonsList.toString() + "\n\n" + shelfsList.toString() + "\n\n" + printersList.toString())
+//
+//            defaultBehaviourContextWithFSM.startChain(ConfirmationStart(chatId, webNum, orderId))
+//        } else bot.sendMessage(
+//            chatId,
+//            "Ошибка получения данных из TS",
+//            disableWebPagePreview = true
+//        )
+
         with(defaultBehaviourContextWithFSM) {
-            strictlyOn<ConfirmationExpectReason> {
+
+            strictlyOn<ConfirmationStart> {
                 stateUser[it.context.chatId] = it
-                send(it.context) { +"Выберите тип подтверждения" }
 
-                val infoMsg = inlineKeyboard {
-                    row {
-                        dataButton("Text button", "request=param")
-                        dataButton("Text button2", "poom=purum")
-                        dataButton("Text button3", "poom=purumvf")
-                        dataButton("Text button4", "poom=purum33")
-                        dataButton("Text button5", "poom=purum44")
-                    }
-                }
-
+                var messageId: MessageId? = null
                 try {
-                    send(
+                    messageId = send(
                         it.context,
-                        "Выберите тип подтверждения",
-                        replyMarkup = infoMsg
-                    ).reply_markup
+                        templateLoadData(it.webNum),
+                        replyMarkup = null
+                    ).messageId
                 } catch (e: Exception) {
                     Logging.e(tag, "Exception: ${e.stackTraceToString()}}")
                 }
 
-                val contentMessage = waitDataCallbackQuery().first()
-//                    .filter { message ->
-//                    message.sameChat(it.context)
-//                }.first()
-                println(contentMessage.data)
-//                println("вы выбрали тип ${contentMessage.content.text}")
-                ConfirmationStopState(it.context)
+                val orderSaveParam = OrderSaveParam(
+                    orderId = it.orderId,
+                    webNum = it.webNum,
+                    messageId = messageId,
+                    collector = Collector(
+                        username = allBotUsers[it.context.chatId]?.tsLogin,
+                        hrCode = allBotUsers[it.context.chatId]?.sapId
+                    )
+                )
+
+                if (messageId == null) {
+                    orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                    ConfirmationStopState(it.context, orderSaveParam)
+                } else {
+                    orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
+//                    val webOrder = botTSOperations.getWebOrderDetail(chatId.chatId, orderId)
+
+                    if (webOrder.result.success) {
+                        orderSaveParam.webNum = webOrder.webOrder.webNum
+                        orderSaveParam.orderType = webOrder.webOrder.orderType
+                        orderSaveParam.company = webOrder.webOrder.company
+                        orderSaveParam.ordType = webOrder.webOrder.ordType
+                        webOrder.webOrder.items.forEach { item ->
+                            orderSaveParam.items.add(
+                                ItemsSaveParam(
+                                    goodCode = item.goodCode,
+                                    name = item.name,
+                                    itemNo = "${item.itemNo}",
+                                    incomplet = null,
+                                    shelf = null,
+                                    quantity = "${item.quantity}"
+                                )
+                            )
+                        }
+                        ConfirmationExpectReason(it.context, orderSaveParam)
+                    } else {
+                        orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, orderSaveParam)
+                    }
+
+                }
+            }
+
+
+            strictlyOn<ConfirmationExpectReason> {
+                stateUser[it.context.chatId] = it
+
+                Logging.d(tag, "Параметры тут такие: ${it.orderSaveParam.toString()}")
+
+//                val reasonsList: MutableMap<String, List<ShortageReasonDto>> =
+//                    emptyMap<String, List<ShortageReasonDto>>().toMutableMap()
+//                webOrder.webOrder.items.forEach { item ->
+//                    reasonsList[item.goodCode.toString()] =
+//                        botTSOperations.getReasonForIncompliteness(
+//                            chatId.chatId,
+//                            orderId,
+//                            item.goodCode.toString()
+//                        ).reasonsList
+//                }
+
+
+//                val shelfsList = botTSOperations.getShelfs(chatId.chatId)
+                it.orderSaveParam.items.forEach { item ->
+                    val doReasonsList =
+                        reasonsList["590018193"] ?: emptyList()
+//                        botTSOperations.getReasonForIncompliteness(chatId.chatId, orderId, item.goodCode.toString()).reasonsList
+
+                    if ((doReasonsList.isNotEmpty()) && (shelfsList.result.success)) {
+
+                        // блок выбора типа подтверждения
+
+
+                        val reasonButtons = inlineKeyboard {
+                            doReasonsList.forEach {
+                                row {
+                                    dataButton(it.name.toString(), it.reasonCode.toString())
+                                }
+                            }
+                        }
+                        editOrderConfirmationMessage(
+                            it.context,
+                            templateReasonRequest(item.goodCode ?: "", item.name ?: ""),
+                            it.orderSaveParam.messageId,
+                            reasonButtons
+                        )
+                        val reasonChoiceCode = waitDataCallbackQuery().filter { message ->
+                            message.message?.sameChat(it.context) ?: false
+                        }.first()
+
+                        val reasonChoice = doReasonsList.find { it.reasonCode == reasonChoiceCode.data }
+
+                        if (reasonChoice?.needComm == "Y") {
+                            editOrderConfirmationMessage(
+                                it.context,
+                                templateCommentRequest(item.goodCode ?: "", item.name ?: "", reasonChoice.name ?: ""),
+                                it.orderSaveParam.messageId
+                            )
+                            val reasonComment = waitTextMessage().filter { message ->
+                                message.sameChat(it.context)
+                            }.first()
+                            delete(it.context, reasonComment.messageId)
+
+
+                        }
+                        println("вы выбрали тип ${reasonChoiceCode.data}")
+
+                        // блок выбора полки
+
+//                        var count = 0
+
+                        val sortedShelfs = shelfsList.shelfsList.sortedBy { it.shelfId }
+                        val size = sortedShelfs.size - 3
+                        val x = 5
+                        val y = abs(size / x)
+
+                        var count = 1
+
+                        // TODO: отфильтровать секции больше 3
+
+
+                        val shelfButtons = inlineKeyboard {
+
+                            for (yy in 1..(y + 1)) {
+                                row {
+                                    for (xx in 1..x) {
+                                        if (count >= size) break
+                                        val shelf = sortedShelfs.get(count)
+                                        dataButton(
+                                            "${shelf.sectionNumber}/${shelf.rackNumber}/${shelf.shelfNumber}",
+                                            shelf.shelfId.toString()
+                                        )
+                                        count++
+                                    }
+                                }
+                            }
+                            for (xx in count..(sortedShelfs.size-1)) {
+                                row {
+                                    val shelf = sortedShelfs.get(xx)
+                                    dataButton(
+                                        shelf.description.toString(),
+                                        shelf.shelfId.toString()
+                                    )
+                                }
+                            }
+
+//                            shelfsList.shelfsList.sortedBy { it.shelfId }.forEach {
+//
+//                                if (count++ < (shelfsList.shelfsList.size - 3)) {
+//                                    row {
+//                                        dataButton(
+//                                            "${it.sectionNumber}/${it.rackNumber}/${it.shelfNumber}",
+//                                            it.shelfId.toString()
+//                                        )
+//                                    }
+//
+//                                } else {
+//                                    row {
+//                                        dataButton(
+//                                            it.description.toString(),
+//                                            it.shelfId.toString()
+//                                        )
+//                                    }
+//                                }
+//
+//
+//                            }
+                        }
+
+                        editOrderConfirmationMessage(
+                            it.context,
+                            templateShelfRequest(item.goodCode ?: "", item.name ?: ""),
+                            it.orderSaveParam.messageId,
+                            shelfButtons
+                        )
+                        val shelfChoiceId = waitDataCallbackQuery().filter { message ->
+                            message.message?.sameChat(it.context) ?: false
+                        }.first()
+
+                        val shelfChoice = shelfsList.shelfsList.find { it.shelfId.toString() == shelfChoiceId.data }
+
+                        println("вы выбрали полку ${shelfChoice}")
+
+
+                    } else {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                        return@forEach
+                        null
+                    }
+
+                }
+
+
+                it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+                ConfirmationStopState(it.context, it.orderSaveParam)
+
             }
 
             strictlyOn<ConfirmationStopState> {
                 stateUser.remove(it.context.chatId)
-                sendMessage(
-                    it.context,
-                    buildEntities { +"Пробуем подтвердить веб-заявку" })
 
+                val textMessage = when (it.orderSaveParam.saveStatus) {
+                    OrderDataSaveStatus.FALSE -> templateConfirmedFalse(it.orderSaveParam.webNum ?: "")
+                    OrderDataSaveStatus.EXIST -> templateAlredyConfirmed(it.orderSaveParam.webNum ?: "")
+                    OrderDataSaveStatus.CANCEL -> templateCancelOrder(it.orderSaveParam.webNum ?: "")
+                    OrderDataSaveStatus.FINISH -> templateConfirmedOk(it.orderSaveParam.webNum ?: "")
+                    else -> ""
+                }
+                editOrderConfirmationMessage(
+                    chatId = it.context,
+                    textMessage = textMessage,
+                    messageId = it.orderSaveParam.messageId
+                )
                 null
-
             }
         }
+    }
 
-        /*                        val webOrder = botTSOperations.getWebOrderDetail(chatId.chatId, orderId)
-                                val reasonsList: MutableMap<String, List<ShortageReasonDto>> =
-                                    emptyMap<String, List<ShortageReasonDto>>().toMutableMap()
-                                webOrder.webOrder.items.forEach { item ->
-                                    reasonsList[item.goodCode.toString()] =
-                                        botTSOperations.getReasonForIncompliteness(chatId.chatId, orderId, item.goodCode.toString()).reasonsList
-                                }
-                                val shelfsList = botTSOperations.getShelfs(chatId.chatId)
-                                val printersList = botTSOperations.getPrintersList(chatId.chatId)*/
-
-        if ((webOrder.result.success) && (reasonsList.isNotEmpty()) && (shelfsList.shelfsList.isNotEmpty())) {
-//            Logging.d(tag, webOrder.toString() + "\n\n" + reasonsList.toString() + "\n\n" + shelfsList.toString() + "\n\n" + printersList.toString())
-
-            defaultBehaviourContextWithFSM.startChain(ConfirmationExpectReason(chatId))
-        } else bot.sendMessage(
-            chatId,
-            "Ошибка получения данных из TS",
-            disableWebPagePreview = true
-        )
-
-
+    private suspend fun editOrderConfirmationMessage(
+        chatId: ChatIdentifier,
+        textMessage: String? = null,
+        messageId: MessageId? = null,
+        replyMarkup: InlineKeyboardMarkup? = null
+    ): Boolean {
+        try {
+            if (messageId != null) {
+                bot.edit(
+                    chatId = chatId,
+                    messageId = messageId,
+                    text = textMessage ?: "",
+                    replyMarkup = replyMarkup,
+                    disableWebPagePreview = true
+                )
+            } else {
+                bot.send(
+                    chatId = chatId,
+                    text = textMessage ?: "",
+                    replyMarkup = replyMarkup,
+                    disableWebPagePreview = true
+                )
+            }
+            return true
+        } catch (e: Exception) {
+            Logging.e(tag, "Exception: ${e.stackTraceToString()}}")
+            return false
+        }
     }
 
     private suspend fun requestWebOrder(chatId: IdChatIdentifier, webNum: String) {

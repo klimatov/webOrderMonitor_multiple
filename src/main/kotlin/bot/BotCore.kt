@@ -70,7 +70,7 @@ class BotCore(
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
-    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository, stateUser)
+    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository, stateUser, allBotUsers)
 
     suspend fun start() {
         botName = bot.getMe().username

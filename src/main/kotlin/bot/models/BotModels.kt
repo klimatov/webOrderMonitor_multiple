@@ -1,8 +1,12 @@
 package bot.models
 
 import dev.inmo.tgbotapi.types.Identifier
+import dev.inmo.tgbotapi.types.MessageId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
+import restTS.models.Collector
+import restTS.models.SaveIncomplet
+import restTS.models.ShelfItem
 import java.util.*
 
 
@@ -53,3 +57,33 @@ fun NewWorker.mapToShopWorkersParam(): ShopWorkersParam =
         workerState = workerState,
         gmt = gmt
     )
+
+data class OrderSaveParam(
+    var webNum: String? = null,
+    var orderId: String? = null,
+    var orderType: String? = null,
+    var company: String? = null,
+    var items: MutableList<ItemsSaveParam> = mutableListOf(),
+    var collector: Collector? = Collector(),
+    var ordType: String? = null,
+    var printerName: String? = null,
+    var messageId: MessageId? = null,
+    var saveStatus: OrderDataSaveStatus? = null
+)
+
+data class ItemsSaveParam(
+    var goodCode: String? = null,
+    var name: String? = null,
+    var itemNo: String? = null,
+    var incomplet: SaveIncomplet? = null,
+    var shelf: ShelfItem? = null,
+    var quantity: String? = null
+)
+
+enum class OrderDataSaveStatus {
+    CANCEL,
+    EXIST,
+    FALSE,
+    PROCESS,
+    FINISH
+}
