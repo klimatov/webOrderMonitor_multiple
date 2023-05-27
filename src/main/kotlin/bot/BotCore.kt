@@ -70,7 +70,7 @@ class BotCore(
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
-    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository)
+    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository, stateUser)
 
     suspend fun start() {
         botName = bot.getMe().username
@@ -553,11 +553,17 @@ class BotCore(
                 }
             }
 
-            onDeepLink { (it, deepLink) ->
+            onDeepLink(initialFilter = {
+                stateUser[it.first.chat.id.chatId] == null
+            }) { (it, deepLink) ->
                 delete(it.chat, it.messageId)
 
                 if (allBotUsers.containsKey(it.chat.id.chatId)) {
-                    commandProcessing.incomingDeepLink(deepLink, it.chat.id)
+                    commandProcessing.incomingDeepLink(
+                        deepLink,
+                        it.chat.id,
+                        this@buildBehaviourWithFSMAndStartLongPolling
+                    )
                 } else {
                     sendTextMessage(it.chat, botMessage.descriptionMessage())
                     sendTextMessage(it.chat, "Регистрируем вас")
@@ -737,7 +743,7 @@ class BotCore(
             ) {
                 Logging.d(tag, "/test")
                 val text = buildEntities {
-                    link("[Подробнее]",makeDeepLink(bot.getMe().username,"22"))
+                    link("[Подробнее]", makeDeepLink(bot.getMe().username, "22"))
                 }
                 sendTextMessage(
                     it.chat,
