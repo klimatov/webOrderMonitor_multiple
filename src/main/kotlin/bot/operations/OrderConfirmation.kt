@@ -80,7 +80,7 @@ class OrderConfirmation(
                     name = "Батарея Duracell Optimum АА 4 штz",
                     amount = 399,
                     quantity = 1,
-                    itemNo = 10,
+                    itemNo = 20,
                     barCode = "5000394158696",
                     kit = null,
                     routeIsNeeded = "Y",
@@ -749,6 +749,31 @@ class OrderConfirmation(
         )
     )
 
+    private fun templateBaseMessageText(webNum: String, orderId: String, ordType: String) =
+        "Заявка  №$webNum/$orderId\n" +
+                "$ordType\n"
+
+    private fun templatePrinterText(printerName: String?) =
+        if (printerName == null) "\n⭕Принтер не выбран" else "\uD83D\uDDA8\uFE0F$printerName"
+
+    private fun templateItemMessageText(
+        goodCode: String,
+        name: String,
+        reasonName: String,
+        comment: String?,
+        shelf: String?
+    ) =
+        "\n" +
+                "$goodCode $name\n" +
+                "✅$reasonName\n" +
+                if (comment != null) {
+                    "\uD83D\uDCDD$comment\n"
+                } else {
+                    ""
+                } +
+                if (shelf == null) "⭕Полка не выбрана\n" else "✅$shelf\n"
+
+
     private fun templateLoadData(webNum: String) =
         "Запрашиваем данные для подтверждения веб-заявки №$webNum с сервера TS"
 
@@ -794,8 +819,12 @@ class OrderConfirmation(
 
         with(defaultBehaviourContextWithFSM) {
 
+            /**
+             *  ConfirmationStartState
+             */
             strictlyOn<ConfirmationStartState> {
                 stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationStartState")
 
                 var messageId: MessageId? = null
                 try {
@@ -836,13 +865,17 @@ class OrderConfirmation(
                                     goodCode = item.goodCode,
                                     name = item.name,
                                     itemNo = "${item.itemNo}",
-                                    incomplet = null,
+                                    incomplet = SaveIncompletParam(
+                                        reasonCode = "OK",
+                                        reasonName = "Товар найден",
+                                        comment = null
+                                    ),
                                     shelf = null,
                                     quantity = "${item.quantity}"
                                 )
                             )
                         }
-                        ConfirmationChoosingReasonState(it.context, orderSaveParam)
+                        ConfirmationMainState(it.context, orderSaveParam)
                     } else {
                         orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
                         ConfirmationStopState(it.context, orderSaveParam)
@@ -851,8 +884,81 @@ class OrderConfirmation(
                 }
             }
 
+            /**
+             * ConfirmationMainState
+             */
+            strictlyOn<ConfirmationMainState> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationMainState")
+                Logging.d(tag, "MainState и параметры на старте такие: ${it.orderSaveParam.toString()}")
 
-            strictlyOn<ConfirmationChoosingReasonState> {
+                val mainStateButtons = inlineKeyboard {
+                    it.orderSaveParam.items.forEach { item ->
+                        row {
+                            dataButton(
+                                (if (item.shelf == null) "\uD83D\uDD34" else "\uD83D\uDFE2") + item.goodCode + " " + item.name,
+                                "item=${item.itemNo}"
+                            )
+                        }
+                    }
+                    row {
+                        dataButton(
+                            (if (it.orderSaveParam.printerName == null) "\n⭕Выбрать принтер" else "\uD83D\uDDA8\uFE0FИзменить принтер"),
+                            "printer=${it.orderSaveParam.webNum}"
+                        )
+                    }
+                    row {
+                        dataButton("Подтвердить", "confirm=${it.orderSaveParam.webNum}")
+                    }
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                    }
+                }
+
+                changeOrderConfirmationMessage(it.context, it.orderSaveParam, mainStateButtons)
+
+                val mainStateChoiceCode = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+
+                when (mainStateChoiceCode.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "confirm" -> {
+                        it.orderSaveParam.infoMessage = "❗ Не все параметры выбраны ❗"
+                        it
+                    }
+
+                    "item" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "printer" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
+
+
+            /**
+             * ConfirmationChoosingReasonState
+             */
+            strictlyOn<ConfirmationChoosingReasonState>
+            {
                 stateUser[it.context.chatId] = it
 
                 Logging.d(tag, "Параметры тут такие: ${it.orderSaveParam.toString()}")
@@ -887,7 +993,7 @@ class OrderConfirmation(
                                 }
                             }
                         }
-                        editOrderConfirmationMessage(
+                        doMessage(
                             it.context,
                             templateReasonRequest(item.goodCode ?: "", item.name ?: ""),
                             it.orderSaveParam.messageId,
@@ -900,7 +1006,7 @@ class OrderConfirmation(
                         val reasonChoice = doReasonsList.find { it.reasonCode == reasonChoiceCode.data }
 
                         if (reasonChoice?.needComm == "Y") {
-                            editOrderConfirmationMessage(
+                            doMessage(
                                 it.context,
                                 templateCommentRequest(item.goodCode ?: "", item.name ?: "", reasonChoice.name ?: ""),
                                 it.orderSaveParam.messageId
@@ -943,7 +1049,7 @@ class OrderConfirmation(
                                     }
                                 }
                             }
-                            for (xx in count..(sortedShelfs.size-1)) {
+                            for (xx in count..(sortedShelfs.size - 1)) {
                                 row {
                                     val shelf = sortedShelfs.get(xx)
                                     dataButton(
@@ -976,7 +1082,7 @@ class OrderConfirmation(
 //                            }
                         }
 
-                        editOrderConfirmationMessage(
+                        doMessage(
                             it.context,
                             templateShelfRequest(item.goodCode ?: "", item.name ?: ""),
                             it.orderSaveParam.messageId,
@@ -1006,8 +1112,15 @@ class OrderConfirmation(
 
             }
 
-            strictlyOn<ConfirmationStopState> {
+            /**
+             * ConfirmationStopState
+             */
+            strictlyOn<ConfirmationStopState>
+            {
                 stateUser.remove(it.context.chatId)
+
+                Logging.i(tag, "ConfirmationStopState")
+                Logging.d(tag, "ConfirmationStopState и параметры на старте такие: ${it.orderSaveParam.toString()}")
 
                 val textMessage = when (it.orderSaveParam.saveStatus) {
                     OrderDataSaveStatus.FALSE -> templateConfirmedFalse(it.orderSaveParam.webNum ?: "")
@@ -1016,7 +1129,7 @@ class OrderConfirmation(
                     OrderDataSaveStatus.FINISH -> templateConfirmedOk(it.orderSaveParam.webNum ?: "")
                     else -> ""
                 }
-                editOrderConfirmationMessage(
+                doMessage(
                     chatId = it.context,
                     textMessage = textMessage,
                     messageId = it.orderSaveParam.messageId
@@ -1026,7 +1139,39 @@ class OrderConfirmation(
         }
     }
 
-    private suspend fun editOrderConfirmationMessage(
+    private suspend fun changeOrderConfirmationMessage(
+        chatId: ChatIdentifier,
+        orderSaveParam: OrderSaveParam,
+        mainStateButtons: InlineKeyboardMarkup
+    ) {
+        var messageText = templateBaseMessageText(
+            orderSaveParam.webNum ?: "",
+            orderSaveParam.orderId ?: "",
+            orderSaveParam.ordType ?: ""
+        )
+        orderSaveParam.items.forEach { item ->
+            messageText += templateItemMessageText(
+                item.goodCode ?: "",
+                item.name ?: "",
+                item.incomplet?.reasonName ?: "",
+                item.incomplet?.comment,
+                item.shelf?.description
+            )
+        }
+        messageText += templatePrinterText(orderSaveParam.printerName)
+
+        if (orderSaveParam.infoMessage != null) messageText += "\n\n${orderSaveParam.infoMessage}"
+
+        doMessage(
+            chatId,
+            messageText,
+            orderSaveParam.messageId,
+            mainStateButtons
+        )
+
+    }
+
+    private suspend fun doMessage(
         chatId: ChatIdentifier,
         textMessage: String? = null,
         messageId: MessageId? = null,

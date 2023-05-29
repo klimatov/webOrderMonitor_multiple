@@ -5,7 +5,6 @@ import dev.inmo.tgbotapi.types.MessageId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
 import restTS.models.Collector
-import restTS.models.SaveIncomplet
 import restTS.models.ShelfItem
 import java.util.*
 
@@ -68,16 +67,23 @@ data class OrderSaveParam(
     var ordType: String? = null,
     var printerName: String? = null,
     var messageId: MessageId? = null,
-    var saveStatus: OrderDataSaveStatus? = null
+    var saveStatus: OrderDataSaveStatus? = null,
+    var infoMessage: String? = null
 )
 
 data class ItemsSaveParam(
     var goodCode: String? = null,
     var name: String? = null,
     var itemNo: String? = null,
-    var incomplet: SaveIncomplet? = null,
+    var incomplet: SaveIncompletParam? = null,
     var shelf: ShelfItem? = null,
     var quantity: String? = null
+)
+
+data class SaveIncompletParam(
+    var reasonCode: String? = null,
+    var reasonName: String? = null,
+    var comment: String? = null
 )
 
 enum class OrderDataSaveStatus {
