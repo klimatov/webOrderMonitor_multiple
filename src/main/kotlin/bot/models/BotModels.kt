@@ -68,7 +68,8 @@ data class OrderSaveParam(
     var printerName: String? = null,
     var messageId: MessageId? = null,
     var saveStatus: OrderDataSaveStatus? = null,
-    var infoMessage: String? = null
+    var infoMessage: String? = null,
+    var activeItem: String? = null
 )
 
 data class ItemsSaveParam(
@@ -83,7 +84,8 @@ data class ItemsSaveParam(
 data class SaveIncompletParam(
     var reasonCode: String? = null,
     var reasonName: String? = null,
-    var comment: String? = null
+    var comment: String? = null,
+    var needComm: String? = null
 )
 
 enum class OrderDataSaveStatus {

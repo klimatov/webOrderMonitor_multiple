@@ -10,6 +10,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.DefaultBehaviourContextWit
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.message
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
@@ -754,7 +755,7 @@ class OrderConfirmation(
                 "$ordType\n"
 
     private fun templatePrinterText(printerName: String?) =
-        if (printerName == null) "\n⭕Принтер не выбран" else "\uD83D\uDDA8\uFE0F$printerName"
+        if (printerName == null) "\n❕Лист подбора не печатаем" else "\uD83D\uDDA8\uFE0FПечатаем на $printerName"
 
     private fun templateItemMessageText(
         goodCode: String,
@@ -903,19 +904,17 @@ class OrderConfirmation(
                     }
                     row {
                         dataButton(
-                            (if (it.orderSaveParam.printerName == null) "\n⭕Выбрать принтер" else "\uD83D\uDDA8\uFE0FИзменить принтер"),
+                            (if (it.orderSaveParam.printerName == null) "Выбрать принтер" else "Изменить принтер"),
                             "printer=${it.orderSaveParam.webNum}"
                         )
                     }
                     row {
-                        dataButton("Подтвердить", "confirm=${it.orderSaveParam.webNum}")
-                    }
-                    row {
                         dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Подтвердить", "confirm=${it.orderSaveParam.webNum}")
                     }
                 }
 
-                changeOrderConfirmationMessage(it.context, it.orderSaveParam, mainStateButtons)
+                changeConfirmationMainMessage(it.context, it.orderSaveParam, mainStateButtons)
 
                 val mainStateChoiceCode = waitDataCallbackQuery()
                     .filter { message ->
@@ -925,25 +924,33 @@ class OrderConfirmation(
                     .data
                     .split("=")
 
+                it.orderSaveParam.infoMessage = null
+
                 when (mainStateChoiceCode.first()) {
                     "cancel" -> {
                         it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
                         ConfirmationStopState(it.context, it.orderSaveParam)
                     }
 
-                    "confirm" -> {
-                        it.orderSaveParam.infoMessage = "❗ Не все параметры выбраны ❗"
-                        it
-                    }
-
                     "item" -> {
+                        it.orderSaveParam.activeItem = mainStateChoiceCode.last()
                         it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
-                        ConfirmationStopState(it.context, it.orderSaveParam)
+                        ConfirmationItemState(it.context, it.orderSaveParam)
                     }
 
                     "printer" -> {
                         it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
-                        ConfirmationStopState(it.context, it.orderSaveParam)
+                        ConfirmationChoosingPrinter(it.context, it.orderSaveParam)
+                    }
+
+                    "confirm" -> {
+                        if (it.orderSaveParam.items.all { item -> item.shelf != null }) {
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+                            ConfirmationStopState(it.context, it.orderSaveParam)
+                        } else {
+                            it.orderSaveParam.infoMessage = "❗ Не все параметры выбраны ❗"
+                            it
+                        }
                     }
 
                     else -> {
@@ -953,11 +960,357 @@ class OrderConfirmation(
                 }
             }
 
+            /**
+             * ConfirmationItemState
+             */
+            strictlyOn<ConfirmationItemState> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationItemState")
+                Logging.d(tag, "ConfirmationItemState и параметры на старте такие: ${it.orderSaveParam.toString()}")
+
+                val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+
+                val itemStateButtons = inlineKeyboard {
+                    row {
+                        dataButton(
+                            "${currentItem?.incomplet?.reasonName} (изменить)",
+                            "chooseReason=${it.orderSaveParam.webNum}"
+                        )
+                    }
+                    row {
+                        dataButton(
+                            (if (currentItem?.shelf == null) "Выбрать полку" else ("${currentItem.shelf?.description ?: "???"} (изменить)")),
+                            "chooseShelf=${it.orderSaveParam.webNum}"
+                        )
+                    }
+                    row {
+                        dataButton(
+                            "${
+                                if (currentItem?.incomplet?.comment == null) "Внести" else "Изменить"
+                            } комментарий", "enterComment=${it.orderSaveParam.webNum}"
+                        )
+                    }
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Назад", "back=${it.orderSaveParam.webNum}")
+                    }
+                }
+
+//                it.orderSaveParam.infoMessage = "\uD83D\uDEE0Подбираем ${currentItem?.goodCode} ${currentItem?.name}:"
+
+                changeConfirmationItemMessage(it.context, it.orderSaveParam, itemStateButtons)
+
+                val itemStateChoiceCode = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+
+//                it.orderSaveParam.infoMessage = null
+
+                when (itemStateChoiceCode.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "back" -> {
+                        ConfirmationMainState(it.context, it.orderSaveParam)
+                    }
+
+                    "chooseShelf" -> {
+                        ConfirmationChoosingShelf(it.context, it.orderSaveParam)
+                    }
+
+                    "chooseReason" -> {
+                        ConfirmationChoosingReasonState(it.context, it.orderSaveParam)
+                    }
+
+                    "enterComment" -> {
+                        ConfirmationEnterReasonCommentState(it.context, it.orderSaveParam)
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
 
             /**
              * ConfirmationChoosingReasonState
              */
-            strictlyOn<ConfirmationChoosingReasonState>
+            strictlyOn<ConfirmationChoosingReasonState> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationChoosingReasonState")
+                Logging.d(
+                    tag,
+                    "ConfirmationChoosingReasonState и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                )
+
+                val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+                val doReasonsList =
+                    reasonsList["590018193"] ?: emptyList()
+
+                val reasonStateButtons = inlineKeyboard {
+
+                    row {
+                        doReasonsList.forEach {
+                            row {
+                                dataButton(it.name.toString(), "reasonCode=${it.reasonCode.toString()}")
+                            }
+                        }
+                    }
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Назад", "back=${it.orderSaveParam.webNum}")
+                    }
+                }
+
+//                it.orderSaveParam.infoMessage = "\uD83D\uDEE0Подбираем ${currentItem?.goodCode} ${currentItem?.name}:"
+
+                changeConfirmationItemMessage(it.context, it.orderSaveParam, reasonStateButtons)
+
+                val reasonStateChoiceCode = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+
+//                it.orderSaveParam.infoMessage = null
+
+                when (reasonStateChoiceCode.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "back" -> {
+                        ConfirmationItemState(it.context, it.orderSaveParam)
+                    }
+
+                    "reasonCode" -> {
+                        val reason =
+                            doReasonsList.find { selectedReason -> selectedReason.reasonCode == reasonStateChoiceCode.last() }
+                        currentItem?.incomplet = SaveIncompletParam(
+                            reasonCode = reason?.reasonCode,
+                            reasonName = reason?.name,
+                            needComm = reason?.needComm
+                        )
+                        if (reason?.needComm == "Y") {
+                            ConfirmationEnterReasonCommentState(it.context, it.orderSaveParam)
+                        } else {
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        }
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
+
+            /**
+             * ConfirmationChoosingShelf
+             */
+            strictlyOn<ConfirmationChoosingShelf> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationChoosingShelf")
+                Logging.d(
+                    tag,
+                    "ConfirmationChoosingShelf и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                )
+
+                val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+
+                val sortedShelfs = shelfsList.shelfsList.sortedBy { it.shelfId }
+                val size = sortedShelfs.size - 3
+                val x = 5
+                val y = abs(size / x)
+
+                var count = 1
+
+                // TODO: отфильтровать секции больше 3
+
+                val shelfStateButtons = inlineKeyboard {
+
+                    for (yy in 1..(y + 1)) {
+                        row {
+                            for (xx in 1..x) {
+                                if (count >= size) break
+                                val shelf = sortedShelfs.get(count)
+                                dataButton(
+                                    "${shelf.sectionNumber}/${shelf.rackNumber}/${shelf.shelfNumber}",
+                                    "shelfId=${shelf.shelfId.toString()}"
+                                )
+                                count++
+                            }
+                        }
+                    }
+                    for (xx in count..(sortedShelfs.size - 1)) {
+                        row {
+                            val shelf = sortedShelfs.get(xx)
+                            dataButton(
+                                shelf.description.toString(),
+                                "shelfId=${shelf.shelfId.toString()}"
+                            )
+                        }
+                    }
+
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Назад", "back=${it.orderSaveParam.webNum}")
+                    }
+                }
+
+//                it.orderSaveParam.infoMessage = "\uD83D\uDEE0Подбираем ${currentItem?.goodCode} ${currentItem?.name}:"
+
+                changeConfirmationItemMessage(it.context, it.orderSaveParam, shelfStateButtons)
+
+                val shelfChoiceId = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+
+//                it.orderSaveParam.infoMessage = null
+
+                when (shelfChoiceId.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "back" -> {
+                        ConfirmationItemState(it.context, it.orderSaveParam)
+                    }
+
+                    "shelfId" -> {
+                        val shelfChoice = shelfsList.shelfsList.find { shelf -> shelf.shelfId.toString() == shelfChoiceId.last() }
+                        currentItem?.shelf = shelfChoice
+                        ConfirmationItemState(it.context, it.orderSaveParam)
+
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
+
+            /**
+             * ConfirmationChoosingPrinter
+             */
+            strictlyOn<ConfirmationChoosingPrinter> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationChoosingPrinter")
+                Logging.d(
+                    tag,
+                    "ConfirmationChoosingPrinter и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                )
+
+                val printerStateButtons = inlineKeyboard {
+
+                    row {
+                        printersList.printersList.forEach {
+                            row {
+                                dataButton(it.pcName.toString(), "pcName=${it.pcName.toString()}")
+                            }
+                        }
+                    }
+                    row {
+                        dataButton("Не печатать", "notPrint=${it.orderSaveParam.webNum}")
+                    }
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Назад", "back=${it.orderSaveParam.webNum}")
+                    }
+                }
+
+                it.orderSaveParam.infoMessage = "\uD83D\uDEE0Выбираем принтер для печати листа подбора"
+
+                changeConfirmationMainMessage(it.context, it.orderSaveParam, printerStateButtons)
+
+                val printerStateChoiceName = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+
+                it.orderSaveParam.infoMessage = null
+
+                when (printerStateChoiceName.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "back" -> {
+                        ConfirmationMainState(it.context, it.orderSaveParam)
+                    }
+
+                    "pcName" -> {
+                        val pcName = printerStateChoiceName.last()
+                        it.orderSaveParam.printerName = pcName
+
+                        ConfirmationMainState(it.context, it.orderSaveParam)
+                    }
+                    "notPrint" -> {
+                        it.orderSaveParam.printerName = null
+                        ConfirmationMainState(it.context, it.orderSaveParam)
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
+
+            /**
+             * ConfirmationEnterReasonCommentState
+             */
+            strictlyOn<ConfirmationEnterReasonCommentState> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationEnterReasonCommentState")
+                Logging.d(
+                    tag,
+                    "ConfirmationEnterReasonCommentState и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                )
+
+                val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+
+                it.orderSaveParam.infoMessage =
+                    "⬇\uFE0FВведите комментарий⬇\uFE0F"
+
+                changeConfirmationItemMessage(it.context, it.orderSaveParam, null)
+
+                val reasonComment = waitTextMessage().filter { message ->
+                    message.sameChat(it.context)
+                }.first()
+                delete(reasonComment.chat.id, reasonComment.messageId)
+
+                it.orderSaveParam.infoMessage = null
+                currentItem?.incomplet?.comment = reasonComment.text
+
+                ConfirmationItemState(it.context, it.orderSaveParam)
+            }
+
+
+            /**
+             * ConfirmationChoosingSomeState
+             */
+            strictlyOn<ConfirmationChoosingSomeState>
             {
                 stateUser[it.context.chatId] = it
 
@@ -1139,10 +1492,10 @@ class OrderConfirmation(
         }
     }
 
-    private suspend fun changeOrderConfirmationMessage(
+    private suspend fun changeConfirmationMainMessage(
         chatId: ChatIdentifier,
         orderSaveParam: OrderSaveParam,
-        mainStateButtons: InlineKeyboardMarkup
+        mainStateButtons: InlineKeyboardMarkup? = null
     ) {
         var messageText = templateBaseMessageText(
             orderSaveParam.webNum ?: "",
@@ -1159,6 +1512,31 @@ class OrderConfirmation(
             )
         }
         messageText += templatePrinterText(orderSaveParam.printerName)
+
+        if (orderSaveParam.infoMessage != null) messageText += "\n\n${orderSaveParam.infoMessage}"
+
+        doMessage(
+            chatId,
+            messageText,
+            orderSaveParam.messageId,
+            mainStateButtons
+        )
+
+    }
+
+    private suspend fun changeConfirmationItemMessage(
+        chatId: ChatIdentifier,
+        orderSaveParam: OrderSaveParam,
+        mainStateButtons: InlineKeyboardMarkup? = null
+    ) {
+        val currentItem = orderSaveParam.items.find { item -> item.itemNo == orderSaveParam.activeItem }
+        var messageText: String =  templateItemMessageText(
+            currentItem?.goodCode ?: "",
+            currentItem?.name ?: "",
+            currentItem?.incomplet?.reasonName ?: "",
+            currentItem?.incomplet?.comment,
+            currentItem?.shelf?.description
+            )
 
         if (orderSaveParam.infoMessage != null) messageText += "\n\n${orderSaveParam.infoMessage}"
 
