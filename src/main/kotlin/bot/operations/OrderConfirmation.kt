@@ -1,7 +1,6 @@
 package bot.operations
 
 import bot.models.*
-import bot.repository.BotTSRepository
 import dev.inmo.tgbotapi.bot.TelegramBot
 import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit
@@ -28,7 +27,7 @@ import kotlin.math.abs
 
 class OrderConfirmation(
     val bot: TelegramBot,
-    botTSRepository: BotTSRepository,
+    private val botTSOperations: BotTSOperations,
     private val stateUser: MutableMap<Identifier, BotState>,
     private val allBotUsers: MutableMap<Identifier, BotUser>
 ) {
@@ -75,7 +74,7 @@ class OrderConfirmation(
                     params = listOf(),
                     incomplet = null,
                     remains = listOf()
-                ),
+                )/*,
                 Items(
                     goodCode = "590018193",
                     name = "Батарея Duracell Optimum АА 4 штz",
@@ -92,7 +91,7 @@ class OrderConfirmation(
                     params = listOf(),
                     incomplet = null,
                     remains = listOf()
-                )
+                )*/
             ),
             status = Status(title = null, description = null, rgb = null),
             itemsUpdateStatus = false,
@@ -779,6 +778,7 @@ class OrderConfirmation(
         "Запрашиваем данные для подтверждения веб-заявки №$webNum с сервера TS"
 
     private fun templateAlredyConfirmed(webNum: String) = "Веб-заявка №$webNum уже подтверждена"
+    private fun templateConfirmedStorn(webNum: String) = "Веб-заявка №$webNum была отменена"
     private fun templateReasonRequest(goodCode: String, name: String) = "Выберите тип подтверждения для $goodCode $name"
     private fun templateCommentRequest(goodCode: String, name: String, reason: String) =
         "Так как для $goodCode $name Вы выбрали \'$reason\', нужно ввести обязательный комментарий:"
@@ -945,8 +945,73 @@ class OrderConfirmation(
 
                     "confirm" -> {
                         if (it.orderSaveParam.items.all { item -> item.shelf != null }) {
-                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+
+                            val orderDetail =
+                                botTSOperations.getWebOrderDetail(it.context.chatId, it.orderSaveParam.orderId ?: "")
+                            if (orderDetail.result.success) {
+
+                                if (orderDetail.webOrder.docStatus == "WRQST_CRTD") {
+
+                                    val saveItemsList: MutableList<SaveItems> = mutableListOf()
+
+                                    it.orderSaveParam.items.forEach { item ->
+                                        saveItemsList.add(
+                                            SaveItems(
+                                                quantity = item.quantity?:"",
+                                                itemNo = item.itemNo?:"",
+                                                goodCode = item.goodCode,
+                                                incomplet = SaveIncomplet(
+                                                    reasonCode = item.incomplet?.reasonCode,
+                                                    comment = item.incomplet?.comment?:item.incomplet?.reasonName
+                                                ),
+                                                shelf = item.shelf?.shelfId.toString()
+                                                )
+                                        )
+                                    }
+
+                                    val saveResult = botTSOperations.saveWebOrder(
+                                        userId = it.context.chatId,
+                                        orderType = it.orderSaveParam.orderType ?: "",
+                                        orderId = it.orderSaveParam.orderId ?: "",
+                                        company = it.orderSaveParam.company ?: "",
+                                        items = saveItemsList,
+                                        collector = it.orderSaveParam.collector ?: Collector(),
+                                        ordType = it.orderSaveParam.ordType ?: ""
+                                    )
+                                    if (saveResult.result.success) {
+                                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+                                    } else {
+                                        Logging.e(
+                                            tag,
+                                            "Ошибка подтверждения заявки №${it.orderSaveParam.webNum} ${saveResult.result.errorMessage}"
+                                        )
+                                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                                    }
+                                    Logging.d(tag, saveResult.saveWebOrder.message.toString())
+                                } else {
+
+                                    when(orderDetail.webOrder.docStatus) {
+                                        "DOC_STORN" -> it.orderSaveParam.saveStatus = OrderDataSaveStatus.STORN
+                                        else -> it.orderSaveParam.saveStatus = OrderDataSaveStatus.EXIST
+                                    }
+                                    Logging.e(
+                                        tag,
+                                        "Заявка №${it.orderSaveParam.webNum} уже подтверждена/отменена ${orderDetail.webOrder.collector?.username}"
+                                    )
+
+                                }
+
+                            } else {
+                                Logging.e(
+                                    tag,
+                                    "Ошибка подтверждения заявки №${it.orderSaveParam.webNum} ${orderDetail.result.errorMessage}"
+                                )
+                                it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                            }
+
                             ConfirmationStopState(it.context, it.orderSaveParam)
+
+
                         } else {
                             it.orderSaveParam.infoMessage = "❗ Не все параметры выбраны ❗"
                             it
@@ -1193,7 +1258,8 @@ class OrderConfirmation(
                     }
 
                     "shelfId" -> {
-                        val shelfChoice = shelfsList.shelfsList.find { shelf -> shelf.shelfId.toString() == shelfChoiceId.last() }
+                        val shelfChoice =
+                            shelfsList.shelfsList.find { shelf -> shelf.shelfId.toString() == shelfChoiceId.last() }
                         currentItem?.shelf = shelfChoice
                         ConfirmationItemState(it.context, it.orderSaveParam)
 
@@ -1265,6 +1331,7 @@ class OrderConfirmation(
 
                         ConfirmationMainState(it.context, it.orderSaveParam)
                     }
+
                     "notPrint" -> {
                         it.orderSaveParam.printerName = null
                         ConfirmationMainState(it.context, it.orderSaveParam)
@@ -1480,6 +1547,7 @@ class OrderConfirmation(
                     OrderDataSaveStatus.EXIST -> templateAlredyConfirmed(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.CANCEL -> templateCancelOrder(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.FINISH -> templateConfirmedOk(it.orderSaveParam.webNum ?: "")
+                    OrderDataSaveStatus.STORN -> templateConfirmedStorn(it.orderSaveParam.webNum ?: "")
                     else -> ""
                 }
                 doMessage(
@@ -1530,13 +1598,13 @@ class OrderConfirmation(
         mainStateButtons: InlineKeyboardMarkup? = null
     ) {
         val currentItem = orderSaveParam.items.find { item -> item.itemNo == orderSaveParam.activeItem }
-        var messageText: String =  templateItemMessageText(
+        var messageText: String = templateItemMessageText(
             currentItem?.goodCode ?: "",
             currentItem?.name ?: "",
             currentItem?.incomplet?.reasonName ?: "",
             currentItem?.incomplet?.comment,
             currentItem?.shelf?.description
-            )
+        )
 
         if (orderSaveParam.infoMessage != null) messageText += "\n\n${orderSaveParam.infoMessage}"
 

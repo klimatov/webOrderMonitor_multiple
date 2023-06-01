@@ -77,8 +77,8 @@ data class ListWebOrder(
 )
 
 data class Collector(
-    @SerializedName("username") var username: String? = null,
-    @SerializedName("hrCode") var hrCode: String? = null
+    @SerializedName("hrCode") var hrCode: String? = null,
+    @SerializedName("username") var username: String? = null
 )
 
 data class WebOrder(
@@ -203,16 +203,16 @@ data class SaveWebOrderRes(
 )
 
 data class SaveItems(
-    @SerializedName("quantity") var quantity: Int? = null,
-    @SerializedName("itemNo") var itemNo: Int? = null,
+    @SerializedName("quantity") var quantity: String? = null,
+    @SerializedName("itemNo") var itemNo: String? = null,
     @SerializedName("goodCode") var goodCode: String? = null,
     @SerializedName("incomplet") var incomplet: SaveIncomplet? = SaveIncomplet(),
     @SerializedName("shelf") var shelf: String? = null
 )
 
 data class SaveIncomplet(
-    @SerializedName("reasonCode") var reasonCode: String? = null,
-    @SerializedName("comment") var comment: String? = null
+    @SerializedName("comment") var comment: String? = null,
+    @SerializedName("reasonCode") var reasonCode: String? = null
 )
 data class PrintRes(
     @SerializedName("needUpdate") var needUpdate: Boolean? = null

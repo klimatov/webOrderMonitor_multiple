@@ -91,6 +91,7 @@ data class SaveIncompletParam(
 enum class OrderDataSaveStatus {
     CANCEL,
     EXIST,
+    STORN,
     FALSE,
     PROCESS,
     FINISH

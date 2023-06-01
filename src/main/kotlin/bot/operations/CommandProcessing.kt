@@ -28,7 +28,7 @@ class CommandProcessing(
 
     private val botTSOperations = BotTSOperations(botTSRepository, botRepositoryDB)
     private val botMessage = BotMessage()
-    private val orderConfirmation = OrderConfirmation(bot, botTSRepository, stateUser, allBotUsers)
+    private val orderConfirmation = OrderConfirmation(bot, botTSOperations, stateUser, allBotUsers)
 
     suspend fun incomingMessage(rawMessage: CommonMessage<MessageContent>) {
         val newMessage = rawMessage.text.toString()
