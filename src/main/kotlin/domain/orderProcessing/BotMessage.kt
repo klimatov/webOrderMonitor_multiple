@@ -15,9 +15,10 @@ import java.util.*
 
 class BotMessage : DateTimeProcess() {
 
-    fun orderMessage(webOrder: WebOrder?): TextSourcesList {
+    fun orderMessage(webOrder: WebOrder?, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
-            regularln("#️⃣${webOrder?.webNum}/${webOrder?.orderId}")
+            regular("#️⃣${webOrder?.webNum}/${webOrder?.orderId} ")
+            linkln("[i]", makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray())))
             regular("${webOrder?.ordType} ")
             if (webOrder?.isLegalEntity == "Y") bold("СЧЁТ КОНТРАГЕНТА")
             underlineln("\n\uD83D\uDCC6${replaceDateTime(webOrder?.docDate ?: "")}")
@@ -43,7 +44,7 @@ class BotMessage : DateTimeProcess() {
         val resultMessage = buildEntities {
             codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }
-            .plus(orderMessage(webOrder))
+            .plus(orderMessage(webOrder, botName))
             .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, false))
         return resultMessage
     }
@@ -52,19 +53,16 @@ class BotMessage : DateTimeProcess() {
         val resultMessage = buildEntities {
             boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }
-            .plus(italic(orderMessage(webOrder)))
+            .plus(italic(orderMessage(webOrder, botName)))
             .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, true))
         return resultMessage
     }
 
     private fun bottomLink(orderId: String?, webNum: String?, botName: Username, complete: Boolean): TextSourcesList {
         val resultMessage = buildEntities {
-            boldln("")
-            boldln("")
-            link("[СТАТУС]", makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=$webNum&order=$orderId".toByteArray())))
-
             if (!complete) {
-                regular("   ")
+                boldln("")
+                boldln("")
                 link(
                     "[ПОДТВЕРДИТЬ]",
                     makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=confirm&web=$webNum&order=$orderId".toByteArray()))

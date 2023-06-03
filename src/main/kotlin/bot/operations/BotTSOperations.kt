@@ -62,6 +62,13 @@ class BotTSOperations(
         return botTSRepository.getWebOrder(userId, webNum)
     }
 
+    suspend fun printWebOrder(userId: Identifier, pcName: String?, printOrders: String?): PrintResult {
+        val printType = "PRINT_DOC_COLLECTED"
+        val checkUserInstanceResult = checkOrMakeUserInstance(userId)
+        if (!checkUserInstanceResult.success) return PrintResult(checkUserInstanceResult)
+        return botTSRepository.printWebOrder(userId, pcName, printOrders, printType)
+    }
+
     private suspend fun checkOrMakeUserInstance(userId: Identifier): Result {
         if (!botTSRepository.checkUserInstance(userId)) { // если инстанса юзера нет, то создаем
             val botUserData = botRepositoryDB.getUserBy(userId) // берем данные юзера из БД

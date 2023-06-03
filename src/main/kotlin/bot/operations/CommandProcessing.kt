@@ -5,6 +5,7 @@ import bot.models.BotUser
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import dev.inmo.tgbotapi.bot.TelegramBot
+import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.send.sendMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.DefaultBehaviourContextWithFSM
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
@@ -80,7 +81,7 @@ class CommandProcessing(
         if (webOrder.result.success) {
             bot.sendMessage(
                 chatId,
-                botMessage.orderMessage(webOrder.webOrder),
+                botMessage.orderMessage(webOrder.webOrder, bot.getMe().username),
                 disableWebPagePreview = true
             )
 
