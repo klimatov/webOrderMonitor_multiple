@@ -1,7 +1,10 @@
 package domain.orderProcessing
 
 import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.urlButton
 import dev.inmo.tgbotapi.types.Username
+import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
 import dev.inmo.tgbotapi.utils.*
@@ -56,6 +59,16 @@ class BotMessage : DateTimeProcess() {
             .plus(italic(orderMessage(webOrder, botName)))
             .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, true))
         return resultMessage
+    }
+
+    fun confirmButton(webOrder: WebOrder?, botName: Username): InlineKeyboardMarkup {
+        return inlineKeyboard {
+                row {
+                    urlButton("Подтвердить",
+                        makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=confirm&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray()))
+                    )
+                }
+            }
     }
 
     private fun bottomLink(orderId: String?, webNum: String?, botName: Username, complete: Boolean): TextSourcesList {

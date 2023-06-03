@@ -917,7 +917,8 @@ class BotCore(
                 botInstancesParameters[shop]!!.targetChatId,
                 botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                 disableWebPagePreview = true,
-                disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true)
+                disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true),
+                replyMarkup = botMessage.confirmButton(webOrder, botName)
             ).messageId
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
@@ -945,12 +946,18 @@ class BotCore(
                     gmt = botInstancesParameters[shop]!!.gmt
                 )
             ) {
+                val confirmButton = botMessage.confirmButton(webOrder, botName)
+                val infoButton =
+                    if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
+
+                val resultButtons = infoButton
+
                 bot.editMessageText(
                     botInstancesParameters[shop]!!.targetChatId,
                     webOrder?.messageId ?: 0,
                     botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                     disableWebPagePreview = true,
-                    replyMarkup = if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
+                    replyMarkup = resultButtons
                 )
             }
         } catch (e: Exception) {
