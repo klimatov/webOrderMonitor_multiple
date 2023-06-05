@@ -22,7 +22,10 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessa
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.*
 import dev.inmo.tgbotapi.extensions.utils.asFromUser
 import dev.inmo.tgbotapi.extensions.utils.extensions.parseCommandsWithParams
-import dev.inmo.tgbotapi.extensions.utils.extensions.raw.*
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.message
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.migrate_from_chat_id
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.new_chat_title
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
@@ -30,6 +33,9 @@ import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.Identifier
 import dev.inmo.tgbotapi.types.Username
+import dev.inmo.tgbotapi.types.buttons.InlineKeyboardButtons.InlineKeyboardButton
+import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
+import dev.inmo.tgbotapi.types.buttons.Matrix
 import dev.inmo.tgbotapi.types.chat.*
 import dev.inmo.tgbotapi.types.message.ChatEvents.MigratedToSupergroup
 import dev.inmo.tgbotapi.types.message.content.TextContent
@@ -46,6 +52,7 @@ import kotlinx.coroutines.flow.first
 import restTS.models.WebOrder
 import utils.Logging
 import java.util.*
+
 
 class BotCore(
     private val job: CompletableJob,
@@ -171,7 +178,6 @@ class BotCore(
                             "Проверка на сервере компании НЕ пройдена. " +
                                     errorResultMessage(resultCheckTs.result.errorMessage ?: "")
                         )
-//                        UserExpectLogin(it.context, it.sourceMessage)
                     }
                 } else {        // /update
                     if (resultCheckTs.result.success) {
@@ -571,11 +577,6 @@ class BotCore(
                 }
             }
 
-//            waitDeepLinks().subscribeSafelyWithoutExceptions(this) { (it, deepLink) ->
-//                reply(it, "Ok, I got deep link \"${deepLink}\" in waiter")
-//                println(triggersHolder.handleableCommandsHolder.handleable)
-//            }
-
             onCommand("id",
                 initialFilter = {
                     stateUser[it.chat.id.chatId] == null
@@ -772,7 +773,6 @@ class BotCore(
             }
 
             onGroupEvent {
-//                Logging.d(tag, "onGroupEvent: ${it}\n${it.chatEvent}\n")
                 if (it.chatEvent is MigratedToSupergroup) {
                     Logging.d(
                         tag,
@@ -913,13 +913,28 @@ class BotCore(
 
     suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long {
         try {
-            return bot.sendMessage(
+            val confirmButton = botMessage.confirmButton(webOrder, botName)
+            val emptyKeyboard = InlineKeyboardMarkup(listOf())
+            val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
+            val infoButton =
+                if (currentInfoMsg == null) emptyKeyboard else InlineKeyboardMarkup(listOf(currentInfoMsg.keyboard.last()))
+            val resultButtons: InlineKeyboardMarkup = confirmButton + infoButton
+
+            delInfoMsg(shop)
+
+            val messageId = bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
                 botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true),
-                replyMarkup = botMessage.confirmButton(webOrder, botName)
+                replyMarkup = resultButtons
             ).messageId
+
+            botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
+            botInstancesParameters[shop]!!.currentInfoMsgId = messageId
+
+            return messageId
+
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
             return botInstancesParameters[shop]?.currentInfoMsgId ?: 0
@@ -928,10 +943,22 @@ class BotCore(
 
     suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
         try {
+            val emptyKeyboard = InlineKeyboardMarkup(listOf())
+            val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
+            val resultButtons =
+                if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) { // если подтвердили сообщ. с инфокнопкой
+                    if (currentInfoMsg == null) emptyKeyboard else { // если текущее сообщение имело инфокнопку
+                        val infoButton =
+                            InlineKeyboardMarkup(listOf(currentInfoMsg.keyboard.last())) // запоминаем инфокнопку
+                        botInstancesParameters[shop]!!.currentInfoMsg = infoButton // сохраняем текущую инфокнопку
+                        infoButton // возвращаем инфокнопку для вывода в телегу
+                    }
+                } else null
             bot.editMessageText(
-                botInstancesParameters[shop]!!.targetChatId,
-                webOrder?.messageId ?: 0,
-                botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
+                chatId = botInstancesParameters[shop]!!.targetChatId,
+                messageId = webOrder?.messageId ?: 0,
+                entities = botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
+                replyMarkup = resultButtons,
                 disableWebPagePreview = true
             )
         } catch (e: Exception) {
@@ -946,24 +973,63 @@ class BotCore(
                     gmt = botInstancesParameters[shop]!!.gmt
                 )
             ) {
+                val emptyKeyboard = InlineKeyboardMarkup(listOf())
                 val confirmButton = botMessage.confirmButton(webOrder, botName)
                 val infoButton =
-                    if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) botInstancesParameters[shop]!!.currentInfoMsg else null
+                    if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) {
+                        botInstancesParameters[shop]!!.currentInfoMsg.takeLast
+                    } else emptyKeyboard
 
-                val resultButtons = infoButton
+                val resultButtons: InlineKeyboardMarkup = confirmButton + infoButton
 
-                bot.editMessageText(
-                    botInstancesParameters[shop]!!.targetChatId,
-                    webOrder?.messageId ?: 0,
-                    botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
-                    disableWebPagePreview = true,
-                    replyMarkup = resultButtons
-                )
+                if ((webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) &&
+                    (botInstancesParameters[shop]!!.currentInfoMsg.dropLast.keyboard.isEmpty())) {
+                    botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
+                } // для первого запуска (есть currentInfoMsgId, но нет currentInfoMsg)
+
+                    bot.editMessageText(
+                        chatId = botInstancesParameters[shop]!!.targetChatId,
+                        messageId = webOrder?.messageId ?: 0,
+                        entities = botMessage.inworkMessage(
+                            webOrder,
+                            gmt = botInstancesParameters[shop]!!.gmt,
+                            botName
+                        ),
+                        disableWebPagePreview = true,
+                        replyMarkup = resultButtons
+                    )
             }
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}")
         }
     }
+
+    private operator fun InlineKeyboardMarkup.plus(addedButtons: Any): InlineKeyboardMarkup {
+        return when (addedButtons) {
+            is InlineKeyboardMarkup -> InlineKeyboardMarkup(this.keyboard + addedButtons.keyboard)
+            is List<*> -> InlineKeyboardMarkup((this.keyboard + listOf(addedButtons)) as Matrix<InlineKeyboardButton>)
+            else -> InlineKeyboardMarkup(listOf())
+        }
+    }
+
+    private val InlineKeyboardMarkup?.dropLast: InlineKeyboardMarkup
+        get() {
+            return if ((this@dropLast == null) || (this@dropLast.keyboard.isEmpty())) {
+                InlineKeyboardMarkup(listOf())
+            } else {
+                InlineKeyboardMarkup(this@dropLast.keyboard.dropLast(1))
+            }
+        }
+
+    private val InlineKeyboardMarkup?.takeLast: InlineKeyboardMarkup
+        get() {
+            return if ((this@takeLast == null) || (this@takeLast.keyboard.isEmpty())) {
+                InlineKeyboardMarkup(listOf())
+            } else {
+                InlineKeyboardMarkup(this@takeLast.keyboard.takeLast(1))
+            }
+        }
+
 
     suspend fun botSendInfoMessage(shop: String) {
         try {
@@ -981,29 +1047,25 @@ class BotCore(
         }
     }
 
-
-    // из старого WOM TGInfoMessage
-    private suspend fun doUpdateInfoMsg(shop: String, updMsg: String, infoMsgText: String) {
-        if (botInstancesParameters[shop]?.newInfoMsgId != null) {
-
-            if (botInstancesParameters[shop]!!.currentInfoMsgId != botInstancesParameters[shop]!!.newInfoMsgId) {
-                delInfoMsg(shop)
-                botInstancesParameters[shop]!!.currentInfoMsgId = botInstancesParameters[shop]!!.newInfoMsgId
-            }
-
-            val infoMsg = inlineKeyboard {
+    private suspend fun doUpdateInfoMsg(shop: String, buttonText: String, buttonData: String) {
+        if (botInstancesParameters[shop]?.currentInfoMsgId != null) {
+            val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
+            val newInfoMsg = inlineKeyboard {
                 row {
-                    dataButton(updMsg, infoMsgText)
+                    dataButton(buttonText, buttonData)
                 }
             }
 
-            if (infoMsg != botInstancesParameters[shop]!!.currentInfoMsg) {
+            val resultButtons = currentInfoMsg.dropLast + newInfoMsg
+
+            if (resultButtons != botInstancesParameters[shop]!!.currentInfoMsg) {
                 try {
-                    botInstancesParameters[shop]!!.currentInfoMsg = bot.editMessageReplyMarkup(
+                    bot.editMessageReplyMarkup(
                         botInstancesParameters[shop]!!.targetChatId,
                         botInstancesParameters[shop]!!.currentInfoMsgId!!,
-                        replyMarkup = infoMsg
-                    ).reply_markup
+                        replyMarkup = resultButtons
+                    )
+                    botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
                 } catch (e: Exception) {
                     Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
                 }
@@ -1014,33 +1076,34 @@ class BotCore(
     suspend fun updateInfoMsg(shop: String) {
         doUpdateInfoMsg(
             shop = shop,
-            updMsg = botMessage.infoMessage(
+            buttonText = botMessage.infoMessage(
                 botInstancesParameters[shop]!!.notConfirmedOrders,
                 botInstancesParameters[shop]!!.gmt
             ),
-            infoMsgText = "infoRequest"
+            buttonData = "infoRequest"
         )
     }
 
     suspend fun updateErrorInfoMsg(shop: String, errorCode: Int) {
         doUpdateInfoMsg(
             shop = shop,
-            updMsg = botMessage.infoErrorMessage(errorCode),
-            infoMsgText = "error$errorCode"
+            buttonText = botMessage.infoErrorMessage(errorCode),
+            buttonData = "error$errorCode"
         )
     }
 
     private suspend fun delInfoMsg(shop: String) {
         try {
+            val currentInfoMsg: InlineKeyboardMarkup? = botInstancesParameters[shop]!!.currentInfoMsg
+            val buttonsWOInfoMessage = currentInfoMsg.dropLast
             bot.editMessageReplyMarkup(
                 botInstancesParameters[shop]!!.targetChatId,
                 botInstancesParameters[shop]!!.currentInfoMsgId!!,
-                replyMarkup = null
+                replyMarkup = buttonsWOInfoMessage
             )
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
         }
     }
-
 
 }

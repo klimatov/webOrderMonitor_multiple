@@ -2,12 +2,12 @@ package domain.orderProcessing
 
 
 import com.google.gson.Gson
-import domain.repository.BotProcessingRepository
-import restTS.models.WebOrder
-import restTS.models.WebOrderSimply
 import domain.models.ShopParameters
+import domain.repository.BotProcessingRepository
 import domain.repository.ServerTSRepository
 import domain.repository.ShopParametersDBRepository
+import restTS.models.WebOrder
+import restTS.models.WebOrderSimply
 import utils.Logging
 
 
@@ -113,7 +113,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
 
     private suspend fun newOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
         val messageId: Long? = botProcessingRepository.botSendMessage(activeOrders[webNum])
-        botProcessingRepository.newInfoMsgId = messageId // messageID последнего сообщения для инфокнопки
+        //botProcessingRepository.newInfoMsgId = messageId // messageID последнего сообщения для инфокнопки
         activeOrders[webNum]?.messageId = messageId
     }
 

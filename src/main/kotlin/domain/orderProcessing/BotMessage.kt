@@ -48,7 +48,6 @@ class BotMessage : DateTimeProcess() {
             codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }
             .plus(orderMessage(webOrder, botName))
-            .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, false))
         return resultMessage
     }
 
@@ -57,7 +56,6 @@ class BotMessage : DateTimeProcess() {
             boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
         }
             .plus(italic(orderMessage(webOrder, botName)))
-            .plus(bottomLink(webOrder?.orderId, webOrder?.webNum, botName, true))
         return resultMessage
     }
 
@@ -69,20 +67,6 @@ class BotMessage : DateTimeProcess() {
                     )
                 }
             }
-    }
-
-    private fun bottomLink(orderId: String?, webNum: String?, botName: Username, complete: Boolean): TextSourcesList {
-        val resultMessage = buildEntities {
-            if (!complete) {
-                boldln("")
-                boldln("")
-                link(
-                    "[ПОДТВЕРДИТЬ]",
-                    makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=confirm&web=$webNum&order=$orderId".toByteArray()))
-                )
-            }
-        }
-        return resultMessage
     }
 
     fun timeDiff(docDate: String?, gmt: String): Long {
