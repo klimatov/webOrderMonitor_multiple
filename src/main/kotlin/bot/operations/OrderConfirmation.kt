@@ -81,28 +81,14 @@ class OrderConfirmation(
 
 
     suspend fun confirmWebOrder(
-        chatId: IdChatIdentifier,
-        orderId: String,
-        webNum: String,
+        startChatId: IdChatIdentifier,
+        startOrderId: String,
+        startWebNum: String,
         defaultBehaviourContextWithFSM: DefaultBehaviourContextWithFSM<BotState>
     ) {
-        Logging.d(tag, "confirm order #$orderId")
+        Logging.d(tag, "confirm order #$startOrderId")
 
-        defaultBehaviourContextWithFSM.startChain(ConfirmationStartState(chatId, webNum, orderId))
-
-
-//        val printersList = botTSOperations.getPrintersList(chatId.chatId)
-
-
-//        if ((webOrder.result.success) && (reasonsList.isNotEmpty()) && (shelfsList.shelfsList.isNotEmpty())) {
-////            Logging.d(tag, webOrder.toString() + "\n\n" + reasonsList.toString() + "\n\n" + shelfsList.toString() + "\n\n" + printersList.toString())
-//
-//            defaultBehaviourContextWithFSM.startChain(ConfirmationStart(chatId, webNum, orderId))
-//        } else bot.sendMessage(
-//            chatId,
-//            "Ошибка получения данных из TS",
-//            disableWebPagePreview = true
-//        )
+        defaultBehaviourContextWithFSM.startChain(ConfirmationStartState(startChatId, startWebNum, startOrderId))
 
         with(defaultBehaviourContextWithFSM) {
 
@@ -139,7 +125,7 @@ class OrderConfirmation(
                     ConfirmationStopState(it.context, orderSaveParam)
                 } else {
                     orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
-                    val webOrder = botTSOperations.getWebOrderDetail(chatId.chatId, it.orderId)
+                    val webOrder = botTSOperations.getWebOrderDetail(it.context.chatId, it.orderId)
 
                     if (webOrder.result.success) {
                         orderSaveParam.webNum = webOrder.webOrder.webNum
@@ -417,8 +403,8 @@ class OrderConfirmation(
 // TODO: вставить в инфо строку ожидания данных
                 val doReasonsList =
                     botTSOperations.getReasonForIncompliteness(
-                        chatId.chatId,
-                        orderId,
+                        it.context.chatId,
+                        it.orderSaveParam.orderId?:"",
                         currentItem?.goodCode.toString()
                     ).reasonsList
 
@@ -499,7 +485,7 @@ class OrderConfirmation(
 
                 val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
 
-                val shelfsList = botTSOperations.getShelfs(chatId.chatId)
+                val shelfsList = botTSOperations.getShelfs(it.context.chatId)
 
                 val sortedShelfs = shelfsList.shelfsList.sortedBy { shelfItem -> shelfItem.shelfId }
                 val size = sortedShelfs.size - 3
@@ -591,7 +577,7 @@ class OrderConfirmation(
                     "ConfirmationChoosingPrinter и параметры на старте такие: ${it.orderSaveParam.toString()}"
                 )
 
-                val printersList = botTSOperations.getPrintersList(chatId.chatId)
+                val printersList = botTSOperations.getPrintersList(it.context.chatId)
 
                 val printerStateButtons = inlineKeyboard {
 
