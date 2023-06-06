@@ -78,7 +78,8 @@ data class ItemsSaveParam(
     var itemNo: String? = null,
     var incomplet: SaveIncompletParam? = null,
     var shelf: ShelfItem? = null,
-    var quantity: String? = null
+    var quantity: String? = null,
+    var routeIsNeeded: String? = null
 )
 
 data class SaveIncompletParam(

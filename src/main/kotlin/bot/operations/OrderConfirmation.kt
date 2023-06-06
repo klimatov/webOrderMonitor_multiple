@@ -47,17 +47,20 @@ class OrderConfirmation(
         name: String,
         reasonName: String,
         comment: String?,
-        shelf: String?
+        shelf: String?,
+        routeIsNeeded: String?
     ) =
         "\n" +
                 "$goodCode $name\n" +
-                "✅$reasonName\n" +
-                if (comment != null) {
-                    "\uD83D\uDCDD$comment\n"
-                } else {
-                    ""
-                } +
-                if (shelf == null) "⭕Полка не выбрана\n" else "✅$shelf\n"
+                if (routeIsNeeded == "Y") {
+                    "✅$reasonName\n" +
+                            if (comment != null) {
+                                "\uD83D\uDCDD$comment\n"
+                            } else {
+                                ""
+                            } +
+                            if (shelf == null) "⭕Полка не выбрана\n" else "✅$shelf\n"
+                } else "☑\uFE0FНе требует подбора\n"
 
 
     private fun templateLoadData(webNum: String) =
@@ -143,8 +146,9 @@ class OrderConfirmation(
                                         reasonName = "Товар найден",
                                         comment = null
                                     ),
-                                    shelf = null,
-                                    quantity = "${item.quantity}"
+                                    shelf = if (item.routeIsNeeded == "Y") null else ShelfItem(shelfId = -1),
+                                    quantity = "${item.quantity}",
+                                    routeIsNeeded = item.routeIsNeeded
                                 )
                             )
                         }
@@ -169,7 +173,14 @@ class OrderConfirmation(
                     it.orderSaveParam.items.forEach { item ->
                         row {
                             dataButton(
-                                (if (item.shelf?.shelfId == null) "\uD83D\uDD34" else "\uD83D\uDFE2") + item.goodCode + " " + item.name,
+                                (
+                                        when {
+                                            (item.shelf?.shelfId != null) -> "\uD83D\uDFE2"
+                                            (item.routeIsNeeded == "N") -> "⚪"
+                                            else -> "\uD83D\uDD34"
+                                        }
+//                                        if ((item.shelf?.shelfId != null) || (item.routeIsNeeded == "N")) "\uD83D\uDFE2" else "\uD83D\uDD34"
+                                        ) + item.goodCode + " " + item.name,
                                 "item=${item.itemNo}"
                             )
                         }
@@ -206,12 +217,17 @@ class OrderConfirmation(
 
                     "item" -> {
                         it.orderSaveParam.activeItem = mainStateChoiceCode.last()
-                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
-                        ConfirmationItemState(it.context, it.orderSaveParam)
+                        val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+                        if (currentItem?.routeIsNeeded == "Y") {
+                            //                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        } else {
+                            it
+                        }
                     }
 
                     "printer" -> {
-                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FINISH
+//                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
                         ConfirmationChoosingPrinter(it.context, it.orderSaveParam)
                     }
 
@@ -240,11 +256,14 @@ class OrderConfirmation(
                                                     quantity = item.quantity ?: "",
                                                     itemNo = item.itemNo ?: "",
                                                     goodCode = item.goodCode,
-                                                    incomplet = SaveIncomplet(
-                                                        reasonCode = item.incomplet?.reasonCode,
-                                                        comment = item.incomplet?.comment ?: item.incomplet?.reasonName
-                                                    ),
-                                                    shelf = item.shelf?.shelfId.toString()
+                                                    incomplet = if (item.routeIsNeeded == "Y") {
+                                                        SaveIncomplet(
+                                                            reasonCode = item.incomplet?.reasonCode,
+                                                            comment = item.incomplet?.comment
+                                                                ?: item.incomplet?.reasonName
+                                                        )
+                                                    } else SaveIncomplet(),
+                                                    shelf = if (item.routeIsNeeded == "Y") item.shelf?.shelfId.toString() else "null"
                                                 )
                                             )
                                         }
@@ -668,9 +687,11 @@ class OrderConfirmation(
                     "selectedShelfNumber" -> {
                         currentItem?.shelf?.shelfNumber = selectedShelfNumber
                         val selectedShelf =
-                            it.shelfsList.filter { shelfItem -> ((shelfItem.sectionNumber == currentItem?.shelf?.sectionNumber) &&
-                                    (shelfItem.rackNumber == currentItem?.shelf?.rackNumber) &&
-                                    (shelfItem.shelfNumber == currentItem?.shelf?.shelfNumber)) }
+                            it.shelfsList.filter { shelfItem ->
+                                ((shelfItem.sectionNumber == currentItem?.shelf?.sectionNumber) &&
+                                        (shelfItem.rackNumber == currentItem?.shelf?.rackNumber) &&
+                                        (shelfItem.shelfNumber == currentItem?.shelf?.shelfNumber))
+                            }
                         currentItem?.shelf = selectedShelf.first()
                         ConfirmationItemState(it.context, it.orderSaveParam)
                     }
@@ -829,7 +850,8 @@ class OrderConfirmation(
                 item.name ?: "",
                 item.incomplet?.reasonName ?: "",
                 item.incomplet?.comment,
-                item.shelf?.description
+                item.shelf?.description,
+                item.routeIsNeeded
             )
         }
         messageText += templatePrinterText(orderSaveParam.printerName)
@@ -856,7 +878,8 @@ class OrderConfirmation(
             currentItem?.name ?: "",
             currentItem?.incomplet?.reasonName ?: "",
             currentItem?.incomplet?.comment,
-            currentItem?.shelf?.description
+            currentItem?.shelf?.description,
+            currentItem?.routeIsNeeded
         )
 
         if (orderSaveParam.infoMessage != null) messageText += "\n\n${orderSaveParam.infoMessage}"
