@@ -24,8 +24,8 @@ import kotlinx.coroutines.flow.first
 import restTS.models.Collector
 import restTS.models.SaveIncomplet
 import restTS.models.SaveItems
+import restTS.models.ShelfItem
 import utils.Logging
-import kotlin.math.abs
 
 class OrderConfirmation(
     val bot: TelegramBot,
@@ -169,7 +169,7 @@ class OrderConfirmation(
                     it.orderSaveParam.items.forEach { item ->
                         row {
                             dataButton(
-                                (if (item.shelf == null) "\uD83D\uDD34" else "\uD83D\uDFE2") + item.goodCode + " " + item.name,
+                                (if (item.shelf?.shelfId == null) "\uD83D\uDD34" else "\uD83D\uDFE2") + item.goodCode + " " + item.name,
                                 "item=${item.itemNo}"
                             )
                         }
@@ -216,7 +216,7 @@ class OrderConfirmation(
                     }
 
                     "confirm" -> {
-                        if (it.orderSaveParam.items.all { item -> item.shelf != null }) {
+                        if (it.orderSaveParam.items.all { item -> item.shelf?.shelfId != null }) {
 
                             val orderDetail =
                                 botTSOperations.getWebOrderDetail(it.context.chatId, it.orderSaveParam.orderId ?: "")
@@ -268,7 +268,7 @@ class OrderConfirmation(
                                         } else {
                                             Logging.e(
                                                 tag,
-                                                "Ошибка подтверждения заявки №${it.orderSaveParam.webNum} ${saveResult.result.errorMessage}"
+                                                "Ошибка подтверждения заявки №${it.orderSaveParam.webNum} ${saveResult.result.errorMessage} ${saveResult.saveWebOrder.message}"
                                             )
                                             it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
                                         }
@@ -328,7 +328,7 @@ class OrderConfirmation(
                     }
                     row {
                         dataButton(
-                            (if (currentItem?.shelf == null) "Выбрать полку" else ("${currentItem.shelf?.description ?: "???"} (изменить)")),
+                            (if (currentItem?.shelf?.shelfId == null) "Выбрать полку" else ("${currentItem.shelf?.description ?: "???"} (изменить)")),
                             "chooseShelf=${it.orderSaveParam.webNum}"
                         )
                     }
@@ -370,7 +370,7 @@ class OrderConfirmation(
                     }
 
                     "chooseShelf" -> {
-                        ConfirmationChoosingShelf(it.context, it.orderSaveParam)
+                        ConfirmationChoosingShelfMain(it.context, it.orderSaveParam)
                     }
 
                     "chooseReason" -> {
@@ -404,7 +404,7 @@ class OrderConfirmation(
                 val doReasonsList =
                     botTSOperations.getReasonForIncompliteness(
                         it.context.chatId,
-                        it.orderSaveParam.orderId?:"",
+                        it.orderSaveParam.orderId ?: "",
                         currentItem?.goodCode.toString()
                     ).reasonsList
 
@@ -473,75 +473,53 @@ class OrderConfirmation(
             }
 
             /**
-             * ConfirmationChoosingShelf
+             * ConfirmationChoosingShelfMain
              */
-            strictlyOn<ConfirmationChoosingShelf> {
+            strictlyOn<ConfirmationChoosingShelfMain> {
                 stateUser[it.context.chatId] = it
-                Logging.i(tag, "ConfirmationChoosingShelf")
+                Logging.i(tag, "ConfirmationChoosingShelfMain")
                 Logging.d(
                     tag,
-                    "ConfirmationChoosingShelf и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                    "ConfirmationChoosingShelfMain и параметры на старте такие: ${it.orderSaveParam.toString()}"
                 )
 
                 val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
 
-                val shelfsList = botTSOperations.getShelfs(it.context.chatId)
+                val shelfsList = botTSOperations.getShelfs(it.context.chatId).shelfsList
 
-                val sortedShelfs = shelfsList.shelfsList.sortedBy { shelfItem -> shelfItem.shelfId }
-                val size = sortedShelfs.size - 3
-                val x = 5
-                val y = abs(size / x)
+                val stateShelfs = shelfsList.filter { (it.sectionNumber ?: 0) < 3 }
+                val numberShelfs = shelfsList.filter { (it.sectionNumber ?: 0) > 2 }
+                val allSections = numberShelfs.map { it.sectionNumber ?: 0 }.distinct().sortedBy { it }
 
-                var count = 1
-
-                // TODO: отфильтровать секции больше 3
-
-                val shelfStateButtons = inlineKeyboard {
-
-                    for (yy in 1..(y + 1)) {
+                var shelfStateButtons = inlineKeyboard {
+                    allSections.forEach { currentSection ->
                         row {
-                            for (xx in 1..x) {
-                                if (count >= size) break
-                                val shelf = sortedShelfs.get(count)
-                                dataButton(
-                                    "${shelf.sectionNumber}/${shelf.rackNumber}/${shelf.shelfNumber}",
-                                    "shelfId=${shelf.shelfId.toString()}"
-                                )
-                                count++
-                            }
+                            dataButton("Секция $currentSection", "selectedSectionNumber=$currentSection")
                         }
                     }
-                    for (xx in count..(sortedShelfs.size - 1)) {
+                    stateShelfs.forEach { currentShelf ->
                         row {
-                            val shelf = sortedShelfs.get(xx)
                             dataButton(
-                                shelf.description.toString(),
-                                "shelfId=${shelf.shelfId.toString()}"
+                                currentShelf.description.toString(),
+                                "shelfId=${currentShelf.shelfId.toString()}"
                             )
                         }
                     }
-
                     row {
                         dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
                         dataButton("Назад", "back=${it.orderSaveParam.webNum}")
                     }
                 }
-
-//                it.orderSaveParam.infoMessage = "\uD83D\uDEE0Подбираем ${currentItem?.goodCode} ${currentItem?.name}:"
-
                 changeConfirmationItemMessage(it.context, it.orderSaveParam, shelfStateButtons)
-
-                val shelfChoiceId = waitDataCallbackQuery()
+                val sectionChoiceVariant = waitDataCallbackQuery()
                     .filter { message ->
                         message.message?.sameChat(it.context) ?: false
                     }
                     .first()
                     .data
                     .split("=")
-
-//                it.orderSaveParam.infoMessage = null
-
-                when (shelfChoiceId.first()) {
+                val selectedSectionNumber = sectionChoiceVariant.last().toIntOrNull() ?: 0
+                when (sectionChoiceVariant.first()) {
                     "cancel" -> {
                         it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
                         ConfirmationStopState(it.context, it.orderSaveParam)
@@ -553,10 +531,148 @@ class OrderConfirmation(
 
                     "shelfId" -> {
                         val shelfChoice =
-                            shelfsList.shelfsList.find { shelf -> shelf.shelfId.toString() == shelfChoiceId.last() }
+                            shelfsList.find { shelf -> shelf.shelfId.toString() == sectionChoiceVariant.last() }
                         currentItem?.shelf = shelfChoice
                         ConfirmationItemState(it.context, it.orderSaveParam)
+                    }
 
+                    "selectedSectionNumber" -> {
+                        currentItem?.shelf = ShelfItem(
+                            sectionNumber = selectedSectionNumber
+                        )
+                        ConfirmationChoosingShelfRack(it.context, it.orderSaveParam, numberShelfs)
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
+
+            /**
+             * ConfirmationChoosingShelfRack
+             */
+            strictlyOn<ConfirmationChoosingShelfRack> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationChoosingShelfRack")
+                Logging.d(
+                    tag,
+                    "ConfirmationChoosingShelfRack и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                )
+                val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+                val allRacks =
+                    it.shelfsList.filter { shelfItem -> shelfItem.sectionNumber == currentItem?.shelf?.sectionNumber }
+                        .map { shelfItem -> shelfItem.rackNumber }.distinct()
+                        .sortedBy { racks -> racks }
+
+                val shelfStateButtons = inlineKeyboard {
+                    allRacks.forEach { currentRack ->
+                        row {
+                            dataButton(
+                                "Секция ${currentItem?.shelf?.sectionNumber} / Стеллаж $currentRack",
+                                "selectedRackNumber=$currentRack"
+                            )
+                        }
+                    }
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Назад", "back=${it.orderSaveParam.webNum}")
+                    }
+                }
+                changeConfirmationItemMessage(it.context, it.orderSaveParam, shelfStateButtons)
+                val rackChoiceVariant = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+                val selectedRackNumber = rackChoiceVariant.last().toIntOrNull() ?: 0
+                when (rackChoiceVariant.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "back" -> {
+                        ConfirmationItemState(it.context, it.orderSaveParam)
+                    }
+
+                    "selectedRackNumber" -> {
+                        currentItem?.shelf?.rackNumber = selectedRackNumber
+                        ConfirmationChoosingShelfShelf(it.context, it.orderSaveParam, it.shelfsList)
+                    }
+
+                    else -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+                }
+            }
+
+            /**
+             * ConfirmationChoosingShelfShelf
+             */
+            strictlyOn<ConfirmationChoosingShelfShelf> {
+                stateUser[it.context.chatId] = it
+                Logging.i(tag, "ConfirmationChoosingShelfShelf")
+                Logging.d(
+                    tag,
+                    "ConfirmationChoosingShelfShelf и параметры на старте такие: ${it.orderSaveParam.toString()}"
+                )
+                val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+                val allShelfs =
+                    it.shelfsList.filter { shelfItem ->
+                        (shelfItem.sectionNumber == currentItem?.shelf?.sectionNumber) &&
+                                (shelfItem.rackNumber == currentItem?.shelf?.rackNumber)
+                    }
+                        .map { shelfItem -> shelfItem.shelfNumber }.distinct()
+                        .sortedBy { shelfs -> shelfs }
+
+                val shelfStateButtons = inlineKeyboard {
+                    allShelfs.forEach { currentShelf ->
+                        row {
+                            dataButton(
+                                "Секция ${currentItem?.shelf?.sectionNumber} / " +
+                                        "Стеллаж ${currentItem?.shelf?.rackNumber} / " +
+                                        "Полка $currentShelf",
+                                "selectedShelfNumber=$currentShelf"
+                            )
+                        }
+                    }
+                    row {
+                        dataButton("Отмена", "cancel=${it.orderSaveParam.webNum}")
+                        dataButton("Назад", "back=${it.orderSaveParam.webNum}")
+                    }
+                }
+                changeConfirmationItemMessage(it.context, it.orderSaveParam, shelfStateButtons)
+                val shelfChoiceVariant = waitDataCallbackQuery()
+                    .filter { message ->
+                        message.message?.sameChat(it.context) ?: false
+                    }
+                    .first()
+                    .data
+                    .split("=")
+                val selectedShelfNumber = shelfChoiceVariant.last().toIntOrNull() ?: 0
+                when (shelfChoiceVariant.first()) {
+                    "cancel" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.CANCEL
+                        ConfirmationStopState(it.context, it.orderSaveParam)
+                    }
+
+                    "back" -> {
+                        ConfirmationItemState(it.context, it.orderSaveParam)
+                    }
+
+                    "selectedShelfNumber" -> {
+                        currentItem?.shelf?.shelfNumber = selectedShelfNumber
+                        val selectedShelf =
+                            it.shelfsList.filter { shelfItem -> ((shelfItem.sectionNumber == currentItem?.shelf?.sectionNumber) &&
+                                    (shelfItem.rackNumber == currentItem?.shelf?.rackNumber) &&
+                                    (shelfItem.shelfNumber == currentItem?.shelf?.shelfNumber)) }
+                        currentItem?.shelf = selectedShelf.first()
+                        ConfirmationItemState(it.context, it.orderSaveParam)
                     }
 
                     else -> {
