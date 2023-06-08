@@ -20,6 +20,8 @@ class OrderDaemon(
     private val gmt: String,
     private val serverTSRepository: ServerTSRepository,
     private val botWorkersRepository: BotWorkersRepository,
+    private val deviceType: String,
+    private val deviceVersion: String
 ) {
     private val tag = this::class.java.simpleName
 
@@ -82,7 +84,7 @@ class OrderDaemon(
         }
 
 
-        serverTSRepository.login(login, password, werk, gmt)
+        serverTSRepository.login(login, password, werk, gmt, deviceType, deviceVersion)
 
         mainLoop@
         while (true) {  // основной цикл проверки
@@ -123,7 +125,7 @@ class OrderDaemon(
                 )
 
                 401 -> {
-                    val loginResult = serverTSRepository.login(login, password, werk, gmt)
+                    val loginResult = serverTSRepository.login(login, password, werk, gmt, deviceType, deviceVersion)
                     Logging.d(tag, "$werk Login result: Sucess:${loginResult.result.success} " +
                                 "ErrorCode:${loginResult.result.errorCode} " +
                                 "ErrorMessage:${loginResult.result.errorMessage}"

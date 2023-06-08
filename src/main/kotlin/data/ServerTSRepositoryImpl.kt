@@ -36,10 +36,10 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         return netClient.login()
     }
 
-    override suspend fun login(login: String, password: String, werk: String, gmt: String): LoginResult {
+    override suspend fun login(login: String, password: String, werk: String, gmt: String, deviceType: String, deviceVersion: String): LoginResult {
         val ver = netClient.getDBVersion(werk) ?: 0
         if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
-        if (netClient.login(login, password, werk, gmt)) {
+        if (netClient.login(login, password, werk, gmt, deviceType, deviceVersion)) {
             Logging.i(tag, "${netClient.shop} Connected to base ${netClient.userInfo}")
             loginTime = LocalDateTime.now()
 

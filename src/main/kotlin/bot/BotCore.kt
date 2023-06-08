@@ -95,7 +95,9 @@ class BotCore(
                     userRole = UserRole.USER.toString(),
                     sapFio = null,
                     sapPosition = null,
-                    sapId = null
+                    sapId = null,
+                    deviceType = getDeviceModel(),
+                    deviceVersion = "11"
                 )
 
                 stateUser[it.context.chatId] = it
@@ -248,7 +250,9 @@ class BotCore(
                     shopClose = 21,
                     telegramChatId = 0,
                     workerState = WorkerState.CREATE,
-                    gmt = "+0300"
+                    gmt = "+0300",
+                    deviceType = allBotUsers[it.context.chatId]!!.deviceType,
+                    deviceVersion = allBotUsers[it.context.chatId]!!.deviceVersion
                 )
                 stateUser[it.context.chatId] = it
                 send(it.context) {
@@ -507,7 +511,9 @@ class BotCore(
                                 shopClose = requiredShopWorker.shopClose,
                                 telegramChatId = requiredShopWorker.telegramChatId,
                                 workerState = WorkerState.UPDATE,
-                                gmt = requiredShopWorker.gmt
+                                gmt = requiredShopWorker.gmt,
+                                deviceType = requiredShopWorker.deviceType,
+                                deviceVersion = requiredShopWorker.deviceVersion
                             )
                             Logging.i(tag, "Update worker in DB ${newWorkers[it.context.chatId]!!.shop}")
                             // обновляем воркер в БД
@@ -1105,6 +1111,27 @@ class BotCore(
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
         }
+    }
+
+    private fun getDeviceModel(): String {
+        val deviceList = listOf<String>(
+            "Infinix Infinix X650B",
+            "Infinix Infinix X656",
+            "LGE 802LG",
+            "LGE LM-Q620",
+            "Lenovo Lenovo L78121",
+            "Oppo CPH2035",
+            "realme RMX2180",
+            "Samsung SM-A307FN",
+            "Samsung SC-54A",
+            "Samsung SM-A7050",
+            "Samsung SM-M3070",
+            "Samsung SM-N9700",
+            "Samsung SC-03L",
+            "Samsung SM-T865",
+            "Tecno TECNO CC7"
+        )
+        return deviceList.random()
     }
 
 }

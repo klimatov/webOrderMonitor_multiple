@@ -5,7 +5,7 @@ import restTS.models.*
 
 interface BotTSRepository {
     suspend fun getRemoteDbVersion(userId: Identifier): Int
-    suspend fun login(login: String, password: String, werk: String, userId: Identifier): LoginResult
+    suspend fun login(login: String, password: String, werk: String, userId: Identifier, deviceType: String, deviceVersion: String): LoginResult
     suspend fun getWebOrder(userId: Identifier, webNum: String): WebOrderResult
     suspend fun checkUserInstance(userId: Identifier): Boolean
     suspend fun getWebOrderDetail(userId: Identifier, orderId: String): WebOrderResult

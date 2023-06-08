@@ -26,6 +26,8 @@ class NetClient {
     var gmt = SimpleDateFormat("Z").format(calendar.time) // +0700
     private var _login: String = ""
     private var _password: String = ""
+    private var _deviceType = "realme RMX2180"
+    private var _deviceVersion = "11"
     var remoteDbVersion: Int? = null
 //    var timeZone = TimeZone.getTimeZone("GMT+07:00")
 //    val gmt = timeZone.rawOffset.toString()
@@ -61,7 +63,14 @@ class NetClient {
         }
     }
 
-    fun login(login: String = this._login, password: String = this._password, werk: String = this.shop, gmt: String = this.gmt): Boolean {
+    fun login(
+        login: String = this._login,
+        password: String = this._password,
+        werk: String = this.shop,
+        gmt: String = this.gmt,
+        deviceType: String = this._deviceType,
+        deviceVersion: String = this._deviceVersion
+    ): Boolean {
         this.shop = werk
         this.gmt = gmt
         this._login = login
@@ -71,8 +80,8 @@ class NetClient {
             hashMapOf(
                 "login" to login,
                 "password" to password,
-                "type" to "realme RMX2180",
-                "version" to "11"
+                "type" to deviceType,
+                "version" to deviceVersion
             )
         try {
             val response =

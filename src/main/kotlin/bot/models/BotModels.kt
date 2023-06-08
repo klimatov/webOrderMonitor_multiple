@@ -21,6 +21,8 @@ data class NewWorker(
     var telegramChatId: Long,
     var workerState: WorkerState,
     var gmt: String,
+    val deviceType: String,
+    val deviceVersion: String
 )
 
 
@@ -33,7 +35,9 @@ data class BotUser(
     var sapFio: String?,
     var sapPosition: String?,
     var sapId: String?,
-    var lastPrinter: String? = null
+    var lastPrinter: String? = null,
+    val deviceType: String,
+    val deviceVersion: String
 )
 
 enum class UserRole {
@@ -55,7 +59,9 @@ fun NewWorker.mapToShopWorkersParam(): ShopWorkersParam =
         shopClose = shopClose,
         telegramChatId = telegramChatId,
         workerState = workerState,
-        gmt = gmt
+        gmt = gmt,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )
 
 data class OrderSaveParam(

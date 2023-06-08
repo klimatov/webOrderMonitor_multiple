@@ -17,7 +17,9 @@ class BotTSOperations(
             botUserData?.tsLogin ?: "",
             botUserData?.tsPassword ?: "",
             botUserData?.tsShop ?: "",
-            userId
+            userId,
+            deviceType = botUserData?.deviceType?: "",
+            deviceVersion = botUserData?.deviceVersion?: "11"
         )
     }
     suspend fun saveWebOrder(

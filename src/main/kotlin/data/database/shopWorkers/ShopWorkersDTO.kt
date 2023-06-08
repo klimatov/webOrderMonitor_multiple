@@ -4,7 +4,7 @@ import bot.models.NewWorker
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 @Serializable
 data class ShopWorkersDTO(
@@ -17,7 +17,9 @@ data class ShopWorkersDTO(
     val shopOpen: Int,
     val shopClose: Int,
     val telegramChatId: Long,
-    val gmt: String
+    val gmt: String,
+    val deviceType: String,
+    val deviceVersion: String
 )
 
 fun ShopWorkersParam.mapToShopWorkersDTO(): ShopWorkersDTO =
@@ -31,7 +33,9 @@ fun ShopWorkersParam.mapToShopWorkersDTO(): ShopWorkersDTO =
         shopOpen = shopOpen,
         shopClose = shopClose,
         telegramChatId = telegramChatId,
-        gmt = gmt
+        gmt = gmt,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )
 
 fun ShopWorkersDTO.mapToShopWorkersParam(): ShopWorkersParam =
@@ -46,7 +50,9 @@ fun ShopWorkersDTO.mapToShopWorkersParam(): ShopWorkersParam =
         shopClose = shopClose,
         telegramChatId = telegramChatId,
         workerState = WorkerState.CREATE,
-        gmt = gmt
+        gmt = gmt,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )
 
 fun NewWorker.mapToShopWorkersDTO(): ShopWorkersDTO =
@@ -60,7 +66,9 @@ fun NewWorker.mapToShopWorkersDTO(): ShopWorkersDTO =
         shopOpen = shopOpen,
         shopClose = shopClose,
         telegramChatId = telegramChatId,
-        gmt = gmt
+        gmt = gmt,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )
 
 fun ShopWorkersDTO.mapToNewWorker(): NewWorker =
@@ -75,5 +83,7 @@ fun ShopWorkersDTO.mapToNewWorker(): NewWorker =
         shopClose = shopClose,
         telegramChatId = telegramChatId,
         workerState = WorkerState.WORK,
-        gmt = gmt
+        gmt = gmt,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )

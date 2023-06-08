@@ -93,7 +93,9 @@ class ShopWorkersManager(
                         shopWorkersParam.shop,
                         shopWorkersParam.gmt,
                         serverTSRepositoryInstance,
-                        botWorkersRepository
+                        botWorkersRepository,
+                        deviceType = shopWorkersParam.deviceType,
+                        deviceVersion = shopWorkersParam.deviceVersion
                     )
 
                     // создаем новый экземпляр botProcessingRepositoryInstance

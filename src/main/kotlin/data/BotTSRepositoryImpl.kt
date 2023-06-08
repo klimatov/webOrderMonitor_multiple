@@ -19,13 +19,22 @@ class BotTSRepositoryImpl : BotTSRepository {
         return serverTSRepositoryInstance(userId).netClient?.remoteDbVersion ?: 0
     }
 
-    override suspend fun login(login: String, password: String, werk: String, userId: Identifier): LoginResult {
+    override suspend fun login(
+        login: String,
+        password: String,
+        werk: String,
+        userId: Identifier,
+        deviceType: String,
+        deviceVersion: String
+    ): LoginResult {
         val serverTSRepository = serverTSRepositoryInstance(userId)
         return serverTSRepository.login(
             login = login,
             password = password,
             werk = werk,
-            gmt = "+0300" // TODO: подтягивавть GMT юзера
+            gmt = "+0300", // TODO: подтягивавть GMT юзера
+            deviceType = deviceType,
+            deviceVersion = deviceVersion
         )
     }
 
@@ -97,7 +106,11 @@ class BotTSRepositoryImpl : BotTSRepository {
 
     }
 
-    override suspend fun getReasonForIncompliteness(userId: Identifier, orderId: String, itemId: String): ReasonsForIncompletnessResult {
+    override suspend fun getReasonForIncompliteness(
+        userId: Identifier,
+        orderId: String,
+        itemId: String
+    ): ReasonsForIncompletnessResult {
         val serverTSRepository = serverTSRepositoryInstance(userId)
         try {
             val reasonsList = serverTSRepository.getReasonForIncompliteness(orderId, itemId)
@@ -185,22 +198,27 @@ class BotTSRepositoryImpl : BotTSRepository {
         }
     }
 
-    override suspend fun printWebOrder(userId: Identifier, pcName: String?, printOrders: String?, printType: String?): PrintResult {
-            val serverTSRepository = serverTSRepositoryInstance(userId)
-            try {
-                serverTSRepository.sendToPrint(pcName, printOrders, printType)
-                return PrintResult(
-                    result = Result(
-                        success = (serverTSRepository.errorCode == 200),
-                        errorMessage = serverTSRepository.errorMessage,
-                        errorCode = serverTSRepository.errorCode
-                    )
+    override suspend fun printWebOrder(
+        userId: Identifier,
+        pcName: String?,
+        printOrders: String?,
+        printType: String?
+    ): PrintResult {
+        val serverTSRepository = serverTSRepositoryInstance(userId)
+        try {
+            serverTSRepository.sendToPrint(pcName, printOrders, printType)
+            return PrintResult(
+                result = Result(
+                    success = (serverTSRepository.errorCode == 200),
+                    errorMessage = serverTSRepository.errorMessage,
+                    errorCode = serverTSRepository.errorCode
                 )
-            } catch (e: Exception) {
-                return PrintResult(
-                    result = Result(success = false, errorMessage = e.message, errorCode = null),
-                )
-            }
+            )
+        } catch (e: Exception) {
+            return PrintResult(
+                result = Result(success = false, errorMessage = e.message, errorCode = null),
+            )
+        }
     }
 
     override suspend fun checkUserInstance(userId: Identifier): Boolean {

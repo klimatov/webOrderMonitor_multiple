@@ -14,6 +14,8 @@ data class BotUsersDTO(
     val sapFio: String?,
     val sapPosition: String?,
     val sapId: String?,
+    val deviceType: String,
+    val deviceVersion: String
 )
 
 fun BotUser.mapToBotUserDTO(): BotUsersDTO =
@@ -25,7 +27,9 @@ fun BotUser.mapToBotUserDTO(): BotUsersDTO =
         userRole = userRole,
         sapFio = sapFio,
         sapPosition = sapPosition,
-        sapId = sapId
+        sapId = sapId,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )
 
 fun BotUsersDTO.mapToBotUser(): BotUser =
@@ -37,5 +41,7 @@ fun BotUsersDTO.mapToBotUser(): BotUser =
         userRole = userRole,
         sapFio = sapFio,
         sapPosition = sapPosition,
-        sapId = sapId
+        sapId = sapId,
+        deviceType = deviceType,
+        deviceVersion = deviceVersion
     )

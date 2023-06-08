@@ -17,6 +17,8 @@ object ShopWorkersDB : Table("shop_workers") {
     private val shopClose = ShopWorkersDB.varchar("shop_close", 2)
     private val telegramChatId = ShopWorkersDB.varchar("chat_id", 20)
     private val gmt = ShopWorkersDB.varchar("timezone", 5)
+    private val deviceType = ShopWorkersDB.varchar("device_type", 40)
+    private val deviceVersion = ShopWorkersDB.varchar("device_version", 40)
 
     fun insert(shopWorkersDTO: ShopWorkersDTO) {
         transaction {
@@ -32,6 +34,8 @@ object ShopWorkersDB : Table("shop_workers") {
                 it[shopClose] = shopWorkersDTO.shopClose.toString()
                 it[telegramChatId] = shopWorkersDTO.telegramChatId.toString()
                 it[gmt] = shopWorkersDTO.gmt
+                it[deviceType] = shopWorkersDTO.deviceType
+                it[deviceVersion] = shopWorkersDTO.deviceVersion
 
             }
         }
@@ -51,6 +55,8 @@ object ShopWorkersDB : Table("shop_workers") {
                 it[shopClose] = shopWorkersDTO.shopClose.toString()
                 it[telegramChatId] = shopWorkersDTO.telegramChatId.toString()
                 it[gmt] = shopWorkersDTO.gmt
+                it[deviceType] = shopWorkersDTO.deviceType
+                it[deviceVersion] = shopWorkersDTO.deviceVersion
             }
         }
     }
@@ -70,7 +76,9 @@ object ShopWorkersDB : Table("shop_workers") {
                         shopOpen = it[shopOpen].toInt(),
                         shopClose = it[shopClose].toInt(),
                         telegramChatId = it[telegramChatId].toLong(),
-                        gmt = it[gmt]
+                        gmt = it[gmt],
+                        deviceType = it[deviceType],
+                        deviceVersion = it[deviceVersion]
                     )
                 }
             }
@@ -95,7 +103,9 @@ object ShopWorkersDB : Table("shop_workers") {
                     shopOpen = worker[shopOpen].toInt(),
                     shopClose = worker[shopClose].toInt(),
                     telegramChatId = worker[telegramChatId].toLong(),
-                    gmt = worker[gmt]
+                    gmt = worker[gmt],
+                    deviceType = worker[deviceType],
+                    deviceVersion = worker[deviceVersion]
                 )
             }
         } catch (e: Exception) {

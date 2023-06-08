@@ -16,9 +16,10 @@ object BotUsersDB : Table("bot_users") {
     private val sapFio = BotUsersDB.varchar("sap_fio", 100)
     private val sapPosition = BotUsersDB.varchar("sap_position", 40)
     private val sapId = BotUsersDB.varchar("sap_id", 20)
+    private val deviceType = BotUsersDB.varchar("device_type", 40)
+    private val deviceVersion = BotUsersDB.varchar("device_version", 40)
 
     fun insert(botUsersDTO: BotUsersDTO) {
-
         try {
             transaction {
                 addLogger(StdOutSqlLogger)
@@ -31,6 +32,8 @@ object BotUsersDB : Table("bot_users") {
                     it[sapFio] = botUsersDTO.sapFio ?: ""
                     it[sapPosition] = botUsersDTO.sapPosition ?: ""
                     it[sapId] = botUsersDTO.sapId ?: ""
+                    it[deviceType] = botUsersDTO.deviceType ?: ""
+                    it[deviceVersion] = botUsersDTO.deviceVersion ?: ""
                 }
             }
 
@@ -48,6 +51,8 @@ object BotUsersDB : Table("bot_users") {
                         it[sapFio] = botUsersDTO.sapFio ?: ""
                         it[sapPosition] = botUsersDTO.sapPosition ?: ""
                         it[sapId] = botUsersDTO.sapId ?: ""
+                        it[deviceType] = botUsersDTO.deviceType ?: ""
+                        it[deviceVersion] = botUsersDTO.deviceVersion ?: ""
                     }
                 }
             } else Logging.e(tag, e.message.toString())
@@ -67,7 +72,9 @@ object BotUsersDB : Table("bot_users") {
                         userRole = it[userRole],
                         sapFio = it[sapFio],
                         sapPosition = it[sapPosition],
-                        sapId = it[sapId]
+                        sapId = it[sapId],
+                        deviceType = it[deviceType],
+                        deviceVersion = it[deviceVersion]
                     )
                 }
             }
@@ -89,7 +96,9 @@ object BotUsersDB : Table("bot_users") {
                     userRole = user[userRole],
                     sapFio = user[sapFio],
                     sapPosition = user[sapPosition],
-                    sapId = user[sapId]
+                    sapId = user[sapId],
+                    deviceType = user[deviceType],
+                    deviceVersion = user[deviceVersion]
                 )
             }
         } catch (e: Exception) {

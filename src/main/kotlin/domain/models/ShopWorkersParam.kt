@@ -15,7 +15,9 @@ data class ShopWorkersParam(
     val telegramChatId: Long,
     var workerState: WorkerState,
     val gmt: String,
-    var loginTime: LocalDateTime = LocalDateTime.now()
+    var loginTime: LocalDateTime = LocalDateTime.now(),
+    val deviceType: String,
+    val deviceVersion: String
 )
 
 enum class WorkerState{
