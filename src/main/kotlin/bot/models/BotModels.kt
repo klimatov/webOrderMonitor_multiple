@@ -1,8 +1,11 @@
 package bot.models
 
 import dev.inmo.tgbotapi.types.Identifier
+import dev.inmo.tgbotapi.types.MessageId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
+import restTS.models.Collector
+import restTS.models.ShelfItem
 import java.util.*
 
 
@@ -30,6 +33,7 @@ data class BotUser(
     var sapFio: String?,
     var sapPosition: String?,
     var sapId: String?,
+    var lastPrinter: String? = null
 )
 
 enum class UserRole {
@@ -53,3 +57,44 @@ fun NewWorker.mapToShopWorkersParam(): ShopWorkersParam =
         workerState = workerState,
         gmt = gmt
     )
+
+data class OrderSaveParam(
+    var webNum: String? = null,
+    var orderId: String? = null,
+    var orderType: String? = null,
+    var company: String? = null,
+    var items: MutableList<ItemsSaveParam> = mutableListOf(),
+    var collector: Collector? = Collector(),
+    var ordType: String? = null,
+    var printerName: String? = null,
+    var messageId: MessageId? = null,
+    var saveStatus: OrderDataSaveStatus? = null,
+    var infoMessage: String? = null,
+    var activeItem: String? = null
+)
+
+data class ItemsSaveParam(
+    var goodCode: String? = null,
+    var name: String? = null,
+    var itemNo: String? = null,
+    var incomplet: SaveIncompletParam? = null,
+    var shelf: ShelfItem? = null,
+    var quantity: String? = null,
+    var routeIsNeeded: String? = null
+)
+
+data class SaveIncompletParam(
+    var reasonCode: String? = null,
+    var reasonName: String? = null,
+    var comment: String? = null,
+    var needComm: String? = null
+)
+
+enum class OrderDataSaveStatus {
+    CANCEL,
+    EXIST,
+    STORN,
+    FALSE,
+    PROCESS,
+    FINISH
+}

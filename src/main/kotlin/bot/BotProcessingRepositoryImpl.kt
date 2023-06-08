@@ -2,11 +2,10 @@ package bot
 
 import bot.models.BotInstanceParameters
 import botCore
-
-import restTS.models.WebOrder
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.ChatIdentifier
 import domain.repository.BotProcessingRepository
+import restTS.models.WebOrder
 
 class BotProcessingRepositoryImpl : BotProcessingRepository {
 
@@ -31,11 +30,11 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
             botCore.botInstancesParameters[shop]?.currentInfoMsgId = value
         }
 
-    override var newInfoMsgId: Long?
-        get() = botCore.botInstancesParameters[shop]?.newInfoMsgId
-        set(value) {
-            botCore.botInstancesParameters[shop]?.newInfoMsgId = value
-        }
+//    override var newInfoMsgId: Long?
+//        get() = botCore.botInstancesParameters[shop]?.newInfoMsgId
+//        set(value) {
+//            botCore.botInstancesParameters[shop]?.newInfoMsgId = value
+//        }
     override var dayConfirmedCount: Int
         get() = botCore.botInstancesParameters[shop]?.dayConfirmedCount ?: 0
         set(value) {

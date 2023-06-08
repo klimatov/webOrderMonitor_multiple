@@ -14,7 +14,7 @@ data class BotInstanceParameters(
 
     // из старого WOM TGInfoMessage
     var currentInfoMsgId: Long? = null,
-    var newInfoMsgId: Long? = null,
+    //var newInfoMsgId: Long? = null,
     var currentInfoMsg: InlineKeyboardMarkup? = null,
     var notConfirmedOrders: Int = 0,  //активных не подтвержденных
     var gmt: String = "+0300",

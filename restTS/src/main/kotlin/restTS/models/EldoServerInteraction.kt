@@ -1,7 +1,5 @@
 package restTS.models
 
-import com.google.gson.annotations.SerializedName
-
 data class Result(
     val success: Boolean,
     val errorMessage: String?,
@@ -18,16 +16,25 @@ data class WebOrderResult(
     val webOrder: WebOrder
 )
 
-data class SaveItems(
-    @SerializedName("quantity") var quantity: Int? = null,
-    @SerializedName("itemNo") var itemNo: Int? = null,
-    @SerializedName("goodCode") var goodCode: String? = null,
-    @SerializedName("incomplet") var incomplet: SaveIncomplet? = SaveIncomplet(),
-    @SerializedName("shelf") var shelf: String? = null
+data class ReasonsForIncompletnessResult(
+    val result: Result,
+    val reasonsList: List<ShortageReasonDto>
 )
 
-data class SaveIncomplet(
-    @SerializedName("reasonCode") var reasonCode: String? = null,
-    @SerializedName("comment") var comment: String? = null
+data class ShelfsResult(
+    val result: Result,
+    val shelfsList: List<ShelfItem>
 )
 
+data class PrintersListResult(
+    val result: Result,
+    val printersList: List<PcNameList>
+)
+
+data class SaveWebOrderResult(
+    val result: Result,
+    val saveWebOrder: SaveWebOrderRes
+)
+data class PrintResult(
+    val result: Result
+)

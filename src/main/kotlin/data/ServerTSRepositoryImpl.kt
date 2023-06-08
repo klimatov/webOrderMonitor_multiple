@@ -30,6 +30,12 @@ class ServerTSRepositoryImpl : ServerTSRepository {
             netClient.errorMessage = value ?: ""
         }
 
+    suspend fun renewLogin(): Boolean {
+        val ver = netClient.getDBVersion() ?: 0
+        if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
+        return netClient.login()
+    }
+
     override suspend fun login(login: String, password: String, werk: String, gmt: String): LoginResult {
         val ver = netClient.getDBVersion(werk) ?: 0
         if (ver > netClient.dbVersion.toInt()) netClient.dbVersion = ver.toString()
@@ -46,7 +52,11 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         } else {
             Logging.e(tag, "${netClient.shop} Login failed with Error: ${netClient.errorMessage}")
             return LoginResult(
-                result = Result(success = false, errorMessage = netClient.errorMessage, errorCode = netClient.errorCode),
+                result = Result(
+                    success = false,
+                    errorMessage = netClient.errorMessage,
+                    errorCode = netClient.errorCode
+                ),
                 userInfo = null
             )
         }
@@ -86,25 +96,34 @@ class ServerTSRepositoryImpl : ServerTSRepository {
     }
 
     fun getReasonForIncompliteness(orderId: String?, itemId: String?): List<ShortageReasonDto> {
-        val listReasons = netClient.getReasonForIncompliteness(orderId = orderId, itemId = itemId)
-        return listReasons ?: emptyList()
+        val reasonsList = netClient.getReasonForIncompliteness(orderId = orderId, itemId = itemId)
+        return reasonsList ?: emptyList()
     }
 
     fun getShelfsAll(): List<ShelfItem> {
-        val listShelfs = netClient.getShelfsAll()
-        return listShelfs ?: emptyList()
+        val shelfsList = netClient.getShelfsAll()
+        return shelfsList ?: emptyList()
     }
 
     fun getPrintersList(): List<PcNameList> {
-        val listShelfs = netClient.getPrintersList()
-        return listShelfs ?: emptyList()
+        val printersList = netClient.getPrintersList()
+        return printersList ?: emptyList()
     }
 
-    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderResult {
-        return netClient.saveWebOrder(orderType, orderId, company, items, collector, ordType) ?: SaveWebOrderResult()
+    fun saveWebOrder(
+        orderType: String?,
+        orderId: String?,
+        company: String?,
+        items: List<SaveItems>,
+        collector: Collector,
+        ordType: String?
+    ): SaveWebOrderRes {
+        return netClient.saveWebOrder(orderType, orderId, company, items, collector, ordType) ?: SaveWebOrderRes()
     }
 
-
+    fun sendToPrint(pcName: String?, printOrders: String?, printType: String?) {
+        netClient.sendToPrint(pcName, printOrders, printType)
+    }
 
 
 }

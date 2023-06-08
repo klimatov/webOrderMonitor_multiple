@@ -126,6 +126,7 @@ interface EldoAPI {
         @Header("werk") str: String?,
         @Header("ver") str6: String?,
         @Header("dbvers") dbvers: String?,
+        @Header("gmt") gmt: String?,
         @Header("Authorization") str2: String?,
         @Body hashMap: HashMap<String?, Any?>?
     ): Call<JsonElement?>?

@@ -1,26 +1,27 @@
 package domain.orderProcessing
 
-import restTS.models.WebOrder
+import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.urlButton
+import dev.inmo.tgbotapi.types.Username
+import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.italic
 import dev.inmo.tgbotapi.utils.*
-import dev.inmo.tgbotapi.utils.bold
-import dev.inmo.tgbotapi.utils.regular
-import dev.inmo.tgbotapi.utils.regularln
-import dev.inmo.tgbotapi.utils.underlineln
+import restTS.models.WebOrder
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
-import kotlin.collections.plus
 
 class BotMessage : DateTimeProcess() {
 
-    fun orderMessage(webOrder: WebOrder?): TextSourcesList {
+    fun orderMessage(webOrder: WebOrder?, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
-            regularln("#️⃣${webOrder?.webNum}/${webOrder?.orderId}")
+            regular("#️⃣${webOrder?.webNum}/${webOrder?.orderId} ")
+            linkln("[i]", makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray())))
             regular("${webOrder?.ordType} ")
             if (webOrder?.isLegalEntity == "Y") bold("СЧЁТ КОНТРАГЕНТА")
             underlineln("\n\uD83D\uDCC6${replaceDateTime(webOrder?.docDate ?: "")}")
@@ -42,18 +43,30 @@ class BotMessage : DateTimeProcess() {
         return resultMessage
     }
 
-    fun inworkMessage(webOrder: WebOrder?, gmt: String): TextSourcesList {
+    fun inworkMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
             codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
-        }.plus(orderMessage(webOrder))
+        }
+            .plus(orderMessage(webOrder, botName))
         return resultMessage
     }
 
-    fun completeMessage(webOrder: WebOrder?, gmt: String): TextSourcesList {
+    fun completeMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
             boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
-        }.plus(italic(orderMessage(webOrder)))
+        }
+            .plus(italic(orderMessage(webOrder, botName)))
         return resultMessage
+    }
+
+    fun confirmButton(webOrder: WebOrder?, botName: Username): InlineKeyboardMarkup {
+        return inlineKeyboard {
+                row {
+                    urlButton("Подтвердить",
+                        makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=confirm&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray()))
+                    )
+                }
+            }
     }
 
     fun timeDiff(docDate: String?, gmt: String): Long {

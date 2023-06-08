@@ -2,16 +2,16 @@ package domain.orderProcessing
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import restTS.models.WebOrder
 import domain.models.ShopParameters
 import domain.repository.BotProcessingRepository
 import domain.repository.BotWorkersRepository
 import domain.repository.ServerTSRepository
 import domain.repository.ShopParametersDBRepository
 import kotlinx.coroutines.delay
+import restTS.models.WebOrder
 import utils.Logging
 import java.time.LocalDateTime
-import kotlin.reflect.full.*
+import kotlin.reflect.full.declaredMemberProperties
 
 class OrderDaemon(
     private val login: String,
@@ -72,7 +72,7 @@ class OrderDaemon(
 
         if (currentInfoMsgId != null) {
             botProcessingRepository.currentInfoMsgId = currentInfoMsgId.toLong()
-            botProcessingRepository.newInfoMsgId = botProcessingRepository.currentInfoMsgId
+            //botProcessingRepository.newInfoMsgId = botProcessingRepository.currentInfoMsgId
             Logging.i(tag, "$werk currentInfoMsgId READ: $currentInfoMsgId")
         }
 
