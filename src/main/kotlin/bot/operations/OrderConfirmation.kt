@@ -21,10 +21,7 @@ import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.utils.row
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import restTS.models.Collector
-import restTS.models.SaveIncomplet
-import restTS.models.SaveItems
-import restTS.models.ShelfItem
+import restTS.models.*
 import utils.Logging
 
 class OrderConfirmation(
@@ -77,10 +74,12 @@ class OrderConfirmation(
         "Выберите принтер для печати листа подтверждения веб-заявки №$webNum"
 
     private fun templateIsTheDataCorrect(webNum: String) = "Для веб-заявки №$webNum вы выбрали:"
-    private fun templateCancelOrder(webNum: String) = "Подтверждение веб-заявки №$webNum отменено"
-    private fun templateConfirmedOk(webNum: String) = "Веб-заявка №$webNum успешно подтверждена"
+    private fun templateCancelOrder(webNum: String) = "Подтверждение веб-заявки №$webNum отменено."
+    private fun templateConfirmedOk(webNum: String) = "Веб-заявка №$webNum успешно подтверждена."
     private fun templateConfirmedFalse(webNum: String) =
-        "Подтверить веб-заявку №$webNum не удалось по техническим причинам"
+        "Подтверить веб-заявку №$webNum не удалось по техническим причинам."
+    private fun templateConfirmedPrinted(printerName: String?) =
+        if (printerName == null) "" else " Лист подбора отправлен на печать на $printerName"
 
 
     suspend fun confirmWebOrder(
@@ -113,6 +112,10 @@ class OrderConfirmation(
                     Logging.e(tag, "Exception: ${e.stackTraceToString()}}")
                 }
 
+                val printersList = botTSOperations.getPrintersList(it.context.chatId).printersList
+                val lastPrinter = allBotUsers[it.context.chatId]?.lastPrinter
+                val userPrinter = if (printersList.contains(PcNameList(pcName = lastPrinter))) lastPrinter else null
+
                 val orderSaveParam = OrderSaveParam(
                     orderId = it.orderId,
                     webNum = it.webNum,
@@ -120,7 +123,8 @@ class OrderConfirmation(
                     collector = Collector(
                         username = allBotUsers[it.context.chatId]?.tsLogin,
                         hrCode = allBotUsers[it.context.chatId]?.sapId
-                    )
+                    ),
+                    printerName = userPrinter
                 )
 
                 if (messageId == null) {
@@ -175,8 +179,8 @@ class OrderConfirmation(
                             dataButton(
                                 (
                                         when {
-                                            (item.shelf?.shelfId != null) -> "\uD83D\uDFE2"
                                             (item.routeIsNeeded == "N") -> "⚪"
+                                            (item.shelf?.shelfId != null) -> "\uD83D\uDFE2"
                                             else -> "\uD83D\uDD34"
                                         }
 //                                        if ((item.shelf?.shelfId != null) || (item.routeIsNeeded == "N")) "\uD83D\uDFE2" else "\uD83D\uDD34"
@@ -761,12 +765,13 @@ class OrderConfirmation(
                     "pcName" -> {
                         val pcName = printerStateChoiceName.last()
                         it.orderSaveParam.printerName = pcName
-
+                        allBotUsers[it.context.chatId]?.lastPrinter = pcName
                         ConfirmationMainState(it.context, it.orderSaveParam)
                     }
 
                     "notPrint" -> {
                         it.orderSaveParam.printerName = null
+                        allBotUsers[it.context.chatId]?.lastPrinter = null
                         ConfirmationMainState(it.context, it.orderSaveParam)
                     }
 
@@ -820,8 +825,11 @@ class OrderConfirmation(
                     OrderDataSaveStatus.FALSE -> templateConfirmedFalse(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.EXIST -> templateAlredyConfirmed(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.CANCEL -> templateCancelOrder(it.orderSaveParam.webNum ?: "")
-                    OrderDataSaveStatus.FINISH -> templateConfirmedOk(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.STORN -> templateConfirmedStorn(it.orderSaveParam.webNum ?: "")
+                    OrderDataSaveStatus.FINISH -> {
+                        templateConfirmedOk(it.orderSaveParam.webNum ?: "") +
+                                templateConfirmedPrinted(it.orderSaveParam.printerName)
+                    }
                     else -> ""
                 }
                 doMessage(

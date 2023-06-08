@@ -33,6 +33,7 @@ data class BotUser(
     var sapFio: String?,
     var sapPosition: String?,
     var sapId: String?,
+    var lastPrinter: String? = null
 )
 
 enum class UserRole {
