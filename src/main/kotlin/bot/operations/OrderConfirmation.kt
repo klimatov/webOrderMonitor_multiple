@@ -156,7 +156,30 @@ class OrderConfirmation(
                                 )
                             )
                         }
-                        ConfirmationMainState(it.context, orderSaveParam)
+
+                        when (webOrder.webOrder.docStatus) {
+                            "WRQST_CRTD" -> {
+                                ConfirmationMainState(it.context, orderSaveParam)
+                            }
+                            "DOC_STORN" -> {
+                                orderSaveParam.saveStatus = OrderDataSaveStatus.STORN
+                                Logging.e(
+                                    tag,
+                                    "Заявка №${orderSaveParam.webNum} отменена"
+                                )
+                                ConfirmationStopState(it.context, orderSaveParam)
+                            }
+                            else -> {
+                                orderSaveParam.saveStatus = OrderDataSaveStatus.EXIST
+                                Logging.e(
+                                    tag,
+                                    "Заявка №${orderSaveParam.webNum} уже подтверждена ${webOrder.webOrder.collector?.username}."
+                                )
+                                ConfirmationStopState(it.context, orderSaveParam)
+                            }
+                        }
+
+
                     } else {
                         orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
                         ConfirmationStopState(it.context, orderSaveParam)
