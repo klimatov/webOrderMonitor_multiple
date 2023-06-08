@@ -70,7 +70,7 @@ class NetClient {
         val values =
             hashMapOf(
                 "login" to login,
-                "password" to md5Hash(password),
+                "password" to password,
                 "type" to "realme RMX2180",
                 "version" to "11"
             )

@@ -9,7 +9,7 @@ import utils.Logging
 object BotUsersDB : Table("bot_users") {
     private val tag = this::class.java.simpleName
     private val login = BotUsersDB.varchar("ts_login", 25)
-    private val password = BotUsersDB.varchar("ts_password", 25)
+    private val password = BotUsersDB.varchar("ts_password", 40)
     private val shop = BotUsersDB.varchar("ts_shop", 4)
     private val telegramUserId = BotUsersDB.varchar("tg_user_id", 20)
     private val userRole = BotUsersDB.varchar("user_role", 20)

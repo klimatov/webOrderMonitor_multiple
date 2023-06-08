@@ -9,7 +9,7 @@ object ShopWorkersDB : Table("shop_workers") {
     private val tag = this::class.java.simpleName
     private val workerId = ShopWorkersDB.uuid("worker_id")
     private val login = ShopWorkersDB.varchar("login", 25)
-    private val password = ShopWorkersDB.varchar("password", 25)
+    private val password = ShopWorkersDB.varchar("password", 40)
     private val shop = ShopWorkersDB.varchar("shop", 4)
     private val ownerTgId = ShopWorkersDB.varchar("owner_tg_id", 20)
     private val isActive = ShopWorkersDB.bool("is_active")
