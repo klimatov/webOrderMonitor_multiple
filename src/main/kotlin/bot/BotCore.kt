@@ -78,7 +78,7 @@ class BotCore(
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
-    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository, stateUser, allBotUsers)
+    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository, stateUser, allBotUsers, botInstancesParameters)
 
     suspend fun start() {
         botName = bot.getMe().username
@@ -894,7 +894,7 @@ class BotCore(
                     (stateUser[it.chat.id.chatId] == null) &&
                             (it.asFromUser()?.user?.id?.chatId == it.chat.id.chatId) &&
                             (allBotUsers.containsKey(it.chat.id.chatId))
-                }) { commandProcessing.incomingMessage(it) }
+                }) { commandProcessing.incomingMessage(it, this@buildBehaviourWithFSMAndStartLongPolling) }
 
             Logging.i(tag, "Telegram Bot started! ${getMe()}")
         }.start()
