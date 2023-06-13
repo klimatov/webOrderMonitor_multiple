@@ -131,7 +131,7 @@ class OrderConfirmation(
                     orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
                     ConfirmationStopState(it.context, orderSaveParam)
                 } else {
-                    orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
+                    orderSaveParam.saveStatus = OrderDataSaveStatus.STANDART
                     val webOrder = botTSOperations.getWebOrderDetail(it.context.chatId, it.orderId)
 
                     if (webOrder.result.success) {
@@ -157,7 +157,8 @@ class OrderConfirmation(
                             )
                         }
 
-                        when (webOrder.webOrder.docStatus) {
+                        ConfirmationMainState(it.context, orderSaveParam)
+/*                        when (webOrder.webOrder.docStatus) {
                             "WRQST_CRTD" -> {
                                 ConfirmationMainState(it.context, orderSaveParam)
                             }
@@ -177,7 +178,7 @@ class OrderConfirmation(
                                 )
                                 ConfirmationStopState(it.context, orderSaveParam)
                             }
-                        }
+                        }*/
 
 
                     } else {
@@ -211,6 +212,9 @@ class OrderConfirmation(
                                 "item=${item.itemNo}"
                             )
                         }
+                    }
+                    row {
+                        dataButton("Одна полка для всех позиций", "oneShelf=${it.orderSaveParam.webNum}")
                     }
                     row {
                         dataButton(
@@ -256,6 +260,11 @@ class OrderConfirmation(
                     "printer" -> {
 //                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
                         ConfirmationChoosingPrinter(it.context, it.orderSaveParam)
+                    }
+
+                    "oneShelf" -> {
+                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.ONESHELF
+                        ConfirmationChoosingShelfMain(it.context, it.orderSaveParam)
                     }
 
                     "confirm" -> {

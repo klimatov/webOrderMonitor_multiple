@@ -101,6 +101,8 @@ enum class OrderDataSaveStatus {
     EXIST,
     STORN,
     FALSE,
-    PROCESS,
+    STANDART,
+    ONESHELF,
+    FAST,
     FINISH
 }

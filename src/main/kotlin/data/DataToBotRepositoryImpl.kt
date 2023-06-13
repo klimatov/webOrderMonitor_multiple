@@ -38,7 +38,9 @@ class DataToBotRepositoryImpl: BotRepositoryDB {
             userRole = UserRole.USER.toString(),
             sapFio = null,
             sapPosition = null,
-            sapId = null
+            sapId = null,
+            deviceType = resultWorker.deviceType,
+            deviceVersion = resultWorker.deviceVersion
             )
     }
 
