@@ -78,6 +78,7 @@ class OrderConfirmation(
     private fun templateConfirmedOk(webNum: String) = "Веб-заявка №$webNum успешно подтверждена."
     private fun templateConfirmedFalse(webNum: String) =
         "Подтверить веб-заявку №$webNum не удалось по техническим причинам."
+
     private fun templateConfirmedPrinted(printerName: String?) =
         if (printerName == null) "" else " Лист подбора отправлен на печать на $printerName"
 
@@ -158,27 +159,27 @@ class OrderConfirmation(
                         }
 
                         ConfirmationMainState(it.context, orderSaveParam)
-/*                        when (webOrder.webOrder.docStatus) {
-                            "WRQST_CRTD" -> {
-                                ConfirmationMainState(it.context, orderSaveParam)
-                            }
-                            "DOC_STORN" -> {
-                                orderSaveParam.saveStatus = OrderDataSaveStatus.STORN
-                                Logging.e(
-                                    tag,
-                                    "Заявка №${orderSaveParam.webNum} отменена"
-                                )
-                                ConfirmationStopState(it.context, orderSaveParam)
-                            }
-                            else -> {
-                                orderSaveParam.saveStatus = OrderDataSaveStatus.EXIST
-                                Logging.e(
-                                    tag,
-                                    "Заявка №${orderSaveParam.webNum} уже подтверждена ${webOrder.webOrder.collector?.username}."
-                                )
-                                ConfirmationStopState(it.context, orderSaveParam)
-                            }
-                        }*/
+                        /*                        when (webOrder.webOrder.docStatus) {
+                                                    "WRQST_CRTD" -> {
+                                                        ConfirmationMainState(it.context, orderSaveParam)
+                                                    }
+                                                    "DOC_STORN" -> {
+                                                        orderSaveParam.saveStatus = OrderDataSaveStatus.STORN
+                                                        Logging.e(
+                                                            tag,
+                                                            "Заявка №${orderSaveParam.webNum} отменена"
+                                                        )
+                                                        ConfirmationStopState(it.context, orderSaveParam)
+                                                    }
+                                                    else -> {
+                                                        orderSaveParam.saveStatus = OrderDataSaveStatus.EXIST
+                                                        Logging.e(
+                                                            tag,
+                                                            "Заявка №${orderSaveParam.webNum} уже подтверждена ${webOrder.webOrder.collector?.username}."
+                                                        )
+                                                        ConfirmationStopState(it.context, orderSaveParam)
+                                                    }
+                                                }*/
 
 
                     } else {
@@ -214,7 +215,9 @@ class OrderConfirmation(
                         }
                     }
                     row {
-                        dataButton("Одна полка для всех позиций", "oneShelf=${it.orderSaveParam.webNum}")
+                        dataButton("Одна полка для всех позиций", "oneShelf=${
+                            findFirstOrderOrNull(it.orderSaveParam)
+                        }")
                     }
                     row {
                         dataButton(
@@ -248,7 +251,8 @@ class OrderConfirmation(
 
                     "item" -> {
                         it.orderSaveParam.activeItem = mainStateChoiceCode.last()
-                        val currentItem = it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
+                        val currentItem =
+                            it.orderSaveParam.items.find { item -> item.itemNo == it.orderSaveParam.activeItem }
                         if (currentItem?.routeIsNeeded == "Y") {
                             //                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.PROCESS
                             ConfirmationItemState(it.context, it.orderSaveParam)
@@ -263,8 +267,13 @@ class OrderConfirmation(
                     }
 
                     "oneShelf" -> {
-                        it.orderSaveParam.saveStatus = OrderDataSaveStatus.ONESHELF
-                        ConfirmationChoosingShelfMain(it.context, it.orderSaveParam)
+                        if (mainStateChoiceCode.last() == "null") {
+                            it
+                        } else {
+                            it.orderSaveParam.activeItem = mainStateChoiceCode.last()
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.ONESHELF
+                            ConfirmationChoosingShelfMain(it.context, it.orderSaveParam)
+                        }
                     }
 
                     "confirm" -> {
@@ -581,14 +590,27 @@ class OrderConfirmation(
                     }
 
                     "back" -> {
-                        ConfirmationItemState(it.context, it.orderSaveParam)
+                        if (it.orderSaveParam.saveStatus == OrderDataSaveStatus.ONESHELF) {
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.STANDART
+                            ConfirmationMainState(it.context, it.orderSaveParam)
+                        } else {
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        }
                     }
 
                     "shelfId" -> {
                         val shelfChoice =
                             shelfsList.find { shelf -> shelf.shelfId.toString() == sectionChoiceVariant.last() }
-                        currentItem?.shelf = shelfChoice
-                        ConfirmationItemState(it.context, it.orderSaveParam)
+                        if (it.orderSaveParam.saveStatus == OrderDataSaveStatus.ONESHELF) { // выбор 1 полки для всех или для товара
+                            it.orderSaveParam.items.forEach { item ->
+                                if (item.routeIsNeeded == "Y") item.shelf = shelfChoice
+                            }
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.STANDART
+                            ConfirmationMainState(it.context, it.orderSaveParam)
+                        } else {
+                            currentItem?.shelf = shelfChoice
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        }
                     }
 
                     "selectedSectionNumber" -> {
@@ -651,7 +673,12 @@ class OrderConfirmation(
                     }
 
                     "back" -> {
-                        ConfirmationItemState(it.context, it.orderSaveParam)
+                        if (it.orderSaveParam.saveStatus == OrderDataSaveStatus.ONESHELF) {
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.STANDART
+                            ConfirmationMainState(it.context, it.orderSaveParam)
+                        } else {
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        }
                     }
 
                     "selectedRackNumber" -> {
@@ -717,7 +744,12 @@ class OrderConfirmation(
                     }
 
                     "back" -> {
-                        ConfirmationItemState(it.context, it.orderSaveParam)
+                        if (it.orderSaveParam.saveStatus == OrderDataSaveStatus.ONESHELF) {
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.STANDART
+                            ConfirmationMainState(it.context, it.orderSaveParam)
+                        } else {
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        }
                     }
 
                     "selectedShelfNumber" -> {
@@ -728,8 +760,19 @@ class OrderConfirmation(
                                         (shelfItem.rackNumber == currentItem?.shelf?.rackNumber) &&
                                         (shelfItem.shelfNumber == currentItem?.shelf?.shelfNumber))
                             }
-                        currentItem?.shelf = selectedShelf.first()
-                        ConfirmationItemState(it.context, it.orderSaveParam)
+
+
+                        if (it.orderSaveParam.saveStatus == OrderDataSaveStatus.ONESHELF) { // выбор 1 полки для всех или для товара
+                            it.orderSaveParam.items.forEach { item ->
+                                if (item.routeIsNeeded == "Y") item.shelf = selectedShelf.first()
+                            }
+                            it.orderSaveParam.saveStatus = OrderDataSaveStatus.STANDART
+                            ConfirmationMainState(it.context, it.orderSaveParam)
+                        } else {
+                            currentItem?.shelf = selectedShelf.first()
+                            ConfirmationItemState(it.context, it.orderSaveParam)
+                        }
+
                     }
 
                     else -> {
@@ -862,6 +905,7 @@ class OrderConfirmation(
                         templateConfirmedOk(it.orderSaveParam.webNum ?: "") +
                                 templateConfirmedPrinted(it.orderSaveParam.printerName)
                     }
+
                     else -> ""
                 }
                 doMessage(
@@ -872,6 +916,14 @@ class OrderConfirmation(
                 null
             }
         }
+    }
+
+    private fun findFirstOrderOrNull(orderSaveParam: OrderSaveParam): String? {
+        var resultItemNo: String? = null
+        orderSaveParam.items.forEach { item ->
+            if (item.routeIsNeeded == "Y") resultItemNo = item.itemNo
+        }
+        return resultItemNo
     }
 
     private suspend fun changeConfirmationMainMessage(
@@ -912,16 +964,31 @@ class OrderConfirmation(
         orderSaveParam: OrderSaveParam,
         mainStateButtons: InlineKeyboardMarkup? = null
     ) {
-        val currentItem = orderSaveParam.items.find { item -> item.itemNo == orderSaveParam.activeItem }
-        var messageText: String = templateItemMessageText(
-            currentItem?.goodCode ?: "",
-            currentItem?.name ?: "",
-            currentItem?.incomplet?.reasonName ?: "",
-            currentItem?.incomplet?.comment,
-            currentItem?.shelf?.description,
-            currentItem?.routeIsNeeded
-        )
-
+        var messageText: String = ""
+        if (orderSaveParam.saveStatus == OrderDataSaveStatus.ONESHELF) {
+            orderSaveParam.items.forEach { item ->
+                if (item.routeIsNeeded == "Y") {
+                    messageText += templateItemMessageText(
+                        item?.goodCode ?: "",
+                        item?.name ?: "",
+                        item?.incomplet?.reasonName ?: "",
+                        item?.incomplet?.comment,
+                        item?.shelf?.description,
+                        item?.routeIsNeeded
+                    )
+                }
+            }
+        } else {
+            val currentItem = orderSaveParam.items.find { item -> item.itemNo == orderSaveParam.activeItem }
+            messageText = templateItemMessageText(
+                currentItem?.goodCode ?: "",
+                currentItem?.name ?: "",
+                currentItem?.incomplet?.reasonName ?: "",
+                currentItem?.incomplet?.comment,
+                currentItem?.shelf?.description,
+                currentItem?.routeIsNeeded
+            )
+        }
         if (orderSaveParam.infoMessage != null) messageText += "\n\n${orderSaveParam.infoMessage}"
 
         doMessage(
