@@ -1,5 +1,6 @@
 package bot.models
 
+import dev.inmo.tgbotapi.types.ChatIdentifier
 import dev.inmo.tgbotapi.types.Identifier
 import dev.inmo.tgbotapi.types.MessageId
 import domain.models.ShopWorkersParam
@@ -76,7 +77,8 @@ data class OrderSaveParam(
     var messageId: MessageId? = null,
     var saveStatus: OrderDataSaveStatus? = null,
     var infoMessage: String? = null,
-    var activeItem: String? = null
+    var activeItem: String? = null,
+    var sourceMessageId: MessageId? = null
 )
 
 data class ItemsSaveParam(
@@ -106,3 +108,13 @@ enum class OrderDataSaveStatus {
     FAST,
     FINISH
 }
+
+data class ConfirmationData(
+    val webNum: String,
+    val orderId: String,
+    val shop: String,
+    val collector: Collector,
+    val chatId: ChatIdentifier?,
+    val sourceMessageId: MessageId?,
+    val sapFio: String?
+)

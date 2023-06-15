@@ -1,5 +1,6 @@
 package domain.orderProcessing
 
+import bot.models.ConfirmationData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import domain.models.ShopParameters
@@ -7,7 +8,11 @@ import domain.repository.BotProcessingRepository
 import domain.repository.BotWorkersRepository
 import domain.repository.ServerTSRepository
 import domain.repository.ShopParametersDBRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 import restTS.models.WebOrder
 import utils.Logging
 import java.time.LocalDateTime
@@ -21,7 +26,8 @@ class OrderDaemon(
     private val serverTSRepository: ServerTSRepository,
     private val botWorkersRepository: BotWorkersRepository,
     private val deviceType: String,
-    private val deviceVersion: String
+    private val deviceVersion: String,
+    private val confirmationDataFlow: SharedFlow<ConfirmationData>
 ) {
     private val tag = this::class.java.simpleName
 
@@ -47,6 +53,8 @@ class OrderDaemon(
         var serializedActiveOrders: String? = null
         var currentInfoMsgId: Long? = null
         var dayConfirmedCount: Int? = null
+
+        val listOfOrdersInTheConfirmation: MutableList<ConfirmationData> = mutableListOf()
 
         // считываем данные из БД
         val shopParameters = shopParametersDBRepository.getShopParametersByShop(werk)
@@ -85,6 +93,21 @@ class OrderDaemon(
 
 
         serverTSRepository.login(login, password, werk, gmt, deviceType, deviceVersion)
+
+
+
+        CoroutineScope(Dispatchers.Default).launch {
+            while (true) {
+                confirmationDataFlow.collect{
+                    println(werk)
+                    println(it.shop)
+                    if (it.shop == werk) {
+                        println("SharedFlow from $werk: $it")
+                        listOfOrdersInTheConfirmation.add(it)
+                    }
+                }
+            }
+        }.start()
 
         mainLoop@
         while (true) {  // основной цикл проверки

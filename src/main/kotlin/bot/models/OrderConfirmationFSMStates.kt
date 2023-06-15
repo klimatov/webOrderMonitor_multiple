@@ -3,7 +3,7 @@ package bot.models
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import restTS.models.ShelfItem
 
-data class ConfirmationStartState(override val context: IdChatIdentifier, val webNum: String, val orderId: String) :
+data class ConfirmationStartState(override val context: IdChatIdentifier, val webNum: String, val orderId: String, val sourceMessageId: String?) :
     BotState
 
 data class ConfirmationMainState(override val context: IdChatIdentifier, val orderSaveParam: OrderSaveParam) :

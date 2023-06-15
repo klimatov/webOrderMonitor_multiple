@@ -1,5 +1,6 @@
 package domain
 
+import bot.models.ConfirmationData
 import dev.inmo.tgbotapi.types.ChatId
 import domain.models.ShopWorkersParam
 import domain.models.WorkerState
@@ -9,6 +10,7 @@ import domain.repository.ServerTSFactoryRepository
 import domain.repository.ShopParametersDBRepository
 import domain.repository.WorkersDBRepository
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.SharedFlow
 import utils.Logging
 import java.time.LocalDateTime
 import java.util.*
@@ -17,7 +19,8 @@ class ShopWorkersManager(
     private val workersDBRepository: WorkersDBRepository,
     private val botWorkersRepository: BotWorkersRepository,
     private val shopParametersDBRepository: ShopParametersDBRepository,
-    private val serverTSFactoryRepository: ServerTSFactoryRepository
+    private val serverTSFactoryRepository: ServerTSFactoryRepository,
+    private val confirmationDataFlow: SharedFlow<ConfirmationData>
 ) {
     private val tag = this::class.java.simpleName
     private val scopesList: MutableMap<UUID, Job> = mutableMapOf()
@@ -95,7 +98,8 @@ class ShopWorkersManager(
                         serverTSRepositoryInstance,
                         botWorkersRepository,
                         deviceType = shopWorkersParam.deviceType,
-                        deviceVersion = shopWorkersParam.deviceVersion
+                        deviceVersion = shopWorkersParam.deviceVersion,
+                        confirmationDataFlow = confirmationDataFlow
                     )
 
                     // создаем новый экземпляр botProcessingRepositoryInstance

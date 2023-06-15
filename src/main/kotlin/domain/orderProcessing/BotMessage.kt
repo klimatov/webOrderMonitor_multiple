@@ -1,6 +1,7 @@
 package domain.orderProcessing
 
 import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
+import dev.inmo.tgbotapi.extensions.utils.formatting.makeTelegramDeepLink
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.urlButton
 import dev.inmo.tgbotapi.types.Username
@@ -63,7 +64,7 @@ class BotMessage : DateTimeProcess() {
         return inlineKeyboard {
                 row {
                     urlButton("Подтвердить",
-                        makeDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=confirm&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray()))
+                        makeTelegramDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=c&w=${webOrder?.webNum}&o=${webOrder?.orderId}&m=${webOrder?.messageId}".toByteArray()))
                     )
                 }
             }

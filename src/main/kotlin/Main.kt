@@ -1,3 +1,7 @@
+
+import SecurityData.POSTGRES_PASSWORD
+import SecurityData.POSTGRES_URL
+import SecurityData.POSTGRES_USER
 import bot.BotCore
 import bot.BotWorkersRepositoryImpl
 import data.BotTSRepositoryImpl
@@ -5,9 +9,6 @@ import data.DataToBotRepositoryImpl
 import data.DataToDomainRepositoryImpl
 import domain.ShopWorkersManager
 import kotlinx.coroutines.*
-import SecurityData.POSTGRES_PASSWORD
-import SecurityData.POSTGRES_URL
-import SecurityData.POSTGRES_USER
 import org.jetbrains.exposed.sql.Database
 import utils.Logging
 
@@ -26,7 +27,8 @@ private val shopWorkersManager by lazy(LazyThreadSafetyMode.NONE) {
         workersDBRepository = dataToDomainRepositoryImpl,
         botWorkersRepository = botWorkersRepository,
         shopParametersDBRepository = dataToDomainRepositoryImpl,
-        serverTSFactoryRepository = dataToDomainRepositoryImpl
+        serverTSFactoryRepository = dataToDomainRepositoryImpl,
+        confirmationDataFlow = botCore.confirmationDataFlow
     )
 }
 

@@ -19,6 +19,7 @@ import dev.inmo.tgbotapi.types.Identifier
 import dev.inmo.tgbotapi.types.MessageId
 import dev.inmo.tgbotapi.types.buttons.InlineKeyboardMarkup
 import dev.inmo.tgbotapi.utils.row
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import restTS.models.*
@@ -28,7 +29,9 @@ class OrderConfirmation(
     val bot: TelegramBot,
     private val botTSOperations: BotTSOperations,
     private val stateUser: MutableMap<Identifier, BotState>,
-    private val allBotUsers: MutableMap<Identifier, BotUser>
+    private val allBotUsers: MutableMap<Identifier, BotUser>,
+    private val _confirmationDataFlow: MutableSharedFlow<ConfirmationData>,
+    private val botInstancesParameters: MutableMap<String, BotInstanceParameters>
 ) {
     private val tag = this::class.java.simpleName
 
@@ -87,11 +90,12 @@ class OrderConfirmation(
         startChatId: IdChatIdentifier,
         startOrderId: String,
         startWebNum: String,
+        startSourceMessageId: String,
         defaultBehaviourContextWithFSM: DefaultBehaviourContextWithFSM<BotState>
     ) {
         Logging.d(tag, "confirm order #$startOrderId")
 
-        defaultBehaviourContextWithFSM.startChain(ConfirmationStartState(startChatId, startWebNum, startOrderId))
+        defaultBehaviourContextWithFSM.startChain(ConfirmationStartState(startChatId, startWebNum, startOrderId, startSourceMessageId))
 
         with(defaultBehaviourContextWithFSM) {
 
@@ -125,7 +129,8 @@ class OrderConfirmation(
                         username = allBotUsers[it.context.chatId]?.tsLogin,
                         hrCode = allBotUsers[it.context.chatId]?.sapId
                     ),
-                    printerName = userPrinter
+                    printerName = userPrinter,
+                    sourceMessageId = it.sourceMessageId?.toLongOrNull()
                 )
 
                 if (messageId == null) {
@@ -197,6 +202,19 @@ class OrderConfirmation(
                 stateUser[it.context.chatId] = it
                 Logging.i(tag, "ConfirmationMainState")
                 Logging.d(tag, "MainState и параметры на старте такие: ${it.orderSaveParam.toString()}")
+
+                val shop = allBotUsers[it.context.chatId]?.tsShop?:""
+                _confirmationDataFlow.emit(
+                    ConfirmationData(
+                        webNum = it.orderSaveParam.webNum?:"",
+                        orderId = it.orderSaveParam.orderId?:"",
+                        shop = shop,
+                        collector = it.orderSaveParam.collector?: Collector(),
+                        chatId = botInstancesParameters[shop]?.targetChatId,
+                        sourceMessageId = it.orderSaveParam.sourceMessageId,
+                        sapFio = allBotUsers[it.context.chatId]?.sapFio?:""
+                    )
+                )
 
                 val mainStateButtons = inlineKeyboard {
                     it.orderSaveParam.items.forEach { item ->

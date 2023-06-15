@@ -3,6 +3,7 @@ package bot.operations
 import bot.models.BotInstanceParameters
 import bot.models.BotState
 import bot.models.BotUser
+import bot.models.ConfirmationData
 import bot.repository.BotRepositoryDB
 import bot.repository.BotTSRepository
 import dev.inmo.tgbotapi.bot.TelegramBot
@@ -25,6 +26,7 @@ import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
 import dev.inmo.tgbotapi.types.message.content.MessageContent
 import dev.inmo.tgbotapi.utils.row
 import domain.orderProcessing.BotMessage
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import utils.Logging
@@ -36,14 +38,15 @@ class CommandProcessing(
     botTSRepository: BotTSRepository,
     private val stateUser: MutableMap<Identifier, BotState>,
     private val allBotUsers: MutableMap<Identifier, BotUser>,
-    private val botInstancesParameters: MutableMap<String, BotInstanceParameters>
+    private val botInstancesParameters: MutableMap<String, BotInstanceParameters>,
+    private val _confirmationDataFlow: MutableSharedFlow<ConfirmationData>
 ) {
 
     private val tag = this::class.java.simpleName
 
     private val botTSOperations = BotTSOperations(botTSRepository, botRepositoryDB)
     private val botMessage = BotMessage()
-    private val orderConfirmation = OrderConfirmation(bot, botTSOperations, stateUser, allBotUsers)
+    private val orderConfirmation = OrderConfirmation(bot, botTSOperations, stateUser, allBotUsers, _confirmationDataFlow, botInstancesParameters)
 
     suspend fun incomingMessage(
         rawMessage: CommonMessage<MessageContent>,
@@ -138,6 +141,7 @@ class CommandProcessing(
         defaultBehaviourContextWithFSM: DefaultBehaviourContextWithFSM<BotState>
     ) {
         val rawValue = String(Base64.getUrlDecoder().decode(deepLink))
+        println(rawValue)
         val dataMap = rawValue
             .splitToSequence("&") // returns sequence of strings: [foo = 3, bar = 5, baz = 9000]
             .map { it.split("=") } // returns list of lists: [[foo, 3 ], [bar, 5 ], [baz, 9000]]
@@ -152,12 +156,13 @@ class CommandProcessing(
                 dataMap["web"]?.let { requestWebOrder(chatId, it) }
             }
 
-            "confirm" -> {
+            "c" -> {
                 Logging.d(tag, "confirm")
                 orderConfirmation.confirmWebOrder(
                     chatId,
-                    dataMap["order"] ?: "",
-                    dataMap["web"] ?: "",
+                    dataMap["o"] ?: "",
+                    dataMap["w"] ?: "",
+                    dataMap["m"] ?: "",
                     defaultBehaviourContextWithFSM
                 )
             }

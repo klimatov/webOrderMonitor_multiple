@@ -28,7 +28,6 @@ import dev.inmo.tgbotapi.extensions.utils.extensions.raw.migrate_from_chat_id
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.new_chat_title
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
-import dev.inmo.tgbotapi.extensions.utils.formatting.makeDeepLink
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.types.ChatId
@@ -41,13 +40,14 @@ import dev.inmo.tgbotapi.types.chat.*
 import dev.inmo.tgbotapi.types.message.ChatEvents.MigratedToSupergroup
 import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.utils.buildEntities
-import dev.inmo.tgbotapi.utils.link
 import dev.inmo.tgbotapi.utils.row
 import domain.models.WorkerState
 import domain.orderProcessing.BotMessage
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import restTS.models.WebOrder
@@ -62,6 +62,9 @@ class BotCore(
 ) {
 
     private val tag = this::class.java.simpleName
+
+    private val _confirmationDataFlow = MutableSharedFlow<ConfirmationData>(replay = 0)
+    val confirmationDataFlow = _confirmationDataFlow.asSharedFlow()
 
     val botMessage: BotMessage = BotMessage()
 
@@ -78,7 +81,15 @@ class BotCore(
     private var newWorkers: MutableMap<Identifier, NewWorker> = mutableMapOf()
     private var stateUser: MutableMap<Identifier, BotState> = mutableMapOf()
 
-    private val commandProcessing = CommandProcessing(bot, botRepositoryDB, botTSRepository, stateUser, allBotUsers, botInstancesParameters)
+    private val commandProcessing = CommandProcessing(
+        bot = bot,
+        botRepositoryDB = botRepositoryDB,
+        botTSRepository = botTSRepository,
+        stateUser = stateUser,
+        allBotUsers = allBotUsers,
+        botInstancesParameters = botInstancesParameters,
+        _confirmationDataFlow
+    )
 
     suspend fun start() {
         botName = bot.getMe().username
@@ -750,13 +761,28 @@ class BotCore(
                 }
             ) {
                 Logging.d(tag, "/test")
-                val text = buildEntities {
-                    link("[Подробнее]", makeDeepLink(bot.getMe().username, "22"))
-                }
-                sendTextMessage(
-                    it.chat,
-                    text
-                )
+//                _confirmationDataFlow.emit(
+//                    ConfirmationData(
+//                        webNum = "12345",
+//                        orderId = "54321",
+//                        shop = "A001",
+//                        collector = Collector(
+//                            hrCode = "401999",
+//                            username = "ivanovii"
+//                        ),
+//                        chatId = it.chat.id,
+//                        messageId = 0,
+//                        sapFio = "Иван Иванов"
+//                        )
+//                    )
+
+//                val text = buildEntities {
+//                    link("[Подробнее]", makeDeepLink(bot.getMe().username, "22"))
+//                }
+//                sendTextMessage(
+//                    it.chat,
+//                    text
+//                )
             }
 
             onNewChatMembers { it ->
