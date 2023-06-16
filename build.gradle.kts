@@ -11,6 +11,7 @@ allprojects {
     version = "1"
 
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 }

@@ -203,17 +203,11 @@ class OrderConfirmation(
                 Logging.i(tag, "ConfirmationMainState")
                 Logging.d(tag, "MainState и параметры на старте такие: ${it.orderSaveParam.toString()}")
 
-                val shop = allBotUsers[it.context.chatId]?.tsShop?:""
-                _confirmationDataFlow.emit(
-                    ConfirmationData(
-                        webNum = it.orderSaveParam.webNum?:"",
-                        orderId = it.orderSaveParam.orderId?:"",
-                        shop = shop,
-                        collector = it.orderSaveParam.collector?: Collector(),
-                        chatId = botInstancesParameters[shop]?.targetChatId,
-                        sourceMessageId = it.orderSaveParam.sourceMessageId,
-                        sapFio = allBotUsers[it.context.chatId]?.sapFio?:""
-                    )
+                emitConfirmationData(
+                    chatId = it.context.chatId,
+                    orderSaveParam = it.orderSaveParam,
+                    sapFio = allBotUsers[it.context.chatId]?.sapFio ?: "???",
+                    inConfirmationProcess = true
                 )
 
                 val mainStateButtons = inlineKeyboard {
@@ -923,9 +917,21 @@ class OrderConfirmation(
                         templateConfirmedOk(it.orderSaveParam.webNum ?: "") +
                                 templateConfirmedPrinted(it.orderSaveParam.printerName)
                     }
-
                     else -> ""
                 }
+                when(it.orderSaveParam.saveStatus) {
+                    OrderDataSaveStatus.CANCEL, OrderDataSaveStatus.FALSE -> {
+                        emitConfirmationData(
+                            chatId = it.context.chatId,
+                            orderSaveParam = it.orderSaveParam,
+                            sapFio = allBotUsers[it.context.chatId]?.sapFio ?: "???",
+                            inConfirmationProcess = false
+                        )
+                    }
+                    else -> {}
+                }
+
+
                 doMessage(
                     chatId = it.context,
                     textMessage = textMessage,
@@ -934,6 +940,27 @@ class OrderConfirmation(
                 null
             }
         }
+    }
+
+    private suspend fun emitConfirmationData(
+        chatId: Identifier,
+        orderSaveParam:OrderSaveParam,
+        sapFio: String,
+        inConfirmationProcess: Boolean
+    ) {
+        val shop = allBotUsers[chatId]?.tsShop?:""
+        _confirmationDataFlow.emit(
+            ConfirmationData(
+                webNum = orderSaveParam.webNum?:"",
+                orderId = orderSaveParam.orderId?:"",
+                shop = shop,
+                collector = orderSaveParam.collector?: Collector(),
+                chatId = botInstancesParameters[shop]?.targetChatId,
+                sourceMessageId = orderSaveParam.sourceMessageId,
+                sapFio = sapFio,
+                inConfirmationProcess = inConfirmationProcess
+            )
+        )
     }
 
     private fun findFirstOrderOrNull(orderSaveParam: OrderSaveParam): String? {

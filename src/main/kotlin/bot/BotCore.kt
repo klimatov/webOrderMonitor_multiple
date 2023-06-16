@@ -946,13 +946,6 @@ class BotCore(
 
     suspend fun botSendMessage(webOrder: WebOrder?, shop: String): Long {
         try {
-            val confirmButton = botMessage.confirmButton(webOrder, botName)
-            val emptyKeyboard = InlineKeyboardMarkup(listOf())
-            val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
-            val infoButton =
-                if (currentInfoMsg == null) emptyKeyboard else InlineKeyboardMarkup(listOf(currentInfoMsg.keyboard.last()))
-            val resultButtons: InlineKeyboardMarkup = confirmButton + infoButton
-
             delInfoMsg(shop)
 
             val messageId = bot.sendMessage(
@@ -960,10 +953,17 @@ class BotCore(
                 botMessage.inworkMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]?.msgNotification ?: true),
-                replyMarkup = resultButtons
+                replyMarkup = makeBottomButtons(webOrder, shop)
             ).messageId
+            webOrder?.messageId = messageId
+            val bottomButtons = makeBottomButtons(webOrder, shop)
+            bot.editMessageReplyMarkup(
+                botInstancesParameters[shop]!!.targetChatId,
+                messageId,
+                bottomButtons
+            )
 
-            botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
+            botInstancesParameters[shop]!!.currentInfoMsg = bottomButtons
             botInstancesParameters[shop]!!.currentInfoMsgId = messageId
 
             return messageId
@@ -972,6 +972,16 @@ class BotCore(
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
             return botInstancesParameters[shop]?.currentInfoMsgId ?: 0
         }
+    }
+
+    private fun makeBottomButtons(webOrder: WebOrder?, shop: String): InlineKeyboardMarkup {
+        val confirmButton = botMessage.confirmButton(webOrder, botName)
+        val emptyKeyboard = InlineKeyboardMarkup(listOf())
+        val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
+        val infoButton =
+            if (currentInfoMsg == null) emptyKeyboard else InlineKeyboardMarkup(listOf(currentInfoMsg.keyboard.last()))
+        val resultButtons: InlineKeyboardMarkup = confirmButton + infoButton
+        return resultButtons
     }
 
     suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
@@ -1001,11 +1011,11 @@ class BotCore(
 
     suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
         try {
-            if (webOrder?.activeTime != botMessage.timeDiff(
-                    webOrder?.docDate,
-                    gmt = botInstancesParameters[shop]!!.gmt
-                )
-            ) {
+//            if (webOrder?.activeTime != botMessage.timeDiff(
+//                    webOrder?.docDate,
+//                    gmt = botInstancesParameters[shop]!!.gmt
+//                )
+//            ) {
                 val emptyKeyboard = InlineKeyboardMarkup(listOf())
                 val confirmButton = botMessage.confirmButton(webOrder, botName)
                 val infoButton =
@@ -1015,10 +1025,14 @@ class BotCore(
 
                 val resultButtons: InlineKeyboardMarkup = confirmButton + infoButton
 
-                if ((webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) &&
-                    (botInstancesParameters[shop]!!.currentInfoMsg.dropLast.keyboard.isEmpty())) {
+//                if ((webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) &&
+//                    (botInstancesParameters[shop]!!.currentInfoMsg.dropLast.keyboard.isEmpty())) {
+//                    botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
+//                } // для первого запуска (есть currentInfoMsgId, но нет currentInfoMsg)
+
+                if ((webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId)) {
                     botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
-                } // для первого запуска (есть currentInfoMsgId, но нет currentInfoMsg)
+                } // сохраняем клавиатуру текущей инфокнопки
 
                     bot.editMessageText(
                         chatId = botInstancesParameters[shop]!!.targetChatId,
@@ -1031,7 +1045,7 @@ class BotCore(
                         disableWebPagePreview = true,
                         replyMarkup = resultButtons
                     )
-            }
+//            }
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}")
         }

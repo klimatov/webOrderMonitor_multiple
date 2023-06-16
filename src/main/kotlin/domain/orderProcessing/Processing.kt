@@ -49,7 +49,17 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
         val delOrderList: MutableList<String> = mutableListOf()
         activeOrders.forEach { activeOrder ->
             if (activeOrder.value?.itemsUpdateStatus == false) itemsUpdate(activeOrder.key)
-            updateOrderTimer(activeOrder.key, botProcessingRepository) //обновляем таймер в сообщении
+
+
+            if (activeOrder.value?.activeTime != BotMessage().timeDiff( // если время подтверждения изменилось
+                    activeOrder.value?.docDate,
+                    gmt = gmt
+                )
+            ) {
+                updateOrderTimer(activeOrder.key, botProcessingRepository) //обновляем таймер в сообщении
+            }
+
+
             var deleteFlag = true
             inworkOrderList.forEach {
                 if (activeOrder.key == it.webNum) deleteFlag = false

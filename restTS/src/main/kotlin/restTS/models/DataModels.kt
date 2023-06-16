@@ -105,7 +105,8 @@ data class WebOrder(
     @SerializedName("items") var items: List<Items> = emptyList(), //manual
     @SerializedName("status") var status: Status? = Status(), //new 01.05.2022
     @SerializedName("itemsUpdateStatus") var itemsUpdateStatus: Boolean = false, // manual
-    @SerializedName("company") var company: String? = null //new 20.05.2023
+    @SerializedName("company") var company: String? = null, //new 20.05.2023
+    @SerializedName("sapFioList") var sapFioList: MutableList<String> = mutableListOf() // manual
 )
 
 data class WebOrderDetail(

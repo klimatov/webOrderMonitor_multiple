@@ -116,5 +116,6 @@ data class ConfirmationData(
     val collector: Collector,
     val chatId: ChatIdentifier?,
     val sourceMessageId: MessageId?,
-    val sapFio: String?
+    val sapFio: String,
+    val inConfirmationProcess: Boolean
 )

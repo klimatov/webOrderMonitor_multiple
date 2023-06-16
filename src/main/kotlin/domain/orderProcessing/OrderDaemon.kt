@@ -96,14 +96,22 @@ class OrderDaemon(
 
 
 
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.Default).launch {// запуск отслеживания подтверждений
             while (true) {
-                confirmationDataFlow.collect{
+                confirmationDataFlow.collect{ confirmationData ->
                     println(werk)
-                    println(it.shop)
-                    if (it.shop == werk) {
-                        println("SharedFlow from $werk: $it")
-                        listOfOrdersInTheConfirmation.add(it)
+                    println(confirmationData.shop)
+                    if (confirmationData.shop == werk) {
+                        println("SharedFlow from $werk: $confirmationData")
+//                        listOfOrdersInTheConfirmation.add(it)
+                        if (processing.activeOrders.containsKey(confirmationData.webNum)) {
+                            if (confirmationData.inConfirmationProcess) {
+                                processing.activeOrders[confirmationData.webNum]?.sapFioList?.add(confirmationData.sapFio)
+                            } else {
+                                processing.activeOrders[confirmationData.webNum]?.sapFioList?.remove(confirmationData.sapFio)
+                            }
+                            botProcessingRepository.botTimerUpdate(processing.activeOrders[confirmationData.webNum])
+                        }
                     }
                 }
             }
