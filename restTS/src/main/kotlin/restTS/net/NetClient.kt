@@ -2,10 +2,10 @@ package restTS.net
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import restTS.models.*
+import retrofit2.Response
 import utils.Logging
-import java.math.BigInteger
-import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -29,22 +29,14 @@ class NetClient {
     private var _deviceType = "realme RMX2180"
     private var _deviceVersion = "11"
     var remoteDbVersion: Int? = null
-//    var timeZone = TimeZone.getTimeZone("GMT+07:00")
-//    val gmt = timeZone.rawOffset.toString()
-
-    //хэшилка пароля для запроса
-    private fun md5Hash(str: String): String {
-        val instance: MessageDigest = MessageDigest.getInstance("MD5")
-        val bytes = str.toByteArray(Charsets.UTF_8)
-        val bigInteger = BigInteger(1, instance.digest(bytes))
-        val format = String.format("%032x", *Arrays.copyOf<Any>(arrayOf<Any>(bigInteger), 1))
-        return format
-    }
 
     fun getDBVersion(werk: String = this.shop): Int? {
         this.shop = werk
         try {
             val response = RetrofitInstance.eldoApi.getDBVersion(shop)?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
             //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
             if (this.errorCode == 200) {
@@ -86,6 +78,9 @@ class NetClient {
         try {
             val response =
                 RetrofitInstance.eldoApi.login(werk, dbVersion, dbVersion, values)?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, values)
+
             this.errorCode = response?.code()
             Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -133,8 +128,10 @@ class NetClient {
                 token,
                 hashMap
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+
             this.errorCode = response?.code()
-            // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
             if (this.errorCode == 200) {
                 val responseJson = Gson().fromJson(response?.body(), ListWebOrderSimply::class.java)
                 return responseJson.webOrderSimply
@@ -175,6 +172,9 @@ class NetClient {
                 token,
                 hashMap
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+
             this.errorCode = response?.code()
             //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -199,6 +199,9 @@ class NetClient {
                 orderId,
                 type // WRQST ?
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -221,6 +224,9 @@ class NetClient {
                 token,
                 id
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
             //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -245,6 +251,9 @@ class NetClient {
                 "01.01.2030",
                 str // INWORK ASSEMBLY ISSUED
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -266,6 +275,9 @@ class NetClient {
                 dbVersion,
                 token
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -289,6 +301,9 @@ class NetClient {
                 token,
                 hashMap
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
@@ -312,6 +327,9 @@ class NetClient {
                 orderId,
                 itemId
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
 
             val responseJson = Gson().fromJson(response?.body(), WebOrderReasonForIncompletenessItem::class.java)
@@ -332,6 +350,9 @@ class NetClient {
                 dbVersion,
                 token
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
 
             val responseJson = Gson().fromJson(response?.body(), Shelfs::class.java)
@@ -352,6 +373,9 @@ class NetClient {
                 dbVersion,
                 token
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+
             this.errorCode = response?.code()
 
             val responseJson = Gson().fromJson(response?.body(), PrintersList::class.java)
@@ -384,6 +408,9 @@ class NetClient {
                 token,
                 hashMap
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+
             this.errorCode = response?.code()
 
             val responseJson = Gson().fromJson(response?.body(), SaveWebOrderRes::class.java)
@@ -412,6 +439,9 @@ class NetClient {
                 token,
                 hashMap
             )?.execute()
+
+            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+
             this.errorCode = response?.code()
 
             val responseJson = Gson().fromJson(response?.body(), PrintRes::class.java)
@@ -424,10 +454,25 @@ class NetClient {
         }
     }
 
-
     private fun dateFrom(): String {
         val result = LocalDate.now().minusDays(35)
         return result.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+    }
+
+    private fun loggingRequestInfo(
+        requestFun: String,
+        response: Response<JsonElement?>?,
+        hashMap: HashMap<*, *>? = null
+    ) {
+        try {
+            val loggingText = "${this.shop} Запрос: $requestFun " +
+                    "Отправлено: $hashMap " +
+                    "Ответ: <--${response?.code()} ${response?.body()}" +
+                    if (response?.errorBody() != null) response?.errorBody() else ""
+            Logging.d(tag, loggingText)
+        } catch (e: Exception) {
+            Logging.e(tag, "${this.shop} Exception: ${e.message}")
+        }
     }
 
 }
