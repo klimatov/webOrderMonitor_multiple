@@ -899,7 +899,7 @@ class BotCore(
                 )
                 val popupMsg = when (it.data) {
                     "infoRequest" -> botMessage.popupMessage(
-                        botInstancesParameters[shop]?.dayConfirmedCount ?: 0
+                        botInstancesParameters[shop]?.dayOrderRecievedCount ?: 0
                     )
 
                     "error403", "error401" -> "Изменился пароль входа в TradeService администратора " +
@@ -1098,7 +1098,7 @@ class BotCore(
                 botInstancesParameters[shop]!!.targetChatId,
                 botMessage.notificationMessage(
                     botInstancesParameters[shop]!!.msgNotification,
-                    botInstancesParameters[shop]!!.dayConfirmedCount
+                    botInstancesParameters[shop]!!.dayOrderRecievedCount
                 ),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]!!.msgNotification)

@@ -54,7 +54,7 @@ class OrderDaemon(
         var currentInfoMsgId: Long? = null
         var dayConfirmedCount: Int? = null
 
-        val listOfOrdersInTheConfirmation: MutableList<ConfirmationData> = mutableListOf()
+//        val listOfOrdersInTheConfirmation: MutableList<ConfirmationData> = mutableListOf()
 
         // считываем данные из БД
         val shopParameters = shopParametersDBRepository.getShopParametersByShop(werk)
@@ -87,7 +87,7 @@ class OrderDaemon(
         }
 
         if (dayConfirmedCount != null) {
-            botProcessingRepository.dayConfirmedCount = dayConfirmedCount.toInt()
+            botProcessingRepository.dayOrderRecievedCount = dayConfirmedCount.toInt()
             Logging.i(tag, "$werk dayConfirmedCount READ: $dayConfirmedCount")
         }
 
@@ -136,16 +136,16 @@ class OrderDaemon(
                 botProcessingRepository.botSendInfoMessage()
                 // если магазин закрылся, то сбрасываем счетчик собранных за день и записываем в настройки
                 if (!botProcessingRepository.msgNotification) {
-                    botProcessingRepository.dayConfirmedCount = 0
+                    botProcessingRepository.dayOrderRecievedCount = 0
 
                     shopParametersDBRepository.updateDayConfirmedCount(
                         shop = werk,
-                        dayConfirmedCount = botProcessingRepository.dayConfirmedCount
+                        dayConfirmedCount = botProcessingRepository.dayOrderRecievedCount
                     )
 
                     Logging.i(
                         tag,
-                        "$werk dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
+                        "$werk dayConfirmedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
                     )
                 }
             }

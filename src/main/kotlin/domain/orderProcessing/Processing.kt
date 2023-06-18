@@ -28,7 +28,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
                 if (newOrder.isNotEmpty()) {
                     activeOrders[webOrder.webNum] =
                         newOrder[0]// добавляем новую вебку в список активных
-                    botProcessingRepository.dayConfirmedCount++ // увеличиваем на 1 счетчик собранных за день
+                    botProcessingRepository.dayOrderRecievedCount++ // увеличиваем на 1 счетчик поступивших за день
 
                     itemsUpdate(webOrder.webNum) // обновляем items и остатки по каждому, если все ок, то статус true
 
@@ -82,7 +82,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
                 shop = botProcessingRepository.shop,
                 serializedActiveOrders = serializedActiveOrders,
                 currentInfoMsgId = botProcessingRepository.currentInfoMsgId?:0,
-                dayConfirmedCount = botProcessingRepository.dayConfirmedCount
+                dayConfirmedCount = botProcessingRepository.dayOrderRecievedCount
             ))
 
             Logging.i(tag, "$shop activeOrders SAVE: $serializedActiveOrders")
@@ -92,7 +92,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
             )
             Logging.i(
                 tag,
-                "$shop dayConfirmedCount SAVE: ${botProcessingRepository.dayConfirmedCount}"
+                "$shop dayConfirmedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
             )
         }
     }
@@ -133,6 +133,10 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
             activeOrders[webNum]?.docStatus = updateOrder.docStatus
             activeOrders[webNum]?.paid = updateOrder.paid
             activeOrders[webNum]?.collector = updateOrder.collector
+
+            Logging.d(tag, "!!!!!! Для счетчика подтвержденных ${updateOrder.docStatus} ${updateOrder.collector}")
+            Logging.d(tag, "webOrder from TS server: $updateOrder")
+            Logging.d(tag, "webOrder from memory DB: ${activeOrders[webNum]}")
         }
 //        botProcessingRepository.dayConfirmedCount++ // увеличиваем на 1 счетчик собранных за день
         // TODO: переделать счетчик собранных

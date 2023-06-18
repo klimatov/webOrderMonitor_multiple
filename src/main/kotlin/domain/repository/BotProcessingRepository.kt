@@ -8,7 +8,11 @@ interface BotProcessingRepository {
     var targetChatId: ChatIdentifier
     var currentInfoMsgId: Long?
 //    var newInfoMsgId: Long?
-    var dayConfirmedCount: Int
+    var dayOrderRecievedCount: Int
+
+    var dayOrderConfirmedCount: Int
+    var dayOrderConfirmedByEmployee: MutableMap<String, Int>
+
     var msgNotification: Boolean
     var notConfirmedOrders: Int
     var shopOpenTime: Int

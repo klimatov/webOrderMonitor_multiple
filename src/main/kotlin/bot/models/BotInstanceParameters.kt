@@ -10,7 +10,9 @@ data class BotInstanceParameters(
     // из староого WOM Bot
     var targetChatId: ChatIdentifier = ChatId(0),
     var msgNotification: Boolean = true,
-    var dayConfirmedCount: Int = 0,  //подтверждено за день
+    var dayOrderRecievedCount: Int = 0,  //поступило заявок за день
+    var dayOrderConfirmedCount: Int = 0,  //подтверждено заявок за день
+    var dayOrderConfirmedByEmployee: MutableMap<String, Int> = mutableMapOf(), //подтверждено сотрудниками
 
     // из старого WOM TGInfoMessage
     var currentInfoMsgId: Long? = null,

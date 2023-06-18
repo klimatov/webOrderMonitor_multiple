@@ -35,10 +35,20 @@ class BotProcessingRepositoryImpl : BotProcessingRepository {
 //        set(value) {
 //            botCore.botInstancesParameters[shop]?.newInfoMsgId = value
 //        }
-    override var dayConfirmedCount: Int
-        get() = botCore.botInstancesParameters[shop]?.dayConfirmedCount ?: 0
+    override var dayOrderRecievedCount: Int
+        get() = botCore.botInstancesParameters[shop]?.dayOrderRecievedCount ?: 0
         set(value) {
-            botCore.botInstancesParameters[shop]?.dayConfirmedCount = value
+            botCore.botInstancesParameters[shop]?.dayOrderRecievedCount = value
+        }
+    override var dayOrderConfirmedCount: Int
+        get() = botCore.botInstancesParameters[shop]?.dayOrderConfirmedCount ?: 0
+        set(value) {
+            botCore.botInstancesParameters[shop]?.dayOrderConfirmedCount = value
+        }
+    override var dayOrderConfirmedByEmployee: MutableMap<String, Int>
+        get() = botCore.botInstancesParameters[shop]?.dayOrderConfirmedByEmployee ?: mutableMapOf()
+        set(value) {
+            botCore.botInstancesParameters[shop]?.dayOrderConfirmedByEmployee = value
         }
     override var msgNotification: Boolean
         get() = botCore.botInstancesParameters[shop]?.msgNotification ?: true
