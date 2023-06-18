@@ -99,8 +99,6 @@ class OrderDaemon(
         CoroutineScope(Dispatchers.Default).launch {// запуск отслеживания подтверждений
             while (true) {
                 confirmationDataFlow.collect{ confirmationData ->
-                    println(werk)
-                    println(confirmationData.shop)
                     if (confirmationData.shop == werk) {
                         println("SharedFlow from $werk: $confirmationData")
 //                        listOfOrdersInTheConfirmation.add(it)
@@ -110,7 +108,7 @@ class OrderDaemon(
                             } else {
                                 processing.activeOrders[confirmationData.webNum]?.sapFioList?.remove(confirmationData.sapFio)
                             }
-                            botProcessingRepository.botTimerUpdate(processing.activeOrders[confirmationData.webNum])
+                            botProcessingRepository.botUpdateMessage(processing.activeOrders[confirmationData.webNum])
                         }
                     }
                 }

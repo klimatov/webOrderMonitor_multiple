@@ -45,7 +45,12 @@ class BotMessage : DateTimeProcess() {
 
     fun inworkMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
-            codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
+//            codeln("⭕\uD83D\uDEE0Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
+            if (webOrder?.sapFioList?.isEmpty() == true) {
+                codeln("⭕Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
+            } else {
+                codeln("⭕\uD83D\uDEE0${getFirstCollectorName(webOrder)} собирает ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
+            }
         }
             .plus(orderMessage(webOrder, botName))
         return resultMessage
@@ -59,13 +64,17 @@ class BotMessage : DateTimeProcess() {
         return resultMessage
     }
 
+    private fun getFirstCollectorName(webOrder: WebOrder?): String {
+        return webOrder?.sapFioList?.first()?.split(" ")?.take(2)?.joinToString(" ")?:""
+    }
+
     fun confirmButton(webOrder: WebOrder?, botName: Username): InlineKeyboardMarkup {
         return inlineKeyboard {
                 row {
                     urlButton(if (webOrder?.sapFioList?.isEmpty() == true) {
                         "Подтвердить"
                     } else {
-                           "Собирает ${webOrder?.sapFioList?.first()?.split(" ")?.take(2)?.joinToString(" ")}"
+                           "Собирает ${getFirstCollectorName(webOrder)}"
                            },
                         makeTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=c&w=${webOrder?.webNum}&o=${webOrder?.orderId}&m=${webOrder?.messageId}".toByteArray()))
                     )

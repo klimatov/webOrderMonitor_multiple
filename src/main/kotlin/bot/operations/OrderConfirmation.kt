@@ -163,7 +163,7 @@ class OrderConfirmation(
                             )
                         }
 
-                        ConfirmationMainState(it.context, orderSaveParam)
+                        ConfirmationMainState(it.context, orderSaveParam)// убрать на релизе
                         /*                        when (webOrder.webOrder.docStatus) {
                                                     "WRQST_CRTD" -> {
                                                         ConfirmationMainState(it.context, orderSaveParam)
@@ -928,6 +928,14 @@ class OrderConfirmation(
                             inConfirmationProcess = false
                         )
                     }
+                    OrderDataSaveStatus.FINISH -> {
+                        emitConfirmationData(
+                            chatId = it.context.chatId,
+                            orderSaveParam = it.orderSaveParam,
+                            sapFio = allBotUsers[it.context.chatId]?.sapFio ?: "???",
+                            inConfirmationProcess = true
+                        )
+                    }
                     else -> {}
                 }
 
@@ -954,7 +962,9 @@ class OrderConfirmation(
                 webNum = orderSaveParam.webNum?:"",
                 orderId = orderSaveParam.orderId?:"",
                 shop = shop,
-                collector = orderSaveParam.collector?: Collector(),
+                collector = if (orderSaveParam.saveStatus == OrderDataSaveStatus.FINISH) {
+                    orderSaveParam.collector ?: Collector()
+                } else Collector(),
                 chatId = botInstancesParameters[shop]?.targetChatId,
                 sourceMessageId = orderSaveParam.sourceMessageId,
                 sapFio = sapFio,

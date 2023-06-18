@@ -984,68 +984,82 @@ class BotCore(
         return resultButtons
     }
 
-    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
+//    suspend fun botConfirmMessage(webOrder: WebOrder?, shop: String) {
+//
+//
+//        ///!!!!!!!!!!!!!!!!!!!!!!!!!
+//        try {
+//            val emptyKeyboard = InlineKeyboardMarkup(listOf())
+//            val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
+//            val resultButtons =
+//                if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) { // если подтвердили сообщ. с инфокнопкой
+//                    if (currentInfoMsg == null) emptyKeyboard else { // если текущее сообщение имело инфокнопку
+//                        val infoButton =
+//                            InlineKeyboardMarkup(listOf(currentInfoMsg.keyboard.last())) // запоминаем инфокнопку
+//                        botInstancesParameters[shop]!!.currentInfoMsg = infoButton // сохраняем текущую инфокнопку
+//                        infoButton // возвращаем инфокнопку для вывода в телегу
+//                    }
+//                } else null
+//            bot.editMessageText(
+//                chatId = botInstancesParameters[shop]!!.targetChatId,
+//                messageId = webOrder?.messageId ?: 0,
+//                entities = botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
+//                replyMarkup = resultButtons,
+//                disableWebPagePreview = true
+//            )
+//        } catch (e: Exception) {
+//            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
+//        }
+//    }
+
+    suspend fun botUpdateMessage(webOrder: WebOrder?, shop: String) {
         try {
             val emptyKeyboard = InlineKeyboardMarkup(listOf())
+            val newInfoButton = inlineKeyboard {
+                row {
+                    dataButton(
+                        text = botMessage.infoMessage(
+                            botInstancesParameters[shop]!!.notConfirmedOrders,
+                            botInstancesParameters[shop]!!.gmt
+                        ),
+                        data = "infoRequest"
+                    )
+                }
+            }
             val currentInfoMsg = botInstancesParameters[shop]!!.currentInfoMsg
-            val resultButtons =
-                if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) { // если подтвердили сообщ. с инфокнопкой
-                    if (currentInfoMsg == null) emptyKeyboard else { // если текущее сообщение имело инфокнопку
-                        val infoButton =
-                            InlineKeyboardMarkup(listOf(currentInfoMsg.keyboard.last())) // запоминаем инфокнопку
-                        botInstancesParameters[shop]!!.currentInfoMsg = infoButton // сохраняем текущую инфокнопку
-                        infoButton // возвращаем инфокнопку для вывода в телегу
-                    }
-                } else null
+
+            val processingDocStatus = "WRQST_CRTD"
+
+            val confirmButton =
+                if (webOrder?.docStatus == processingDocStatus) {
+                    botMessage.confirmButton(webOrder, botName)
+                } else emptyKeyboard
+
+            val infoButton =
+                if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) { // если обрабатываем сообщ. с инфокнопкой
+                    val tempInfoButton = currentInfoMsg?.takeLast ?: newInfoButton // для первого запуска
+                    botInstancesParameters[shop]!!.currentInfoMsg =
+                        confirmButton + tempInfoButton // сохраняем клавиатуру текущей инфокнопки
+                    tempInfoButton // возвращаем инфокнопку
+                } else emptyKeyboard
+
+            val resultButtons = confirmButton + infoButton
+
             bot.editMessageText(
                 chatId = botInstancesParameters[shop]!!.targetChatId,
                 messageId = webOrder?.messageId ?: 0,
-                entities = botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName),
-                replyMarkup = resultButtons,
-                disableWebPagePreview = true
-            )
-        } catch (e: Exception) {
-            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}}")
-        }
-    }
-
-    suspend fun botTimerUpdate(webOrder: WebOrder?, shop: String) {
-        try {
-//            if (webOrder?.activeTime != botMessage.timeDiff(
-//                    webOrder?.docDate,
-//                    gmt = botInstancesParameters[shop]!!.gmt
-//                )
-//            ) {
-                val emptyKeyboard = InlineKeyboardMarkup(listOf())
-                val confirmButton = botMessage.confirmButton(webOrder, botName)
-                val infoButton =
-                    if (webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) {
-                        botInstancesParameters[shop]!!.currentInfoMsg.takeLast
-                    } else emptyKeyboard
-
-                val resultButtons: InlineKeyboardMarkup = confirmButton + infoButton
-
-//                if ((webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId) &&
-//                    (botInstancesParameters[shop]!!.currentInfoMsg.dropLast.keyboard.isEmpty())) {
-//                    botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
-//                } // для первого запуска (есть currentInfoMsgId, но нет currentInfoMsg)
-
-                if ((webOrder?.messageId == botInstancesParameters[shop]!!.currentInfoMsgId)) {
-                    botInstancesParameters[shop]!!.currentInfoMsg = resultButtons
-                } // сохраняем клавиатуру текущей инфокнопки
-
-                    bot.editMessageText(
-                        chatId = botInstancesParameters[shop]!!.targetChatId,
-                        messageId = webOrder?.messageId ?: 0,
-                        entities = botMessage.inworkMessage(
-                            webOrder,
-                            gmt = botInstancesParameters[shop]!!.gmt,
-                            botName
-                        ),
-                        disableWebPagePreview = true,
-                        replyMarkup = resultButtons
+                entities = if (webOrder?.docStatus == processingDocStatus) {
+                    botMessage.inworkMessage(
+                        webOrder,
+                        gmt = botInstancesParameters[shop]!!.gmt,
+                        botName
                     )
-//            }
+                } else {
+                    botMessage.completeMessage(webOrder, gmt = botInstancesParameters[shop]!!.gmt, botName)
+                },
+                disableWebPagePreview = true,
+                replyMarkup = resultButtons
+            )
         } catch (e: Exception) {
             Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}")
         }

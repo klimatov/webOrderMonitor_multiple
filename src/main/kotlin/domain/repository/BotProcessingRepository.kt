@@ -26,7 +26,7 @@ interface BotProcessingRepository {
     suspend fun botSendInfoMessage()
     suspend fun updateInfoMsg()
     suspend fun botSendMessage(webOrder: WebOrder?): Long?
-    suspend fun botConfirmMessage(webOrder: WebOrder?)
-    suspend fun botTimerUpdate(webOrder: WebOrder?)
+//    suspend fun botConfirmMessage(webOrder: WebOrder?)
+    suspend fun botUpdateMessage(webOrder: WebOrder?)
     suspend fun updateErrorInfoMsg(errorCode: Int)
 }

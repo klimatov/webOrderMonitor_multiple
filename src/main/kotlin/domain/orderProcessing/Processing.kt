@@ -123,17 +123,28 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
 
     private suspend fun newOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
         val messageId: Long? = botProcessingRepository.botSendMessage(activeOrders[webNum])
-        //botProcessingRepository.newInfoMsgId = messageId // messageID последнего сообщения для инфокнопки
         activeOrders[webNum]?.messageId = messageId
     }
 
     private suspend fun delOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
-        botProcessingRepository.botConfirmMessage(activeOrders[webNum])
+        val updateOrders = serverTSRepository.getNewOrderList(webNum)
+        if (updateOrders.isNotEmpty()) {
+            val updateOrder = updateOrders[0]
+            activeOrders[webNum]?.docStatus = updateOrder.docStatus
+            activeOrders[webNum]?.paid = updateOrder.paid
+            activeOrders[webNum]?.collector = updateOrder.collector
+        }
+//        botProcessingRepository.dayConfirmedCount++ // увеличиваем на 1 счетчик собранных за день
+        // TODO: переделать счетчик собранных
+
+        if (activeOrders[webNum]?.docStatus == "WRQST_CRTD") activeOrders[webNum]?.docStatus = ""
+
+        botProcessingRepository.botUpdateMessage(activeOrders[webNum])
         activeOrders.remove(webNum)
     }
 
     private suspend fun updateOrderTimer(webNum: String?, botProcessingRepository: BotProcessingRepository) {
-        botProcessingRepository.botTimerUpdate(activeOrders[webNum])
+        botProcessingRepository.botUpdateMessage(activeOrders[webNum])
         activeOrders[webNum]?.activeTime =
             BotMessage().timeDiff(activeOrders[webNum]?.docDate, gmt = gmt) // время активности
     }
