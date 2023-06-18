@@ -163,6 +163,13 @@ class OrderConfirmation(
                             )
                         }
 
+                        emitConfirmationData(
+                            chatId = it.context.chatId,
+                            orderSaveParam = orderSaveParam,
+                            sapFio = allBotUsers[it.context.chatId]?.sapFio ?: "???",
+                            inConfirmationProcess = true
+                        )
+
                         ConfirmationMainState(it.context, orderSaveParam)// убрать на релизе
                         /*                        when (webOrder.webOrder.docStatus) {
                                                     "WRQST_CRTD" -> {
@@ -202,13 +209,6 @@ class OrderConfirmation(
                 stateUser[it.context.chatId] = it
                 Logging.i(tag, "ConfirmationMainState")
                 Logging.d(tag, "MainState и параметры на старте такие: ${it.orderSaveParam.toString()}")
-
-                emitConfirmationData(
-                    chatId = it.context.chatId,
-                    orderSaveParam = it.orderSaveParam,
-                    sapFio = allBotUsers[it.context.chatId]?.sapFio ?: "???",
-                    inConfirmationProcess = true
-                )
 
                 val mainStateButtons = inlineKeyboard {
                     it.orderSaveParam.items.forEach { item ->

@@ -103,11 +103,13 @@ class OrderDaemon(
                         println("SharedFlow from $werk: $confirmationData")
 //                        listOfOrdersInTheConfirmation.add(it)
                         if (processing.activeOrders.containsKey(confirmationData.webNum)) {
-                            if (confirmationData.inConfirmationProcess) {
-                                processing.activeOrders[confirmationData.webNum]?.sapFioList?.add(confirmationData.sapFio)
+                            val sapFioList = processing.activeOrders[confirmationData.webNum]?.sapFioList
+                            if ((confirmationData.inConfirmationProcess)&&(sapFioList?.contains(confirmationData.sapFio) == false)) {
+                                sapFioList?.add(confirmationData.sapFio)
                             } else {
-                                processing.activeOrders[confirmationData.webNum]?.sapFioList?.remove(confirmationData.sapFio)
+                                sapFioList?.removeAll(listOf(confirmationData.sapFio))
                             }
+                            println(processing.activeOrders[confirmationData.webNum]?.sapFioList)
                             botProcessingRepository.botUpdateMessage(processing.activeOrders[confirmationData.webNum])
                         }
                     }
