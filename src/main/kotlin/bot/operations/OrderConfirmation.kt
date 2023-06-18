@@ -95,7 +95,14 @@ class OrderConfirmation(
     ) {
         Logging.d(tag, "confirm order #$startOrderId")
 
-        defaultBehaviourContextWithFSM.startChain(ConfirmationStartState(startChatId, startWebNum, startOrderId, startSourceMessageId))
+        defaultBehaviourContextWithFSM.startChain(
+            ConfirmationStartState(
+                startChatId,
+                startWebNum,
+                startOrderId,
+                startSourceMessageId
+            )
+        )
 
         with(defaultBehaviourContextWithFSM) {
 
@@ -170,28 +177,30 @@ class OrderConfirmation(
                             inConfirmationProcess = true
                         )
 
-                        ConfirmationMainState(it.context, orderSaveParam)// убрать на релизе
-                        /*                        when (webOrder.webOrder.docStatus) {
-                                                    "WRQST_CRTD" -> {
-                                                        ConfirmationMainState(it.context, orderSaveParam)
-                                                    }
-                                                    "DOC_STORN" -> {
-                                                        orderSaveParam.saveStatus = OrderDataSaveStatus.STORN
-                                                        Logging.e(
-                                                            tag,
-                                                            "Заявка №${orderSaveParam.webNum} отменена"
-                                                        )
-                                                        ConfirmationStopState(it.context, orderSaveParam)
-                                                    }
-                                                    else -> {
-                                                        orderSaveParam.saveStatus = OrderDataSaveStatus.EXIST
-                                                        Logging.e(
-                                                            tag,
-                                                            "Заявка №${orderSaveParam.webNum} уже подтверждена ${webOrder.webOrder.collector?.username}."
-                                                        )
-                                                        ConfirmationStopState(it.context, orderSaveParam)
-                                                    }
-                                                }*/
+//                        ConfirmationMainState(it.context, orderSaveParam)// убрать на релизе
+                        when (webOrder.webOrder.docStatus) {
+                            "WRQST_CRTD" -> {
+                                ConfirmationMainState(it.context, orderSaveParam)
+                            }
+
+                            "DOC_STORN" -> {
+                                orderSaveParam.saveStatus = OrderDataSaveStatus.STORN
+                                Logging.e(
+                                    tag,
+                                    "Заявка №${orderSaveParam.webNum} отменена"
+                                )
+                                ConfirmationStopState(it.context, orderSaveParam)
+                            }
+
+                            else -> {
+                                orderSaveParam.saveStatus = OrderDataSaveStatus.EXIST
+                                Logging.e(
+                                    tag,
+                                    "Заявка №${orderSaveParam.webNum} уже подтверждена ${webOrder.webOrder.collector?.username}."
+                                )
+                                ConfirmationStopState(it.context, orderSaveParam)
+                            }
+                        }
 
 
                     } else {
@@ -227,9 +236,11 @@ class OrderConfirmation(
                         }
                     }
                     row {
-                        dataButton("Одна полка для всех позиций", "oneShelf=${
-                            findFirstOrderOrNull(it.orderSaveParam)
-                        }")
+                        dataButton(
+                            "Одна полка для всех позиций", "oneShelf=${
+                                findFirstOrderOrNull(it.orderSaveParam)
+                            }"
+                        )
                     }
                     row {
                         dataButton(
@@ -334,6 +345,10 @@ class OrderConfirmation(
                                             collector = it.orderSaveParam.collector ?: Collector(),
                                             ordType = it.orderSaveParam.ordType ?: ""
                                         )
+//                                        val saveResult: SaveWebOrderResult = SaveWebOrderResult(
+//                                            Result(true, "", 0 ),
+//                                            SaveWebOrderRes()
+//                                        )
                                         if (saveResult.result.success) {
                                             if (it.orderSaveParam.printerName != null) botTSOperations.printWebOrder(
                                                 userId = it.context.chatId,
@@ -917,9 +932,10 @@ class OrderConfirmation(
                         templateConfirmedOk(it.orderSaveParam.webNum ?: "") +
                                 templateConfirmedPrinted(it.orderSaveParam.printerName)
                     }
+
                     else -> ""
                 }
-                when(it.orderSaveParam.saveStatus) {
+                when (it.orderSaveParam.saveStatus) {
                     OrderDataSaveStatus.CANCEL, OrderDataSaveStatus.FALSE -> {
                         emitConfirmationData(
                             chatId = it.context.chatId,
@@ -928,6 +944,7 @@ class OrderConfirmation(
                             inConfirmationProcess = false
                         )
                     }
+
                     OrderDataSaveStatus.FINISH -> {
                         emitConfirmationData(
                             chatId = it.context.chatId,
@@ -936,6 +953,7 @@ class OrderConfirmation(
                             inConfirmationProcess = true
                         )
                     }
+
                     else -> {}
                 }
 
@@ -952,15 +970,15 @@ class OrderConfirmation(
 
     private suspend fun emitConfirmationData(
         chatId: Identifier,
-        orderSaveParam:OrderSaveParam,
+        orderSaveParam: OrderSaveParam,
         sapFio: String,
         inConfirmationProcess: Boolean
     ) {
-        val shop = allBotUsers[chatId]?.tsShop?:""
+        val shop = allBotUsers[chatId]?.tsShop ?: ""
         _confirmationDataFlow.emit(
             ConfirmationData(
-                webNum = orderSaveParam.webNum?:"",
-                orderId = orderSaveParam.orderId?:"",
+                webNum = orderSaveParam.webNum ?: "",
+                orderId = orderSaveParam.orderId ?: "",
                 shop = shop,
                 collector = if (orderSaveParam.saveStatus == OrderDataSaveStatus.FINISH) {
                     orderSaveParam.collector ?: Collector()

@@ -103,14 +103,18 @@ class OrderDaemon(
                         println("SharedFlow from $werk: $confirmationData")
 //                        listOfOrdersInTheConfirmation.add(it)
                         if (processing.activeOrders.containsKey(confirmationData.webNum)) {
-                            val sapFioList = processing.activeOrders[confirmationData.webNum]?.sapFioList
-                            if ((confirmationData.inConfirmationProcess)&&(sapFioList?.contains(confirmationData.sapFio) == false)) {
-                                sapFioList?.add(confirmationData.sapFio)
+                            val activeOrder = processing.activeOrders[confirmationData.webNum]
+                            if (confirmationData.inConfirmationProcess) {
+                                if (activeOrder?.sapFioList?.contains(confirmationData.sapFio) == false) activeOrder?.sapFioList?.add(confirmationData.sapFio)
                             } else {
-                                sapFioList?.removeAll(listOf(confirmationData.sapFio))
+                                activeOrder?.sapFioList?.removeAll(listOf(confirmationData.sapFio))
                             }
-                            println(processing.activeOrders[confirmationData.webNum]?.sapFioList)
-                            botProcessingRepository.botUpdateMessage(processing.activeOrders[confirmationData.webNum])
+                            if (confirmationData.collector.hrCode != null) { // если поле заполнено, то заявка подтверждена
+                                activeOrder?.sapFioList?.retainAll(listOf(confirmationData.sapFio))
+                                activeOrder?.docStatus = "SOME_STATUS"
+                                activeOrder?.collector = confirmationData.collector
+                            }
+                            botProcessingRepository.botUpdateMessage(activeOrder)
                         }
                     }
                 }

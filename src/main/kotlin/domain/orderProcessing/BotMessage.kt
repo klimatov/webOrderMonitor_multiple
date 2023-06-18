@@ -57,15 +57,22 @@ class BotMessage : DateTimeProcess() {
     }
 
     fun completeMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
+        val assemblyTime = minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))
         val resultMessage = buildEntities {
-            boldln("✅Подтверждена за ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
+            boldln(
+                when{
+                    (webOrder?.docStatus == "DOC_STORN") -> "✅Отменена клиентом через $assemblyTime!"
+                    (webOrder?.collector?.hrCode != null) -> "✅Подтвердил(-а) ${getFirstCollectorName(webOrder)} за $assemblyTime!" // если не пусто, то собрана в боте
+                    else -> "✅Подтверждена за $assemblyTime!"
+                }
+            )
         }
             .plus(italic(orderMessage(webOrder, botName)))
         return resultMessage
     }
 
     private fun getFirstCollectorName(webOrder: WebOrder?): String {
-        return webOrder?.sapFioList?.first()?.split(" ")?.take(2)?.joinToString(" ")?:""
+        return webOrder?.sapFioList?.firstOrNull()?.split(" ")?.take(2)?.joinToString(" ")?:""
     }
 
     fun confirmButton(webOrder: WebOrder?, botName: Username): InlineKeyboardMarkup {

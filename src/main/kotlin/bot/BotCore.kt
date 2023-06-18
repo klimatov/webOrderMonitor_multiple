@@ -1061,7 +1061,7 @@ class BotCore(
                 replyMarkup = resultButtons
             )
         } catch (e: Exception) {
-            Logging.e(tag, "$shop Exception: ${e.stackTraceToString()}")
+            Logging.e(tag, "$shop Exception: ${e}")
         }
     }
 
