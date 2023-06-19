@@ -52,7 +52,7 @@ class OrderDaemon(
 
         var serializedActiveOrders: String? = null
         var currentInfoMsgId: Long? = null
-        var dayConfirmedCount: Int? = null
+        var dayRecievedCount: Int? = null
 
 //        val listOfOrdersInTheConfirmation: MutableList<ConfirmationData> = mutableListOf()
 
@@ -65,12 +65,12 @@ class OrderDaemon(
                 shop = werk,
                 serializedActiveOrders = "{}",
                 currentInfoMsgId = 0,
-                dayConfirmedCount = 0
+                dayRecievedCount = 0
             )
         ) else {
             serializedActiveOrders = shopParameters.serializedActiveOrders
             currentInfoMsgId = shopParameters.currentInfoMsgId
-            dayConfirmedCount = shopParameters.dayConfirmedCount
+            dayRecievedCount = shopParameters.dayRecievedCount
         }
 
         if (serializedActiveOrders != null) {
@@ -86,9 +86,9 @@ class OrderDaemon(
             Logging.i(tag, "$werk currentInfoMsgId READ: $currentInfoMsgId")
         }
 
-        if (dayConfirmedCount != null) {
-            botProcessingRepository.dayOrderRecievedCount = dayConfirmedCount.toInt()
-            Logging.i(tag, "$werk dayConfirmedCount READ: $dayConfirmedCount")
+        if (dayRecievedCount != null) {
+            botProcessingRepository.dayOrderRecievedCount = dayRecievedCount.toInt()
+            Logging.i(tag, "$werk dayRecievedCount READ: $dayRecievedCount")
         }
 
 
@@ -111,7 +111,7 @@ class OrderDaemon(
                             }
                             if (confirmationData.collector.hrCode != null) { // если поле заполнено, то заявка подтверждена
                                 activeOrder?.sapFioList?.retainAll(listOf(confirmationData.sapFio))
-                                activeOrder?.docStatus = "SOME_STATUS"
+                                activeOrder?.docStatus = "WRQST_ACPT"
                                 activeOrder?.collector = confirmationData.collector
                             }
                             botProcessingRepository.botUpdateMessage(activeOrder)
@@ -138,14 +138,14 @@ class OrderDaemon(
                 if (!botProcessingRepository.msgNotification) {
                     botProcessingRepository.dayOrderRecievedCount = 0
 
-                    shopParametersDBRepository.updateDayConfirmedCount(
+                    shopParametersDBRepository.updateDayRecievedCount(
                         shop = werk,
-                        dayConfirmedCount = botProcessingRepository.dayOrderRecievedCount
+                        dayRecievedCount = botProcessingRepository.dayOrderRecievedCount
                     )
 
                     Logging.i(
                         tag,
-                        "$werk dayConfirmedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
+                        "$werk dayRecievedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
                     )
                 }
             }

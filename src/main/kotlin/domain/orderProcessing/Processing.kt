@@ -82,7 +82,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
                 shop = botProcessingRepository.shop,
                 serializedActiveOrders = serializedActiveOrders,
                 currentInfoMsgId = botProcessingRepository.currentInfoMsgId?:0,
-                dayConfirmedCount = botProcessingRepository.dayOrderRecievedCount
+                dayRecievedCount = botProcessingRepository.dayOrderRecievedCount
             ))
 
             Logging.i(tag, "$shop activeOrders SAVE: $serializedActiveOrders")
@@ -92,7 +92,7 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
             )
             Logging.i(
                 tag,
-                "$shop dayConfirmedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
+                "$shop dayRecievedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
             )
         }
     }
@@ -127,23 +127,46 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
     }
 
     private suspend fun delOrder(webNum: String?, botProcessingRepository: BotProcessingRepository) {
-        val updateOrders = serverTSRepository.getNewOrderList(webNum)
+        val updateOrders = serverTSRepository.getAllOrderList(webNum)
+        val webOrder = activeOrders[webNum]
+//        val updateDetail = serverTSRepository.getWebOrderDetail(webOrder?.orderId?:"")
+
         if (updateOrders.isNotEmpty()) {
             val updateOrder = updateOrders[0]
-            activeOrders[webNum]?.docStatus = updateOrder.docStatus
-            activeOrders[webNum]?.paid = updateOrder.paid
-            activeOrders[webNum]?.collector = updateOrder.collector
 
             Logging.d(tag, "!!!!!! Для счетчика подтвержденных ${updateOrder.docStatus} ${updateOrder.collector}")
-            Logging.d(tag, "webOrder from TS server: $updateOrder")
-            Logging.d(tag, "webOrder from memory DB: ${activeOrders[webNum]}")
+            Logging.d(tag, "webOrder from memory DB: $webOrder")
+            Logging.d(tag, "webOrder List from TS server: $updateOrder")
+//            Logging.d(tag, "webOrder Detail from TS server: $updateDetail")
+
+            webOrder?.docStatus = updateOrder.docStatus
+            webOrder?.paid = updateOrder.paid
+//            webOrder?.collector = updateOrder.collector
+
         }
-//        botProcessingRepository.dayConfirmedCount++ // увеличиваем на 1 счетчик собранных за день
+
         // TODO: переделать счетчик собранных
+        when (webOrder?.docStatus) {
+            "WRQST_ACPT" -> {
+                botProcessingRepository.dayOrderConfirmedCount++
+                if ((webOrder?.collector?.hrCode != null) && (webOrder?.collector?.hrCode != "0")) {
+                    val sapFio = webOrder?.sapFioList?.firstOrNull()?:"TS"
+                    when (val employeeCounter = botProcessingRepository.dayOrderConfirmedByEmployee[sapFio]) {
+                        null -> botProcessingRepository.dayOrderConfirmedByEmployee[sapFio] = 1
+                        else -> botProcessingRepository.dayOrderConfirmedByEmployee[sapFio] = employeeCounter + 1
+                    }
+                }
+            }
+        }
 
-        if (activeOrders[webNum]?.docStatus == "WRQST_CRTD") activeOrders[webNum]?.docStatus = ""
+        println("$shop Упало за день: ${botProcessingRepository.dayOrderRecievedCount}")
+        println("$shop Подтверждено за день: ${botProcessingRepository.dayOrderConfirmedCount}")
+        println("$shop Подтверждено через бота: ${botProcessingRepository.dayOrderConfirmedByEmployee}")
 
-        botProcessingRepository.botUpdateMessage(activeOrders[webNum])
+
+        if (webOrder?.docStatus == "WRQST_CRTD") webOrder?.docStatus = ""
+
+        botProcessingRepository.botUpdateMessage(webOrder)
         activeOrders.remove(webNum)
     }
 

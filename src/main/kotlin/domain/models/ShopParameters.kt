@@ -4,5 +4,5 @@ data class ShopParameters(
     val shop: String,
     val serializedActiveOrders: String,
     val currentInfoMsgId: Long,
-    val dayConfirmedCount: Int
+    val dayRecievedCount: Int
 )

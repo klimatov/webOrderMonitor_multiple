@@ -77,7 +77,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         if (orderList == null) return emptyList() else return orderList.webOrders
     }
 
-    suspend fun getAllOrderList(webNum: String?): List<WebOrder> { // для запроса инфы по вебке
+    override suspend fun getAllOrderList(webNum: String?): List<WebOrder> { // для запроса инфы по вебке
         val orderList = netClient.getWebOrderList("all", webNum)
         if (orderList == null) return emptyList() else return orderList.webOrders
     }
@@ -91,7 +91,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
         )
     }
 
-    suspend fun getWebOrderDetail(orderId: String): WebOrderDetail? {
+    override suspend fun getWebOrderDetail(orderId: String): WebOrderDetail? {
         return netClient.getWebOrderDetail(orderId, "WRQST,PWRQT,DWRQT")
     }
 

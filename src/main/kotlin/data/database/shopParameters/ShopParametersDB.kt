@@ -9,7 +9,7 @@ object ShopParametersDB : Table("shop_parameters") {
     private val shop = ShopParametersDB.varchar("shop", 4)
     private val serializedActiveOrders = ShopParametersDB.text("serialized_active_orders")
     private val currentInfoMsgId = ShopParametersDB.long("current_info_message_id")
-    private val dayConfirmedCount = ShopParametersDB.integer("day_confirmed_count")
+    private val dayRecievedCount = ShopParametersDB.integer("day_recieved_count")
 
     fun upsert(shopParametersDTO: ShopParametersDTO) {
         try {
@@ -18,7 +18,7 @@ object ShopParametersDB : Table("shop_parameters") {
                 val updatedRows = ShopParametersDB.update({ shop eq shopParametersDTO.shop }) {
                     it[serializedActiveOrders] = shopParametersDTO.serializedActiveOrders
                     it[currentInfoMsgId] = shopParametersDTO.currentInfoMsgId
-                    it[dayConfirmedCount] = shopParametersDTO.dayConfirmedCount
+                    it[dayRecievedCount] = shopParametersDTO.dayRecievedCount
                 }
 
                 if (updatedRows == 0) {
@@ -26,7 +26,7 @@ object ShopParametersDB : Table("shop_parameters") {
                         it[shop] = shopParametersDTO.shop
                         it[serializedActiveOrders] = shopParametersDTO.serializedActiveOrders
                         it[currentInfoMsgId] = shopParametersDTO.currentInfoMsgId
-                        it[dayConfirmedCount] = shopParametersDTO.dayConfirmedCount
+                        it[dayRecievedCount] = shopParametersDTO.dayRecievedCount
                     }
                 }
             }
@@ -36,12 +36,12 @@ object ShopParametersDB : Table("shop_parameters") {
         }
     }
 
-    fun updateDayConfirmedCount(shopPar: String, dayConfirmedCountPar: Int) {
+    fun updateDayRecievedCount(shopPar: String, dayRecievedCountPar: Int) {
         try {
             transaction {
                 addLogger(StdOutSqlLogger)
                 ShopParametersDB.update({ ShopParametersDB.shop.eq(shopPar) }) {
-                    it[dayConfirmedCount] = dayConfirmedCountPar
+                    it[dayRecievedCount] = dayRecievedCountPar
                 }
             }
 
@@ -59,7 +59,7 @@ object ShopParametersDB : Table("shop_parameters") {
                         shop = shop,
                         serializedActiveOrders = parameters[serializedActiveOrders],
                         currentInfoMsgId = parameters[currentInfoMsgId],
-                        dayConfirmedCount = parameters[dayConfirmedCount]
+                        dayRecievedCount = parameters[dayRecievedCount]
                     )
 
             }

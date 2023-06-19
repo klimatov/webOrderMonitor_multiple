@@ -152,8 +152,8 @@ class NetClient {
             else -> "WRQST_CRTD"
         }
         val hashMap: HashMap<Any?, Any?> = hashMapOf(
-            "orderType" to "",
-//            "orderType" to "WRQST,PWRQT,DWRQT",
+//            "orderType" to "",
+            "orderType" to "WRQST,PWRQT,DWRQT",
             "dateFrom" to dateFrom(),
             "dateTo" to "01.01.2030",
             "docStatus" to str,

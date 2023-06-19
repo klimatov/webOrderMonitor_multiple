@@ -40,8 +40,8 @@ class DataToDomainRepositoryImpl() : WorkersDBRepository, ShopParametersDBReposi
         return ShopParametersDB.getParametersByShop(shop)?.mapToShopParameters()
     }
 
-    override fun updateDayConfirmedCount(shop: String, dayConfirmedCount: Int) {
-        ShopParametersDB.updateDayConfirmedCount(shop, dayConfirmedCount)
+    override fun updateDayRecievedCount(shop: String, dayRecievedCount: Int) {
+        ShopParametersDB.updateDayRecievedCount(shop, dayRecievedCount)
     }
 
     //ServerTSFactoryRepository

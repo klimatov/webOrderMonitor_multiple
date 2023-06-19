@@ -1,10 +1,7 @@
 package domain.repository
 
 import domain.models.OrderListSimple
-import restTS.models.Items
-import restTS.models.LoginResult
-import restTS.models.RemainsLocal
-import restTS.models.WebOrder
+import restTS.models.*
 
 interface ServerTSRepository {
     var errorCode: Int?
@@ -16,6 +13,7 @@ interface ServerTSRepository {
     suspend fun getItems(orderId: String?): List<Items>
     suspend fun getRemains(goodCode: String?): List<RemainsLocal>
     suspend fun getNewOrderList(webNum: String?): List<WebOrder>
+    suspend fun getAllOrderList(webNum: String?): List<WebOrder>
     suspend fun getOrderListSimple(): OrderListSimple?
-
+    suspend fun getWebOrderDetail(orderId: String): WebOrderDetail?
 }

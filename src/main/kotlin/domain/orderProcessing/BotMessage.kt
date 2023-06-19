@@ -58,12 +58,17 @@ class BotMessage : DateTimeProcess() {
 
     fun completeMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
         val assemblyTime = minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))
+        val docStatus = webOrder?.docStatus
         val resultMessage = buildEntities {
             boldln(
                 when{
-                    (webOrder?.docStatus == "DOC_STORN") -> "✅Отменена клиентом через $assemblyTime!"
-                    (webOrder?.collector?.hrCode != null) -> "✅Подтвердил(-а) ${getFirstCollectorName(webOrder)} за $assemblyTime!" // если не пусто, то собрана в боте
-                    else -> "✅Подтверждена за $assemblyTime!"
+                    (docStatus == "DOC_STORN") -> "✅Отменена клиентом через $assemblyTime!"
+                    ((webOrder?.collector?.hrCode != null) && (webOrder?.collector?.hrCode != "0")) -> "✅Подтвердил(-а) ${getFirstCollectorName(webOrder)} за $assemblyTime!" // если не пусто, то собрана в боте
+                    ((docStatus == "WRQST_ACPT")||(docStatus == "PWRQT_DLVD")) -> "✅Подтверждена за $assemblyTime!"
+                    ((docStatus == "WRQST_WAIT")||(docStatus == "PWRQT_SHRT")) -> "✅Заказ изменен за $assemblyTime, требуется подтверждение клиента!"
+                    ((docStatus == "WRQST_BNLY")||(docStatus == "WRQST_BNLN")) -> "✅Выставлен безнал. Собрана за $assemblyTime!"
+                    (docStatus == "PWRQT_PMNT") -> "✅Ожидается предоплата. Собрана за $assemblyTime!"
+                    else -> "✅Отменена через $assemblyTime!"
                 }
             )
         }
@@ -168,17 +173,17 @@ class BotMessage : DateTimeProcess() {
         }
     }
 
-    fun notificationMessage(notification: Boolean, dayConfirmedCount: Int): String {
+    fun notificationMessage(notification: Boolean, dayRecievedCount: Int): String {
         if (notification) {
-            return "\uD83D\uDD08 Магазин открыт, включаем уведомления!"
+            return "\uD83D\uDD08 Магазин открыт, включаем звуковые уведомления!"
         } else {
-            return "\uD83D\uDD07 Магазин закрыт, отключаем уведомления!\n" +
-                    "\uD83D\uDE2B Сегодня за день ${orderStarting(dayConfirmedCount)} ${orderEnding(dayConfirmedCount)}"
+            return "\uD83D\uDD07 Магазин закрыт, отключаем звуковые уведомления!\n" +
+                    "\uD83D\uDE2B Сегодня за день ${orderStarting(dayRecievedCount)} ${orderEnding(dayRecievedCount)}"
         }
     }
 
-    fun popupMessage(dayConfirmedCount: Int): String {
-        return "Сегодня ${orderStarting(dayConfirmedCount)} ${orderEnding(dayConfirmedCount)}"
+    fun popupMessage(dayRecievedCount: Int): String {
+        return "Сегодня ${orderStarting(dayRecievedCount)} ${orderEnding(dayRecievedCount)}"
     }
 
     fun descriptionMessage(): String {
