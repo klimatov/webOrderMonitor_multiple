@@ -1099,8 +1099,10 @@ class BotCore(
             bot.sendMessage(
                 botInstancesParameters[shop]!!.targetChatId,
                 botMessage.notificationMessage(
-                    botInstancesParameters[shop]!!.msgNotification,
-                    botInstancesParameters[shop]!!.dayOrderRecievedCount
+                    notification = botInstancesParameters[shop]!!.msgNotification,
+                    dayOrderRecievedCount = botInstancesParameters[shop]!!.dayOrderRecievedCount,
+                    dayOrderConfirmedCount = botInstancesParameters[shop]!!.dayOrderConfirmedCount,
+                    dayOrderConfirmedByEmployee = botInstancesParameters[shop]!!.dayOrderConfirmedByEmployee
                 ),
                 disableWebPagePreview = true,
                 disableNotification = !(botInstancesParameters[shop]!!.msgNotification)
