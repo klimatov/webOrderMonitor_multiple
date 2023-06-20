@@ -11,13 +11,13 @@ allprojects {
     version = "1"
 
     repositories {
-        mavenLocal()
+//        mavenLocal()
         mavenCentral()
     }
 }
 
 dependencies {
-    implementation("dev.inmo:tgbotapi:8.0.1")
+    implementation("dev.inmo:tgbotapi:8.1.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

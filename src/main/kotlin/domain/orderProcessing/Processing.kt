@@ -78,22 +78,21 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
         // записываем активные в БД> если были изменения +-
         if (newFlag || delOrderList.count() > 0) {
             val serializedActiveOrders = Gson().toJson(activeOrders)
+            val serializedDayConfirmedByEmployee = Gson().toJson(botProcessingRepository.dayOrderConfirmedByEmployee)
             shopParametersDBRepository.updateShopParameters(ShopParameters(
                 shop = botProcessingRepository.shop,
                 serializedActiveOrders = serializedActiveOrders,
                 currentInfoMsgId = botProcessingRepository.currentInfoMsgId?:0,
-                dayRecievedCount = botProcessingRepository.dayOrderRecievedCount
+                dayRecievedCount = botProcessingRepository.dayOrderRecievedCount,
+                dayConfirmedCount = botProcessingRepository.dayOrderConfirmedCount,
+                serializedDayConfirmedByEmployee = serializedDayConfirmedByEmployee
             ))
 
-            Logging.i(tag, "$shop activeOrders SAVE: $serializedActiveOrders")
-            Logging.i(
-                tag,
-                "$shop currentInfoMsgId SAVE: ${botProcessingRepository.currentInfoMsgId}"
-            )
-            Logging.i(
-                tag,
-                "$shop dayRecievedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
-            )
+            Logging.i(tag, "$shop currentInfoMsgId SAVE: ${botProcessingRepository.currentInfoMsgId} " +
+                    "dayRecievedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount} " +
+                    "dayConfirmedCount SAVE: ${botProcessingRepository.dayOrderConfirmedCount} " +
+                    "serializedDayConfirmedByEmployee SAVE: $serializedActiveOrders " +
+                    "activeOrders SAVE: $serializedDayConfirmedByEmployee")
         }
     }
 

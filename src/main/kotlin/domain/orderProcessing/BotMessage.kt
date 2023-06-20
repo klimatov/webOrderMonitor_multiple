@@ -1,6 +1,6 @@
 package domain.orderProcessing
 
-import dev.inmo.tgbotapi.extensions.utils.formatting.makeTgDeepLink
+import dev.inmo.tgbotapi.extensions.utils.formatting.makeInternalTgDeepLink
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.urlButton
 import dev.inmo.tgbotapi.types.Username
@@ -21,7 +21,7 @@ class BotMessage : DateTimeProcess() {
     fun orderMessage(webOrder: WebOrder?, botName: Username): TextSourcesList {
         val resultMessage = buildEntities {
             regular("#️⃣${webOrder?.webNum}/${webOrder?.orderId} ")
-            linkln("[i]", makeTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray())))
+            linkln("[i]", makeInternalTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray())))
             regular("${webOrder?.ordType} ")
             if (webOrder?.isLegalEntity == "Y") bold("СЧЁТ КОНТРАГЕНТА")
             underlineln("\n\uD83D\uDCC6${replaceDateTime(webOrder?.docDate ?: "")}")
@@ -88,7 +88,7 @@ class BotMessage : DateTimeProcess() {
                     } else {
                            "Собирает ${getFirstCollectorName(webOrder)}"
                            },
-                        makeTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=c&w=${webOrder?.webNum}&o=${webOrder?.orderId}&m=${webOrder?.messageId}".toByteArray()))
+                        makeInternalTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=c&w=${webOrder?.webNum}&o=${webOrder?.orderId}&m=${webOrder?.messageId}".toByteArray()))
                     )
                 }
             }

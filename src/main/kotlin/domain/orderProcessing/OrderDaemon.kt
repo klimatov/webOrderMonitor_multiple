@@ -53,6 +53,8 @@ class OrderDaemon(
         var serializedActiveOrders: String? = null
         var currentInfoMsgId: Long? = null
         var dayRecievedCount: Int? = null
+        var dayConfirmedCount: Int? = null
+        var serializedDayConfirmedByEmployee: String? = null
 
 //        val listOfOrdersInTheConfirmation: MutableList<ConfirmationData> = mutableListOf()
 
@@ -65,12 +67,16 @@ class OrderDaemon(
                 shop = werk,
                 serializedActiveOrders = "{}",
                 currentInfoMsgId = 0,
-                dayRecievedCount = 0
+                dayRecievedCount = 0,
+                dayConfirmedCount = 0,
+                serializedDayConfirmedByEmployee = "{}"
             )
         ) else {
             serializedActiveOrders = shopParameters.serializedActiveOrders
             currentInfoMsgId = shopParameters.currentInfoMsgId
             dayRecievedCount = shopParameters.dayRecievedCount
+            dayConfirmedCount = shopParameters.dayConfirmedCount
+            serializedDayConfirmedByEmployee = shopParameters.serializedDayConfirmedByEmployee
         }
 
         if (serializedActiveOrders != null) {
@@ -89,6 +95,18 @@ class OrderDaemon(
         if (dayRecievedCount != null) {
             botProcessingRepository.dayOrderRecievedCount = dayRecievedCount.toInt()
             Logging.i(tag, "$werk dayRecievedCount READ: $dayRecievedCount")
+        }
+
+        if (dayConfirmedCount != null) {
+            botProcessingRepository.dayOrderConfirmedCount = dayConfirmedCount.toInt()
+            Logging.i(tag, "$werk dayConfirmedCount READ: $dayConfirmedCount")
+        }
+
+        if (serializedDayConfirmedByEmployee != null) {
+            val type = object : TypeToken<MutableMap<String?, Int?>>() {}.type
+            botProcessingRepository.dayOrderConfirmedByEmployee =
+                Gson().fromJson(serializedDayConfirmedByEmployee, type)
+            Logging.i(tag, "$werk serializedDayConfirmedByEmployee READ: $serializedDayConfirmedByEmployee")
         }
 
 
@@ -140,13 +158,15 @@ class OrderDaemon(
 
                     shopParametersDBRepository.updateDayRecievedCount(
                         shop = werk,
-                        dayRecievedCount = botProcessingRepository.dayOrderRecievedCount
+                        dayRecievedCount = botProcessingRepository.dayOrderRecievedCount,
+                        dayConfirmedCount = botProcessingRepository.dayOrderConfirmedCount,
+                        serializedDayConfirmedByEmployee = Gson().toJson(botProcessingRepository.dayOrderConfirmedByEmployee)
                     )
 
-                    Logging.i(
-                        tag,
-                        "$werk dayRecievedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount}"
-                    )
+                    Logging.i(tag, "$werk dayOrderRecievedCount SAVE: ${botProcessingRepository.dayOrderRecievedCount} " +
+                            "dayOrderConfirmedCount SAVE: ${botProcessingRepository.dayOrderConfirmedCount} " +
+                            "dayOrderConfirmedByEmployee SAVE: ${botProcessingRepository.dayOrderConfirmedByEmployee} ")
+
                 }
             }
 

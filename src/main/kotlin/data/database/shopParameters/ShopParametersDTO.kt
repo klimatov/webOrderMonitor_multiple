@@ -9,6 +9,8 @@ data class ShopParametersDTO(
     val serializedActiveOrders: String,
     val currentInfoMsgId: Long,
     val dayRecievedCount: Int,
+    val dayConfirmedCount: Int,
+    val serializedDayConfirmedByEmployee: String,
 )
 fun ShopParameters.mapToShopParametersDTO(): ShopParametersDTO =
     ShopParametersDTO(
@@ -16,6 +18,8 @@ fun ShopParameters.mapToShopParametersDTO(): ShopParametersDTO =
         serializedActiveOrders = serializedActiveOrders,
         currentInfoMsgId = currentInfoMsgId,
         dayRecievedCount = dayRecievedCount,
+        dayConfirmedCount = dayConfirmedCount,
+        serializedDayConfirmedByEmployee = serializedDayConfirmedByEmployee
     )
 
 fun ShopParametersDTO.mapToShopParameters(): ShopParameters =
@@ -24,4 +28,6 @@ fun ShopParametersDTO.mapToShopParameters(): ShopParameters =
         serializedActiveOrders = serializedActiveOrders,
         currentInfoMsgId = currentInfoMsgId,
         dayRecievedCount = dayRecievedCount,
+        dayConfirmedCount = dayConfirmedCount,
+        serializedDayConfirmedByEmployee = serializedDayConfirmedByEmployee
     )
