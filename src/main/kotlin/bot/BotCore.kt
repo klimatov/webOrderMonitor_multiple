@@ -899,7 +899,9 @@ class BotCore(
                 )
                 val popupMsg = when (it.data) {
                     "infoRequest" -> botMessage.popupMessage(
-                        botInstancesParameters[shop]?.dayOrderRecievedCount ?: 0
+                        botInstancesParameters[shop]?.dayOrderRecievedCount ?: 0,
+                        botInstancesParameters[shop]?.dayOrderConfirmedCount ?: 0,
+                        botInstancesParameters[shop]?.dayOrderConfirmedByEmployee ?: mutableMapOf()
                     )
 
                     "error403", "error401" -> "Изменился пароль входа в TradeService администратора " +

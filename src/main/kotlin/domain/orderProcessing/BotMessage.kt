@@ -141,7 +141,7 @@ class BotMessage : DateTimeProcess() {
         }
     }
 
-    private fun orderStarting(order: Int): String {
+    private fun orderRecievedStarting(order: Int): String {
         return order.let {
             if (it % 100 in 11..14) {
                 "упало"
@@ -149,6 +149,19 @@ class BotMessage : DateTimeProcess() {
                 when ((it % 10)) {
                     1 -> "упала"
                     else -> "упало"
+                }
+            }
+        }
+    }
+
+    private fun orderConfirmedStarting(order: Int): String {
+        return order.let {
+            if (it % 100 in 11..14) {
+                "Подтверждено"
+            } else {
+                when ((it % 10)) {
+                    1 -> "Подтверждена"
+                    else -> "Подтверждено"
                 }
             }
         }
@@ -173,17 +186,46 @@ class BotMessage : DateTimeProcess() {
         }
     }
 
-    fun notificationMessage(notification: Boolean, dayRecievedCount: Int): String {
+    fun notificationMessage(
+        notification: Boolean,
+        dayOrderRecievedCount: Int,
+        dayOrderConfirmedCount: Int,
+        dayOrderConfirmedByEmployee: MutableMap<String, Int>
+    ): String {
         if (notification) {
             return "\uD83D\uDD08 Магазин открыт, включаем звуковые уведомления!"
         } else {
             return "\uD83D\uDD07 Магазин закрыт, отключаем звуковые уведомления!\n" +
-                    "\uD83D\uDE2B Сегодня за день ${orderStarting(dayRecievedCount)} ${orderEnding(dayRecievedCount)}"
+                    "\uD83D\uDE2B Сегодня за день ${orderRecievedStarting(dayOrderRecievedCount)}: ${orderEnding(dayOrderRecievedCount)}, \n" +
+                    "${orderConfirmedStarting(dayOrderConfirmedCount)}: ${orderEnding(dayOrderConfirmedCount)}, \n" +
+                    "Из них через бота: ${
+                        if (dayOrderConfirmedByEmployee.isEmpty()) {
+                            orderEnding(0)
+                        } else {
+                            dayOrderConfirmedByEmployee.entries.sortedBy{ (_, value) -> value }.joinToString { (sapFio, count) ->
+                                "\n$sapFio: ${orderEnding(count)}"
+                            }
+                        }
+                    }"
         }
     }
 
-    fun popupMessage(dayRecievedCount: Int): String {
-        return "Сегодня ${orderStarting(dayRecievedCount)} ${orderEnding(dayRecievedCount)}"
+    fun popupMessage(
+        dayOrderRecievedCount: Int,
+        dayOrderConfirmedCount: Int,
+        dayOrderConfirmedByEmployee: MutableMap<String, Int>
+    ): String {
+        return "Сегодня ${orderRecievedStarting(dayOrderRecievedCount)}: ${orderEnding(dayOrderRecievedCount)}, \n" +
+                "${orderConfirmedStarting(dayOrderConfirmedCount)}: ${orderEnding(dayOrderConfirmedCount)}, \n" +
+                "Из них через бота: ${
+                    if (dayOrderConfirmedByEmployee.isEmpty()) {
+                        orderEnding(0)
+                    } else {
+                        dayOrderConfirmedByEmployee.entries.sortedBy{ (_, value) -> value }.joinToString { (sapFio, count) -> 
+                            "\n$sapFio: ${orderEnding(count)}"
+                        }
+                    }
+                }"
     }
 
     fun descriptionMessage(): String {
