@@ -49,7 +49,7 @@ class BotMessage : DateTimeProcess() {
             if (webOrder?.sapFioList?.isEmpty() == true) {
                 codeln("⭕Собираем ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
             } else {
-                codeln("⭕\uD83D\uDEE0${getFirstCollectorName(webOrder)} собирает ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
+                codeln("⭕\uD83D\uDEE0${getFirstCollectorNameFromWebOrder(webOrder)} собирает ${minutesEnding(timeDiff(webOrder?.docDate, gmt = gmt))}!")
             }
         }
             .plus(orderMessage(webOrder, botName))
@@ -63,7 +63,7 @@ class BotMessage : DateTimeProcess() {
             boldln(
                 when{
                     (docStatus == "DOC_STORN") -> "✅Отменена клиентом через $assemblyTime!"
-                    ((webOrder?.collector?.hrCode != null) && (webOrder?.collector?.hrCode != "0")) -> "✅Подтвердил(-а) ${getFirstCollectorName(webOrder)} за $assemblyTime!" // если не пусто, то собрана в боте
+                    ((webOrder?.collector?.hrCode != null) && (webOrder?.collector?.hrCode != "0")) -> "✅Подтвердил(-а) ${getFirstCollectorNameFromWebOrder(webOrder)} за $assemblyTime!" // если не пусто, то собрана в боте
                     ((docStatus == "WRQST_ACPT")||(docStatus == "PWRQT_DLVD")) -> "✅Подтверждена за $assemblyTime!"
                     ((docStatus == "WRQST_WAIT")||(docStatus == "PWRQT_SHRT")) -> "✅Заказ изменен за $assemblyTime, требуется подтверждение клиента!"
                     ((docStatus == "WRQST_BNLY")||(docStatus == "WRQST_BNLN")) -> "✅Выставлен безнал. Собрана за $assemblyTime!"
@@ -76,8 +76,12 @@ class BotMessage : DateTimeProcess() {
         return resultMessage
     }
 
-    private fun getFirstCollectorName(webOrder: WebOrder?): String {
+    private fun getFirstCollectorNameFromWebOrder(webOrder: WebOrder?): String {
         return webOrder?.sapFioList?.firstOrNull()?.split(" ")?.take(2)?.joinToString(" ")?:""
+    }
+
+    private fun getFirstCollectorName(sapFio: String?): String {
+        return sapFio?.split(" ")?.take(2)?.joinToString(" ")?:""
     }
 
     fun confirmButton(webOrder: WebOrder?, botName: Username): InlineKeyboardMarkup {
@@ -86,7 +90,7 @@ class BotMessage : DateTimeProcess() {
                     urlButton(if (webOrder?.sapFioList?.isEmpty() == true) {
                         "Подтвердить"
                     } else {
-                           "Собирает ${getFirstCollectorName(webOrder)}"
+                           "Собирает ${getFirstCollectorNameFromWebOrder(webOrder)}"
                            },
                         makeInternalTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=c&w=${webOrder?.webNum}&o=${webOrder?.orderId}&m=${webOrder?.messageId}".toByteArray()))
                     )
@@ -203,7 +207,7 @@ class BotMessage : DateTimeProcess() {
                             orderEnding(0)
                         } else {
                             dayOrderConfirmedByEmployee.entries.sortedBy{ (_, value) -> value }.joinToString { (sapFio, count) ->
-                                "\n$sapFio: ${orderEnding(count)}"
+                                "\n${getFirstCollectorName(sapFio)}: ${orderEnding(count)}"
                             }
                         }
                     }"
@@ -222,7 +226,7 @@ class BotMessage : DateTimeProcess() {
                         orderEnding(0)
                     } else {
                         dayOrderConfirmedByEmployee.entries.sortedBy{ (_, value) -> value }.joinToString { (sapFio, count) -> 
-                            "\n$sapFio: ${orderEnding(count)}"
+                            "\n${getFirstCollectorName(sapFio)}: ${orderEnding(count)}"
                         }
                     }
                 }"

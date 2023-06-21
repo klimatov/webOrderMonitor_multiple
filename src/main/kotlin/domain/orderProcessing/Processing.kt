@@ -143,10 +143,8 @@ class Processing(private val serverTSRepository: ServerTSRepository, val gmt: St
 //            webOrder?.collector = updateOrder.collector
 
         }
-
-        // TODO: переделать счетчик собранных
         when (webOrder?.docStatus) {
-            "WRQST_ACPT" -> {
+            "WRQST_ACPT", "WRQST_WAIT" -> {
                 botProcessingRepository.dayOrderConfirmedCount++
                 if ((webOrder?.collector?.hrCode != null) && (webOrder?.collector?.hrCode != "0")) {
                     val sapFio = webOrder?.sapFioList?.firstOrNull()?:"TS"

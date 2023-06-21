@@ -152,9 +152,11 @@ class OrderDaemon(
             ) {
                 botProcessingRepository.msgNotification = !botProcessingRepository.msgNotification
                 botProcessingRepository.botSendInfoMessage()
-                // если магазин закрылся, то сбрасываем счетчик собранных за день и записываем в настройки
+                // если магазин закрылся, то сбрасываем счетчик собранных/подтвержденных за день и записываем в настройки
                 if (!botProcessingRepository.msgNotification) {
                     botProcessingRepository.dayOrderRecievedCount = 0
+                    botProcessingRepository.dayOrderConfirmedCount = 0
+                    botProcessingRepository.dayOrderConfirmedByEmployee = mutableMapOf()
 
                     shopParametersDBRepository.updateDayRecievedCount(
                         shop = werk,
