@@ -201,12 +201,12 @@ class BotMessage : DateTimeProcess() {
         } else {
             return "\uD83D\uDD07 Магазин закрыт, отключаем звуковые уведомления!\n" +
                     "\uD83D\uDE2B Сегодня за день ${orderRecievedStarting(dayOrderRecievedCount)}: ${orderEnding(dayOrderRecievedCount)}, \n" +
-                    "${orderConfirmedStarting(dayOrderConfirmedCount)}: ${orderEnding(dayOrderConfirmedCount)}, \n" +
-                    "Из них через бота: ${
+                    "✅${orderConfirmedStarting(dayOrderConfirmedCount)}: ${orderEnding(dayOrderConfirmedCount)}, \n" +
+                    "\uD83E\uDD16Из них через бота: ${
                         if (dayOrderConfirmedByEmployee.isEmpty()) {
                             orderEnding(0)
                         } else {
-                            dayOrderConfirmedByEmployee.entries.sortedBy{ (_, value) -> value }.joinToString { (sapFio, count) ->
+                            dayOrderConfirmedByEmployee.entries.sortedByDescending{ (_, value) -> value }.joinToString { (sapFio, count) ->
                                 "\n${getFirstCollectorName(sapFio)}: ${orderEnding(count)}"
                             }
                         }
@@ -225,7 +225,7 @@ class BotMessage : DateTimeProcess() {
                     if (dayOrderConfirmedByEmployee.isEmpty()) {
                         orderEnding(0)
                     } else {
-                        dayOrderConfirmedByEmployee.entries.sortedBy{ (_, value) -> value }.joinToString { (sapFio, count) -> 
+                        dayOrderConfirmedByEmployee.entries.sortedByDescending{ (_, value) -> value }.joinToString { (sapFio, count) -> 
                             "\n${getFirstCollectorName(sapFio)}: ${orderEnding(count)}"
                         }
                     }
