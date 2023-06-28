@@ -761,6 +761,7 @@ class BotCore(
                 }
             ) {
                 Logging.d(tag, "/test")
+
 //                _confirmationDataFlow.emit(
 //                    ConfirmationData(
 //                        webNum = "12345",
@@ -871,11 +872,16 @@ class BotCore(
                                 "Last error message: ${BotWorkersRepositoryImpl.lastErrorMessage}\n" +
 
                                 BotWorkersRepositoryImpl.shopWorkersList.joinToString(separator = "") { shopWorkersParam ->
-                                    println(shopWorkersParam)
                                     if (shopWorkersParam.workerState == WorkerState.WORK) {
                                         val loginT = botMessage.DateDiff(shopWorkersParam.loginTime)
                                         "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
-                                    } else ""
+                                    } else {
+                                        ""
+                                    } +
+                                            "UserStates:" +
+                                            "\n" + stateUser.entries.joinToString { (identifier, botState) ->
+                                        "${allBotUsers[identifier]?.sapFio}(${allBotUsers[identifier]?.tsShop}): ${botState::class.java.simpleName}"
+                                    }
                                 }
 
                     )
