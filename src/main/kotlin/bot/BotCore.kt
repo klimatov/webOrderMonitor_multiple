@@ -877,12 +877,12 @@ class BotCore(
                                         "${shopWorkersParam.shop} login time: ${loginT.days}d ${loginT.hours}h ${loginT.minutes}m\n"
                                     } else {
                                         ""
-                                    } +
-                                            "UserStates:" +
-                                            "\n" + stateUser.entries.joinToString { (identifier, botState) ->
-                                        "${allBotUsers[identifier]?.sapFio}(${allBotUsers[identifier]?.tsShop}): ${botState::class.java.simpleName}"
                                     }
-                                }
+                                } +
+                                "UserStates:" +
+                                "\n" + stateUser.entries.joinToString { (identifier, botState) ->
+                            "${allBotUsers[identifier]?.sapFio}(${allBotUsers[identifier]?.tsShop}): ${botState::class.java.simpleName}"
+                        }
 
                     )
 
