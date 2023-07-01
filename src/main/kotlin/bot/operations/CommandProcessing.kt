@@ -180,7 +180,11 @@ class CommandProcessing(
         if (webOrder.result.success) {
             bot.sendMessage(
                 chatId,
-                botMessage.orderMessage(webOrder.webOrder, bot.getMe().username),
+                botMessage.orderMessage(
+                    webOrder = webOrder.webOrder,
+                    botName = bot.getMe().username,
+                    fullCustomerInfo = true
+                ),
                 disableWebPagePreview = true
             )
 

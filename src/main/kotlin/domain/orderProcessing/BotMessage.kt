@@ -18,7 +18,11 @@ import java.util.*
 
 class BotMessage : DateTimeProcess() {
 
-    fun orderMessage(webOrder: WebOrder?, botName: Username): TextSourcesList {
+    fun orderMessage(
+        webOrder: WebOrder?,
+        botName: Username,
+        fullCustomerInfo: Boolean = false
+    ): TextSourcesList {
         val resultMessage = buildEntities {
             regular("#️⃣${webOrder?.webNum}/${webOrder?.orderId} ")
             linkln("[i]", makeInternalTgDeepLink(botName, Base64.getUrlEncoder().encodeToString("t=info&web=${webOrder?.webNum}&order=${webOrder?.orderId}".toByteArray())))
@@ -26,8 +30,13 @@ class BotMessage : DateTimeProcess() {
             if (webOrder?.isLegalEntity == "Y") bold("СЧЁТ КОНТРАГЕНТА")
             underlineln("\n\uD83D\uDCC6${replaceDateTime(webOrder?.docDate ?: "")}")
             regularln("${if (webOrder?.paid == "Y") "\uD83D\uDCB0Онлайн оплата" else "\uD83E\uDDFEНе оплачен"} \uD83D\uDCB5${webOrder?.docSum} руб.")
-            regular("\uD83D\uDC68${webOrder?.fioCustomer} ")
-            phone("+${webOrder?.phone}")
+            if (fullCustomerInfo) {
+                regular("\uD83D\uDC68${webOrder?.fioCustomer} ")
+                phone("+${webOrder?.phone}")
+            } else {
+                regular("\uD83D\uDC68${webOrder?.fioCustomer?.substringBefore(" ")} ")
+                phone("+${webOrder?.phone?.replaceRange(4..6,"***")}")
+            }
             webOrder?.items?.forEach {
                 linkln("\n\n\uD83D\uDD35${it.goodCode} ${it.name}", "https://${it.eshopUrl}\n")
                 regular("\uD83D\uDCB0Цена: ${it.amount} ")

@@ -476,7 +476,7 @@ class BotCore(
                 val contentMessage = waitTextMessage().filter { message ->
                     message.sameChat(it.sourceMessage)
                 }.first()
-                newBotUsers[it.context.chatId]?.tsPassword = contentMessage.content.text
+                newBotUsers[it.context.chatId]?.tsPassword = contentMessage.content.text.md5()
                 PasswordUpdateStopState(it.context, it.sourceMessage)
             }
 
@@ -486,7 +486,7 @@ class BotCore(
                 sendMessage(
                     it.context,
                     "Проверяем: \nлогин в TS:${newBotUsers[it.context.chatId]?.tsLogin} " +
-                            "\nпароль:${newBotUsers[it.context.chatId]?.tsPassword} " +
+                            "\nпароль:* " +
                             "\nмагазин:${newBotUsers[it.context.chatId]?.tsShop}"
                 )
                 // проверка и коннект с апи магазина
