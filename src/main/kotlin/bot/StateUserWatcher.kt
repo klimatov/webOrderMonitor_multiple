@@ -7,14 +7,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class StateUserWatcher(val stateUser: MutableMap<Identifier, BotState>) {
-    val timeStartStateUser: MutableMap<Identifier, DateTime> = mutableMapOf()
-    val expiredTimeMinutes: Int = 1
+class StateUserWatcher(private val stateUser: MutableMap<Identifier, BotState>) {
+    private val timeStartStateUser: MutableMap<Identifier, DateTime> = mutableMapOf()
+    private val expiredTimeMinutes: Int = 1
 
-    suspend fun start(){
+    suspend fun start() {
         CoroutineScope(Dispatchers.Default).launch {
             stateUser.forEach { (identifier, botState) -> //проверяем на новых и просроченных
-                if (timeStartStateUser.containsKey(identifier)){
+                if (timeStartStateUser.containsKey(identifier)) {
                     //проверка на просроченность
                 } else {
                     //добавляем нового
@@ -22,7 +22,7 @@ class StateUserWatcher(val stateUser: MutableMap<Identifier, BotState>) {
                 }
             }
 
-                // тут проверка на удаленных ии очистка
+            // тут проверка на удаленных и очистка
                         
         }.start()
     }

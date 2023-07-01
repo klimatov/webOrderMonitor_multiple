@@ -31,10 +31,10 @@ class BotMessage : DateTimeProcess() {
             underlineln("\n\uD83D\uDCC6${replaceDateTime(webOrder?.docDate ?: "")}")
             regularln("${if (webOrder?.paid == "Y") "\uD83D\uDCB0Онлайн оплата" else "\uD83E\uDDFEНе оплачен"} \uD83D\uDCB5${webOrder?.docSum} руб.")
             if (fullCustomerInfo) {
-                regular("\uD83D\uDC68${webOrder?.fioCustomer} ")
+                regular("\uD83D\uDC68${webOrder?.fioCustomer?.trim()} ")
                 phone("+${webOrder?.phone}")
             } else {
-                regular("\uD83D\uDC68${webOrder?.fioCustomer?.substringBefore(" ")} ")
+                regular("\uD83D\uDC68${webOrder?.fioCustomer?.trim()?.substringBefore(" ")} ")
                 phone("+${webOrder?.phone?.replaceRange(4..6,"***")}")
             }
             webOrder?.items?.forEach {
