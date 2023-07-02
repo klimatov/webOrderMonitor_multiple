@@ -18,8 +18,10 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessa
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.message
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
+import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
+import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.Identifier
 import dev.inmo.tgbotapi.types.message.abstracts.CommonMessage
@@ -46,7 +48,8 @@ class CommandProcessing(
 
     private val botTSOperations = BotTSOperations(botTSRepository, botRepositoryDB)
     private val botMessage = BotMessage()
-    private val orderConfirmation = OrderConfirmation(bot, botTSOperations, stateUser, allBotUsers, _confirmationDataFlow, botInstancesParameters)
+    private val orderConfirmation =
+        OrderConfirmation(bot, botTSOperations, stateUser, allBotUsers, _confirmationDataFlow, botInstancesParameters)
 
     suspend fun incomingMessage(
         rawMessage: CommonMessage<MessageContent>,
@@ -110,29 +113,55 @@ class CommandProcessing(
                     bot.edit(
                         chatIdZ,
                         messageId,
-                        "Отправляем сообщения"
+                        "Отправляем сообщение"
                     )
+                    val sendingResult: MutableMap<String, Boolean> = mutableMapOf()
                     botInstancesParameters.forEach { botInstance ->
-                        bot.send(
-                            botInstance.value.targetChatId,
-                            sendingMessage.content.text,
-                            disableWebPagePreview = true
-                        )
+                        try {
+                            bot.send(
+                                botInstance.value.targetChatId,
+                                sendingMessage.content.text,
+                                disableWebPagePreview = true
+                            )
+                            sendingResult["${botInstance.key} чат"] = true
+                        } catch (e: Exception) {
+                            sendingResult["${botInstance.key} чат"] = false
+                            Logging.e(tag, e.message.toString())
+                        }
                     }
-                }
 
+                    allBotUsers.forEach { botUsers ->
+                        val userDataString = "${botMessage.getFirstCollectorName(botUsers.value.sapFio.toString())}(${botUsers.value.tsShop})"
+                        try {
+                            val result = bot.send(
+                                ChatId(botUsers.key),
+                                sendingMessage.content.text,
+                                disableWebPagePreview = true
+                            ).chat.privateChatOrNull()
+                            sendingResult[userDataString + "${result?.username?.username ?: ""} ${result?.firstName ?: ""} ${result?.lastName ?: ""}".trim()] =
+                                true
+                        } catch (e: Exception) {
+                            sendingResult[userDataString] = false
+                            Logging.e(tag, e.message.toString())
+                        }
+                    }
+
+                    bot.edit(
+                        chatIdZ,
+                        messageId,
+                        sendingResult.entries.joinToString { (recipient, result) ->
+                            "\n${recipient}: " +
+                                    if (result) "✅" else "❌"
+                        }
+                    )
+                }
                 else -> bot.edit(
                     chatIdZ,
                     messageId,
                     "Отправка отменена"
                 )
-
-
             }
-
-
         }
-
     }
 
     suspend fun incomingDeepLink(

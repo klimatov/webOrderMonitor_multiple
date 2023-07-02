@@ -89,7 +89,7 @@ class BotMessage : DateTimeProcess() {
         return webOrder?.sapFioList?.firstOrNull()?.split(" ")?.take(2)?.joinToString(" ")?:""
     }
 
-    private fun getFirstCollectorName(sapFio: String?): String {
+    fun getFirstCollectorName(sapFio: String?): String {
         return sapFio?.split(" ")?.take(2)?.joinToString(" ")?:""
     }
 
