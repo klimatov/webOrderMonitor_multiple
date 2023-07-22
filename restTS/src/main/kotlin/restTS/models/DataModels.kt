@@ -61,12 +61,28 @@ data class MainRemains(
 
 data class ListWebOrderSimply(
     @SerializedName("webOrderSimply") var webOrderSimply: List<WebOrderSimply> = emptyList(),
+    @SerializedName("total") var total: Int? = null,  //new 22.07.2023 (26 ver)
+    @SerializedName("count") var count: Int? = null, //new 22.07.2023 (26 ver)
     @SerializedName("needUpdate") var needUpdate: Boolean? = null
 )
 
 data class WebOrderSimply(
     @SerializedName("docDate") var docDate: String? = null,
-    @SerializedName("webNum") var webNum: String? = null
+    @SerializedName("webNum") var webNum: String? = null,
+    @SerializedName("orderId") var orderId: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("ordType") var ordType: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("isLegalEntity") var isLegalEntity: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("fioCustomer") var fioCustomer: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("paid") var paid: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("phone") var phone: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("orderType") var orderType: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("reasonCode") var reasonCode: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("creationPlace") var creationPlace: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("collector") var collector: Collector? = Collector(), //new 22.07.2023 (26 ver)
+    @SerializedName("company") var company: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("docSum") var docSum: Int? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("docStatus") var docStatus: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("status") var status: Status? = Status() //new 22.07.2023 (26 ver)
 )
 
 data class ListWebOrder(
@@ -106,9 +122,13 @@ data class WebOrder(
     @SerializedName("status") var status: Status? = Status(), //new 01.05.2022
     @SerializedName("itemsUpdateStatus") var itemsUpdateStatus: Boolean = false, // manual
     @SerializedName("company") var company: String? = null, //new 20.05.2023
-    @SerializedName("sapFioList") var sapFioList: MutableList<String> = mutableListOf() // manual
+    @SerializedName("sapFioList") var sapFioList: MutableList<String> = mutableListOf(), // manual
+    @SerializedName("type") var type: String? = null //new 22.07.2023 (26 ver)
 )
 
+data class WebOrderDetailList(
+    @SerializedName("webOrders" ) var webOrders : List<WebOrderDetail> = emptyList() //new 22.07.2023 (26 ver)
+)
 data class WebOrderDetail(
     @SerializedName("webOrder") var webOrder: WebOrder? = WebOrder(),
     @SerializedName("needUpdate") var needUpdate: Boolean? = null,
@@ -136,7 +156,10 @@ data class Items(
     @SerializedName("shelf") var shelf: String? = null,
     @SerializedName("params") var params: List<Params> = emptyList(),
     @SerializedName("incomplet") var incomplet: Incomplet? = Incomplet(), //new 21.05.2022
-    @SerializedName("remains") var remains: List<RemainsLocal> = emptyList()//manual
+    @SerializedName("remains") var remains: List<RemainsLocal> = emptyList(), //manual
+    @SerializedName("vitrine") var vitrine: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("itemStatus") var itemStatus: String? = null, //new 22.07.2023 (26 ver)
+    @SerializedName("mecatName") var mecatName: String? = null //new 22.07.2023 (26 ver)
 )
 
 data class Incomplet(
@@ -215,6 +238,7 @@ data class SaveIncomplet(
     @SerializedName("comment") var comment: String? = null,
     @SerializedName("reasonCode") var reasonCode: String? = null
 )
+
 data class PrintRes(
     @SerializedName("needUpdate") var needUpdate: Boolean? = null
 )

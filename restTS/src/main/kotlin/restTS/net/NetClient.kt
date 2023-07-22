@@ -205,8 +205,8 @@ class NetClient {
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
-            val responseJson = Gson().fromJson(response?.body(), WebOrderDetail::class.java)
-            return responseJson
+            val responseJson = Gson().fromJson(response?.body(), WebOrderDetailList::class.java)
+            return responseJson.webOrders.firstOrNull()
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.errorMessage = e.message.toString()

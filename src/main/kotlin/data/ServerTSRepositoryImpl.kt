@@ -64,6 +64,7 @@ class ServerTSRepositoryImpl : ServerTSRepository {
 
     override suspend fun getItems(orderId: String?): List<Items> {
         val orderItems = netClient.getWebOrderDetail(orderId, "WRQST")
+        Logging.d(tag, "Fixing! Result: $orderItems")
         if (orderItems == null) return emptyList() else return orderItems.items
     }
 
