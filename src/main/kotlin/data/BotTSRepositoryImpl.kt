@@ -153,7 +153,11 @@ class BotTSRepositoryImpl : BotTSRepository {
     override suspend fun getPrintersList(userId: Identifier): PrintersListResult {
         val serverTSRepository = serverTSRepositoryInstance(userId)
         try {
-            val printersList = serverTSRepository.getPrintersList()
+            var printersList = serverTSRepository.getPrintersList()
+            if (serverTSRepository.errorCode == 401) {
+                renewLogin(userId)
+                printersList = serverTSRepository.getPrintersList()
+            }
             return PrintersListResult(
                 result = Result(
                     success = (serverTSRepository.errorCode == 200),

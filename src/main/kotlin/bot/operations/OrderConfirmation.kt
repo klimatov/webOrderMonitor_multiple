@@ -82,6 +82,10 @@ class OrderConfirmation(
     private fun templateConfirmedFalse(webNum: String) =
         "Подтверить веб-заявку №$webNum не удалось по техническим причинам."
 
+    private fun templateConfirmedUserFalse(webNum: String) =
+        "Подтверить веб-заявку №$webNum не удалось, т.к. возникла проблема с авторизацией. " +
+                "Возможно изменился ваш пароль в TS, обновите его в боте по команде /password"
+
     private fun templateConfirmedPrinted(printerName: String?) =
         if (printerName == null) "" else " Лист подбора отправлен на печать на $printerName"
 
@@ -204,7 +208,11 @@ class OrderConfirmation(
 
 
                     } else {
-                        orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
+                        orderSaveParam.saveStatus = when (webOrder.result.errorCode) {
+                            401, 403 -> OrderDataSaveStatus.USERFALSE
+                            else -> OrderDataSaveStatus.FALSE
+                        }
+//                        orderSaveParam.saveStatus = OrderDataSaveStatus.FALSE
                         ConfirmationStopState(it.context, orderSaveParam)
                     }
 
@@ -925,6 +933,7 @@ class OrderConfirmation(
 
                 val textMessage = when (it.orderSaveParam.saveStatus) {
                     OrderDataSaveStatus.FALSE -> templateConfirmedFalse(it.orderSaveParam.webNum ?: "")
+                    OrderDataSaveStatus.USERFALSE -> templateConfirmedUserFalse(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.EXIST -> templateAlredyConfirmed(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.CANCEL -> templateCancelOrder(it.orderSaveParam.webNum ?: "")
                     OrderDataSaveStatus.STORN -> templateConfirmedStorn(it.orderSaveParam.webNum ?: "")
@@ -936,7 +945,7 @@ class OrderConfirmation(
                     else -> ""
                 }
                 when (it.orderSaveParam.saveStatus) {
-                    OrderDataSaveStatus.CANCEL, OrderDataSaveStatus.FALSE -> {
+                    OrderDataSaveStatus.CANCEL, OrderDataSaveStatus.FALSE, OrderDataSaveStatus.USERFALSE -> {
                         emitConfirmationData(
                             chatId = it.context.chatId,
                             orderSaveParam = it.orderSaveParam,

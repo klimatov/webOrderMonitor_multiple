@@ -106,7 +106,8 @@ enum class OrderDataSaveStatus {
     STANDART,
     ONESHELF,
     FAST,
-    FINISH
+    FINISH,
+    USERFALSE
 }
 
 data class ConfirmationData(

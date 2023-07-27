@@ -34,7 +34,7 @@ class BotMessage : DateTimeProcess() {
                 regular("\uD83D\uDC68${webOrder?.fioCustomer?.trim()} ")
                 phone("+${webOrder?.phone}")
             } else {
-                regular("\uD83D\uDC68${webOrder?.fioCustomer?.trim()?.substringBefore(" ")} ")
+                regular("\uD83D\uDC68${replacingNameWithStars(webOrder?.fioCustomer?.trim()?.substringBefore(" "))} ")
                 phone("+${webOrder?.phone?.replaceRange(4..6,"***")}")
             }
             webOrder?.items?.forEach {
@@ -50,6 +50,15 @@ class BotMessage : DateTimeProcess() {
             }
         }
         return resultMessage
+    }
+
+    private fun replacingNameWithStars(name: String?): String {
+        return when (name?.length){
+            0, 1, null -> "*"
+            2 -> name.replaceRange(1..1,"*")
+            3 -> name.replaceRange(1..2,"**")
+            else -> name.replaceRange(1..3,"***")
+        }
     }
 
     fun inworkMessage(webOrder: WebOrder?, gmt: String, botName: Username): TextSourcesList {
