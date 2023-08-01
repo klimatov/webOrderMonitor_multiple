@@ -35,7 +35,7 @@ class NetClient {
         try {
             val response = RetrofitInstance.eldoApi.getDBVersion(shop)?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
             //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -79,7 +79,7 @@ class NetClient {
             val response =
                 RetrofitInstance.eldoApi.login(werk, dbVersion, dbVersion, values)?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, values)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response, values)
 
             this.errorCode = response?.code()
             Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -129,7 +129,7 @@ class NetClient {
                 hashMap
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response, hashMap)
 
             this.errorCode = response?.code()
             if (this.errorCode == 200) {
@@ -173,7 +173,7 @@ class NetClient {
                 hashMap
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response, hashMap)
 
             this.errorCode = response?.code()
             //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -200,13 +200,13 @@ class NetClient {
                 type // WRQST ?
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
 
             val responseJson = Gson().fromJson(response?.body(), WebOrderDetailList::class.java)
-            return responseJson.webOrders.firstOrNull()
+            return responseJson?.webOrders?.firstOrNull() ?: null
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.errorMessage = e.message.toString()
@@ -225,7 +225,7 @@ class NetClient {
                 id
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
             //Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -252,7 +252,7 @@ class NetClient {
                 str // INWORK ASSEMBLY ISSUED
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -276,7 +276,7 @@ class NetClient {
                 token
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -302,7 +302,7 @@ class NetClient {
                 hashMap
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response, hashMap)
 
             this.errorCode = response?.code()
             // Logging.d(tag, "${this.shop} Authentication result code: ${response?.code()}")
@@ -328,7 +328,7 @@ class NetClient {
                 itemId
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
 
@@ -351,7 +351,7 @@ class NetClient {
                 token
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
 
@@ -374,12 +374,12 @@ class NetClient {
                 token
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response)
 
             this.errorCode = response?.code()
 
             val responseJson = Gson().fromJson(response?.body(), PrintersList::class.java)
-            return responseJson.pcNameList
+            return responseJson?.pcNameList ?: emptyList()
         } catch (e: Exception) {
             Logging.e(tag, "${this.shop} Exception: ${e.message}")
             this.errorMessage = e.message.toString()
@@ -388,7 +388,14 @@ class NetClient {
         }
     }
 
-    fun saveWebOrder(orderType: String?, orderId: String?, company: String?, items: List<SaveItems>, collector: Collector, ordType: String?): SaveWebOrderRes? {
+    fun saveWebOrder(
+        orderType: String?,
+        orderId: String?,
+        company: String?,
+        items: List<SaveItems>,
+        collector: Collector,
+        ordType: String?
+    ): SaveWebOrderRes? {
         val hashMap: HashMap<String?, Any?> = hashMapOf(
             "orderType" to orderType,
             "orderId" to orderId,
@@ -409,7 +416,7 @@ class NetClient {
                 hashMap
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response, hashMap)
 
             this.errorCode = response?.code()
 
@@ -440,7 +447,7 @@ class NetClient {
                 hashMap
             )?.execute()
 
-            loggingRequestInfo(object{}.javaClass.enclosingMethod.name, response, hashMap)
+            loggingRequestInfo(object {}.javaClass.enclosingMethod.name, response, hashMap)
 
             this.errorCode = response?.code()
 
