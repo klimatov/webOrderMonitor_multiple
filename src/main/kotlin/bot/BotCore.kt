@@ -203,6 +203,8 @@ class BotCore(
                         newBotUsers[it.context.chatId]?.sapPosition = resultCheckTs.userInfo?.position
                         newBotUsers[it.context.chatId]?.sapId = resultCheckTs.userInfo?.hrCode
 
+                        Logging.d(tag, "Update data:" + newBotUsers[it.context.chatId].toString())
+
                         botRepositoryDB.setUserBy(botUser = newBotUsers[it.context.chatId]!!)
                         allBotUsers[it.context.chatId] = newBotUsers[it.context.chatId]!!
 

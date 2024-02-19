@@ -14,7 +14,7 @@ object BotUsersDB : Table("bot_users") {
     private val telegramUserId = BotUsersDB.varchar("tg_user_id", 20)
     private val userRole = BotUsersDB.varchar("user_role", 20)
     private val sapFio = BotUsersDB.varchar("sap_fio", 100)
-    private val sapPosition = BotUsersDB.varchar("sap_position", 40)
+    private val sapPosition = BotUsersDB.varchar("sap_position", 100)
     private val sapId = BotUsersDB.varchar("sap_id", 20)
     private val deviceType = BotUsersDB.varchar("device_type", 40)
     private val deviceVersion = BotUsersDB.varchar("device_version", 40)
